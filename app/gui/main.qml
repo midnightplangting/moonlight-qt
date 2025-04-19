@@ -11,7 +11,7 @@ import SystemProperties 1.0
 import SdlGamepadKeyNavigation 1.0
 
 ApplicationWindow {
-    // flags: Qt.FramelessWindowHint
+    flags: Qt.FramelessWindowHint | Qt.Window | Qt.WindowMinimizeButtonHint
 
     property bool pollingActive: false
 
@@ -22,7 +22,7 @@ ApplicationWindow {
 
     id: window
     width: 1280
-    height: 600
+    height: 800
 
 
 
@@ -240,6 +240,15 @@ ApplicationWindow {
         height: 60
         anchors.topMargin: 5
         anchors.bottomMargin: 5
+
+        MouseArea {
+                id: dragArea
+                anchors.fill: parent   // 覆盖整个 ToolBar；你也可以只覆盖标题文字区域
+                drag.target: null      // 不能设 target，不然就变成拖控件了
+                onPressed: {
+                    window.startSystemMove()
+                }
+            }
 
         Label {
             id: titleLabel
