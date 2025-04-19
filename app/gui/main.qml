@@ -261,246 +261,275 @@ ApplicationWindow {
             verticalAlignment: Qt.AlignVCenter
         }
 
-        RowLayout {
-            spacing: 10
-            anchors.leftMargin: 10
-            anchors.rightMargin: 10
+        ColumnLayout {
             anchors.fill: parent
+            spacing: 4
+            // 第一层
+            RowLayout {
+                spacing: 10
+                anchors.leftMargin: 10
+                anchors.rightMargin: 10
+                anchors.fill: parent
 
-            NavigableToolButton {
-                // Only make the button visible if the user has navigated somewhere.
-                visible: stackView.depth > 1
+                NavigableToolButton {
+                    // Only make the button visible if the user has navigated somewhere.
+                    visible: stackView.depth > 1
 
-                iconSource: "qrc:/res/arrow_left.svg"
+                    iconSource: "qrc:/res/arrow_left.svg"
 
-                onClicked: goBack()
+                    onClicked: goBack()
 
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    Keys.onDownPressed: {
+                        stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    }
                 }
-            }
 
-            // This label will appear when the window gets too small and
-            // we need to ensure the toolbar controls don't collide
-            Label {
-                id: titleRowLabel
-                font.pointSize: titleLabel.font.pointSize
-                elide: Label.ElideRight
-                horizontalAlignment: Qt.AlignHCenter
-                verticalAlignment: Qt.AlignVCenter
+                // This label will appear when the window gets too small and
+                // we need to ensure the toolbar controls don't collide
+                Label {
+                    id: titleRowLabel
+                    font.pointSize: titleLabel.font.pointSize
+                    elide: Label.ElideRight
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
+                    Layout.fillWidth: true
+
+                    // We need this label to always be visible so it can occupy
+                    // the remaining space in the RowLayout. To "hide" it, we
+                    // just set the text to empty string.
+                    text: !titleLabel.visible ? stackView.currentItem.objectName : ""
+                }
+
+                Label {
+                    id: versionLabel
+                    visible: qmltypeof(stackView.currentItem, "SettingsView")
+                    text: qsTr("Version %1").arg(SystemProperties.versionString)
+                    font.pointSize: 12
+                    horizontalAlignment: Qt.AlignRight
+                    verticalAlignment: Qt.AlignVCenter
+                }
+
+                NavigableToolButton {
+                    id: discordButton
+                    visible: SystemProperties.hasBrowser &&
+                             qmltypeof(stackView.currentItem, "SettingsView")
+
+                    iconSource: "qrc:/res/discord.svg"
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 3000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Join our community on Discord")
+
+                    // TODO need to make sure browser is brought to foreground.
+                    onClicked: Qt.openUrlExternally("https://moonlight-stream.org/discord");
+
+                    Keys.onDownPressed: {
+                        stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    }
+                }
+
+                NavigableToolButton {
+                    id: addPcButton
+                    visible: qmltypeof(stackView.currentItem, "PcView")
+
+                    iconSource:  "qrc:/res/ic_add_to_queue_white_48px.svg"
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 3000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Add PC manually") + (newPcShortcut.nativeText ? (" ("+newPcShortcut.nativeText+")") : "")
+
+                    Shortcut {
+                        id: newPcShortcut
+                        sequence: StandardKey.New
+                        onActivated: addPcButton.clicked()
+                    }
+
+                    onClicked: {
+                        addPcDialog.open()
+                    }
+
+                    Keys.onDownPressed: {
+                        stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    }
+                }
+
+                NavigableToolButton {
+                    property string browserUrl: ""
+
+                    id: updateButton
+
+                    iconSource: "qrc:/res/update.svg"
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 3000
+                    ToolTip.visible: hovered || visible
+
+                    // Invisible until we get a callback notifying us that
+                    // an update is available
+                    visible: false
+
+                    onClicked: {
+                        if (SystemProperties.hasBrowser) {
+                            Qt.openUrlExternally(browserUrl);
+                        }
+                    }
+
+                    function updateAvailable(version, url)
+                    {
+                        ToolTip.text = qsTr("Update available for Moonlight: Version %1").arg(version)
+                        updateButton.browserUrl = url
+                        updateButton.visible = true
+                    }
+
+                    Component.onCompleted: {
+                        AutoUpdateChecker.onUpdateAvailable.connect(updateAvailable)
+                        AutoUpdateChecker.start()
+                    }
+
+                    Keys.onDownPressed: {
+                        stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    }
+                }
+
+                NavigableToolButton {
+                    id: helpButton
+                    visible: SystemProperties.hasBrowser
+
+                    iconSource: "qrc:/res/question_mark.svg"
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 3000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Help") + (helpShortcut.nativeText ? (" ("+helpShortcut.nativeText+")") : "")
+
+                    Shortcut {
+                        id: helpShortcut
+                        sequence: StandardKey.HelpContents
+                        onActivated: helpButton.clicked()
+                    }
+
+                    // TODO need to make sure browser is brought to foreground.
+                    onClicked: Qt.openUrlExternally("https://github.com/moonlight-stream/moonlight-docs/wiki/Setup-Guide");
+
+                    Keys.onDownPressed: {
+                        stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    }
+                }
+
+                NavigableToolButton {
+                    // TODO: Implement gamepad mapping then unhide this button
+                    visible: false
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 3000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Gamepad Mapper")
+
+                    iconSource: "qrc:/res/ic_videogame_asset_white_48px.svg"
+
+                    onClicked: navigateTo("qrc:/gui/GamepadMapper.qml", "GamepadMapper")
+
+                    Keys.onDownPressed: {
+                        stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    }
+                }
+
+                NavigableToolButton {
+                    id: settingsButton
+
+                    iconSource:  "qrc:/res/settings.svg"
+
+                    onClicked: navigateTo("qrc:/gui/SettingsView.qml", "SettingsView")
+
+                    Keys.onDownPressed: {
+                        stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    }
+
+                    Shortcut {
+                        id: settingsShortcut
+                        sequence: StandardKey.Preferences
+                        onActivated: settingsButton.clicked()
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 3000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Settings") + (settingsShortcut.nativeText ? (" ("+settingsShortcut.nativeText+")") : "")
+                }
+
+                NavigableToolButton {
+                    id: aboutButton
+
+                    iconSource: "qrc:/res/update.svg" // 你可以换成合适的图标路径
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 3000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("关于")
+
+                    onClicked: {
+                        navigateTo("qrc:/gui/AboutPage.qml", "AboutPage")
+                    }
+
+                    Keys.onDownPressed: {
+                        stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    }
+                }
+
+                // 最小化按钮
+                NavigableToolButton {
+                    iconSource: "qrc:/res/minimize.svg" // 替换为你实际的图标
+                    ToolTip.text: qsTr("最小化")
+                    onClicked: window.showMinimized()
+                }
+
+                // 最大化/还原按钮
+                NavigableToolButton {
+                    iconSource: "qrc:/res/fullscreen.svg" // 替换为你实际的图标
+                    ToolTip.text: qsTr("全屏/还原")
+                    onClicked: {
+                        if (window.visibility === Window.Maximized || window.visibility === Window.FullScreen) {
+                            window.showNormal()
+                        } else {
+                            window.showMaximized()
+                        }
+                    }
+                }
+
+                // 关闭按钮
+                NavigableToolButton {
+                    iconSource: "qrc:/res/close.svg" // 替换为你实际的图标
+                    ToolTip.text: qsTr("关闭")
+                    onClicked: Qt.quit()
+                }
+
+            }
+            // 第二层：搜索栏或其他功能控件
+            RowLayout {
+                spacing: 10
                 Layout.fillWidth: true
 
-                // We need this label to always be visible so it can occupy
-                // the remaining space in the RowLayout. To "hide" it, we
-                // just set the text to empty string.
-                text: !titleLabel.visible ? stackView.currentItem.objectName : ""
-            }
-
-            Label {
-                id: versionLabel
-                visible: qmltypeof(stackView.currentItem, "SettingsView")
-                text: qsTr("Version %1").arg(SystemProperties.versionString)
-                font.pointSize: 12
-                horizontalAlignment: Qt.AlignRight
-                verticalAlignment: Qt.AlignVCenter
-            }
-
-            NavigableToolButton {
-                id: discordButton
-                visible: SystemProperties.hasBrowser &&
-                         qmltypeof(stackView.currentItem, "SettingsView")
-
-                iconSource: "qrc:/res/discord.svg"
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Join our community on Discord")
-
-                // TODO need to make sure browser is brought to foreground.
-                onClicked: Qt.openUrlExternally("https://moonlight-stream.org/discord");
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-            }
-
-            NavigableToolButton {
-                id: addPcButton
-                visible: qmltypeof(stackView.currentItem, "PcView")
-
-                iconSource:  "qrc:/res/ic_add_to_queue_white_48px.svg"
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Add PC manually") + (newPcShortcut.nativeText ? (" ("+newPcShortcut.nativeText+")") : "")
-
-                Shortcut {
-                    id: newPcShortcut
-                    sequence: StandardKey.New
-                    onActivated: addPcButton.clicked()
+                Label {
+                    text: "搜索:"
+                    font.pointSize: 12
                 }
 
-                onClicked: {
-                    addPcDialog.open()
-                }
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-            }
-
-            NavigableToolButton {
-                property string browserUrl: ""
-
-                id: updateButton
-
-                iconSource: "qrc:/res/update.svg"
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered || visible
-
-                // Invisible until we get a callback notifying us that
-                // an update is available
-                visible: false
-
-                onClicked: {
-                    if (SystemProperties.hasBrowser) {
-                        Qt.openUrlExternally(browserUrl);
+                TextField {
+                    id: searchField
+                    placeholderText: "输入内容..."
+                    Layout.fillWidth: true
+                    onAccepted: {
+                        console.log("搜索:", searchField.text)
                     }
                 }
 
-                function updateAvailable(version, url)
-                {
-                    ToolTip.text = qsTr("Update available for Moonlight: Version %1").arg(version)
-                    updateButton.browserUrl = url
-                    updateButton.visible = true
-                }
-
-                Component.onCompleted: {
-                    AutoUpdateChecker.onUpdateAvailable.connect(updateAvailable)
-                    AutoUpdateChecker.start()
-                }
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                Button {
+                    text: "查找"
+                    onClicked: console.log("搜索按钮:", searchField.text)
                 }
             }
-
-            NavigableToolButton {
-                id: helpButton
-                visible: SystemProperties.hasBrowser
-
-                iconSource: "qrc:/res/question_mark.svg"
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Help") + (helpShortcut.nativeText ? (" ("+helpShortcut.nativeText+")") : "")
-
-                Shortcut {
-                    id: helpShortcut
-                    sequence: StandardKey.HelpContents
-                    onActivated: helpButton.clicked()
-                }
-
-                // TODO need to make sure browser is brought to foreground.
-                onClicked: Qt.openUrlExternally("https://github.com/moonlight-stream/moonlight-docs/wiki/Setup-Guide");
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-            }
-
-            NavigableToolButton {
-                // TODO: Implement gamepad mapping then unhide this button
-                visible: false
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Gamepad Mapper")
-
-                iconSource: "qrc:/res/ic_videogame_asset_white_48px.svg"
-
-                onClicked: navigateTo("qrc:/gui/GamepadMapper.qml", "GamepadMapper")
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-            }
-
-            NavigableToolButton {
-                id: settingsButton
-
-                iconSource:  "qrc:/res/settings.svg"
-
-                onClicked: navigateTo("qrc:/gui/SettingsView.qml", "SettingsView")
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-
-                Shortcut {
-                    id: settingsShortcut
-                    sequence: StandardKey.Preferences
-                    onActivated: settingsButton.clicked()
-                }
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Settings") + (settingsShortcut.nativeText ? (" ("+settingsShortcut.nativeText+")") : "")
-            }
-
-            NavigableToolButton {
-                id: aboutButton
-
-                iconSource: "qrc:/res/update.svg" // 你可以换成合适的图标路径
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("关于")
-
-                onClicked: {
-                    navigateTo("qrc:/gui/AboutPage.qml", "AboutPage")
-                }
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-            }
-
-            // 最小化按钮
-            NavigableToolButton {
-                iconSource: "qrc:/res/minimize.svg" // 替换为你实际的图标
-                ToolTip.text: qsTr("最小化")
-                onClicked: window.showMinimized()
-            }
-
-            // 最大化/还原按钮
-            NavigableToolButton {
-                iconSource: "qrc:/res/fullscreen.svg" // 替换为你实际的图标
-                ToolTip.text: qsTr("全屏/还原")
-                onClicked: {
-                    if (window.visibility === Window.Maximized || window.visibility === Window.FullScreen) {
-                        window.showNormal()
-                    } else {
-                        window.showMaximized()
-                    }
-                }
-            }
-
-            // 关闭按钮
-            NavigableToolButton {
-                iconSource: "qrc:/res/close.svg" // 替换为你实际的图标
-                ToolTip.text: qsTr("关闭")
-                onClicked: Qt.quit()
-            }
-
         }
     }
 
