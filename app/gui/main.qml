@@ -11,6 +11,8 @@ import SystemProperties 1.0
 import SdlGamepadKeyNavigation 1.0
 
 ApplicationWindow {
+    // flags: Qt.FramelessWindowHint
+
     property bool pollingActive: false
 
     // Set by SettingsView to force the back operation to pop all
@@ -21,6 +23,8 @@ ApplicationWindow {
     id: window
     width: 1280
     height: 600
+
+
 
     // This function runs prior to creation of the initial StackView item
     function doEarlyInit() {
@@ -441,6 +445,53 @@ ApplicationWindow {
                 ToolTip.visible: hovered
                 ToolTip.text: qsTr("Settings") + (settingsShortcut.nativeText ? (" ("+settingsShortcut.nativeText+")") : "")
             }
+
+            NavigableToolButton {
+                id: aboutButton
+
+                iconSource: "qrc:/res/update.svg" // 你可以换成合适的图标路径
+
+                ToolTip.delay: 1000
+                ToolTip.timeout: 3000
+                ToolTip.visible: hovered
+                ToolTip.text: qsTr("关于")
+
+                onClicked: {
+                    navigateTo("qrc:/gui/AboutPage.qml", "AboutPage")
+                }
+
+                Keys.onDownPressed: {
+                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                }
+            }
+
+            // 最小化按钮
+            NavigableToolButton {
+                iconSource: "qrc:/res/minimize.svg" // 替换为你实际的图标
+                ToolTip.text: qsTr("最小化")
+                onClicked: window.showMinimized()
+            }
+
+            // 最大化/还原按钮
+            NavigableToolButton {
+                iconSource: "qrc:/res/fullscreen.svg" // 替换为你实际的图标
+                ToolTip.text: qsTr("全屏/还原")
+                onClicked: {
+                    if (window.visibility === Window.Maximized || window.visibility === Window.FullScreen) {
+                        window.showNormal()
+                    } else {
+                        window.showMaximized()
+                    }
+                }
+            }
+
+            // 关闭按钮
+            NavigableToolButton {
+                iconSource: "qrc:/res/close.svg" // 替换为你实际的图标
+                ToolTip.text: qsTr("关闭")
+                onClicked: Qt.quit()
+            }
+
         }
     }
 
