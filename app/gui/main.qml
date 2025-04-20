@@ -506,31 +506,52 @@ ApplicationWindow {
                 }
 
             }
-            // 第二层：搜索栏或其他功能控件
             RowLayout {
-                spacing: 10
                 Layout.fillWidth: true
+                Layout.preferredHeight: 30
 
-                Label {
-                    text: "搜索:"
-                    font.pointSize: 12
-                }
-
-                TextField {
-                    id: searchField
-                    placeholderText: "输入内容..."
+                Rectangle {
+                    id: marqueeBox
                     Layout.fillWidth: true
-                    onAccepted: {
-                        console.log("搜索:", searchField.text)
+                    height: 24
+                    radius: 4
+                    color: "#f0f0f0"
+                    border.color: "#ccc"
+                    clip: true
+
+                    property int scrollSpeed: 1            // 每帧移动像素数
+                    property int scrollInterval: 16        // 刷新频率（毫秒）
+
+                    Text {
+                        id: marqueeText
+                        text: "📢 欢迎使用 Moonlight！请点击右上角的设置按钮体验更多功能～"
+                        font.pointSize: 12
+                        y: 4
+                        x: marqueeBox.width
+                        color: "#333"
+                    }
+
+                    Timer {
+                        id: scrollTimer
+                        interval: marqueeBox.scrollInterval
+                        repeat: true
+                        running: true
+                        onTriggered: {
+                            marqueeText.x -= marqueeBox.scrollSpeed
+                            if (marqueeText.x + marqueeText.width < 0) {
+                                marqueeText.x = marqueeBox.width
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onEntered: scrollTimer.stop()
+                        onExited: scrollTimer.start()
                     }
                 }
-
-                Button {
-                    text: "查找"
-                    onClicked: console.log("搜索按钮:", searchField.text)
-                }
             }
-        }
     }
 
     ErrorMessageDialog {
@@ -641,4 +662,5 @@ ApplicationWindow {
             }
         }
     }
+}
 }
