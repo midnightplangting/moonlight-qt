@@ -32,7 +32,7 @@ ApplicationWindow {
         // in order to improve contrast between GFE's placeholder box art
         // and the background of the app grid.
         if (SystemProperties.usesMaterial3Theme) {
-            Material.background = "#303030"
+            Material.background = "#000"
         }
 
         SdlGamepadKeyNavigation.enable()
@@ -270,6 +270,14 @@ ApplicationWindow {
                 anchors.leftMargin: 10
                 anchors.rightMargin: 10
                 anchors.fill: parent
+
+                Image {
+                    source: "qrc:/res/discord.svg" // 替换为你的 logo 路径
+                    width: 10
+                    height: 10
+                    fillMode: Image.PreserveAspectFit
+                    anchors.verticalCenter: parent.verticalCenter
+                }
 
                 NavigableToolButton {
                     // Only make the button visible if the user has navigated somewhere.
@@ -509,14 +517,34 @@ ApplicationWindow {
             RowLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 30
+                spacing: 8
+
+                // 📢 左边：喇叭图标 + “公示：”
+                RowLayout {
+                    spacing: 4
+                    Layout.preferredWidth: 100  // 可根据内容调整
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Image {
+                        source: "qrc:/res/update.svg"  // 你可以换成 emoji 或 SVG 图标
+                        width: 16
+                        height: 16
+                        fillMode: Image.PreserveAspectFit
+                    }
+
+                    Label {
+                        text: qsTr("公示：")
+                        color: "#fff"
+                        font.pointSize: 12
+                    }
+                }
 
                 Rectangle {
                     id: marqueeBox
                     Layout.fillWidth: true
-                    height: 24
+                    height: 30
                     radius: 4
-                    color: "#f0f0f0"
-                    border.color: "#ccc"
+                    color: "#333"
                     clip: true
 
                     property int scrollSpeed: 1            // 每帧移动像素数
@@ -528,7 +556,7 @@ ApplicationWindow {
                         font.pointSize: 12
                         y: 4
                         x: marqueeBox.width
-                        color: "#333"
+                        color: "#fff"
                     }
 
                     Timer {
@@ -550,6 +578,30 @@ ApplicationWindow {
                         onEntered: scrollTimer.stop()
                         onExited: scrollTimer.start()
                     }
+                }
+
+                // ⚙️ 右边：设置按钮
+                NavigableToolButton {
+                    id: settingsButton1
+
+                    iconSource:  "qrc:/res/settings.svg"
+
+                    onClicked: navigateTo("qrc:/gui/SettingsView.qml", "SettingsView")
+
+                    Keys.onDownPressed: {
+                        stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    }
+
+                    Shortcut {
+                        id: settingsShortcut1
+                        sequence: StandardKey.Preferences
+                        onActivated: settingsButton.clicked()
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 3000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Settings") + (settingsShortcut.nativeText ? (" ("+settingsShortcut.nativeText+")") : "")
                 }
             }
     }
