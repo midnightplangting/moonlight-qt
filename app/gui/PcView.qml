@@ -55,6 +55,7 @@ Item {
     RowLayout {
         anchors.fill: parent
         spacing: 20
+        // 主体左侧
         CenteredGridView {
             Layout.fillWidth: true
             Layout.fillHeight: true   // 这一行也要加
@@ -451,6 +452,7 @@ Item {
                 }
             }
 
+
             Rectangle {
                 Layout.preferredWidth: 0.9 * parent.width
                 Layout.preferredHeight: 0.5 * pcGrid.cellHeight
@@ -472,25 +474,57 @@ Item {
                     }
                 }
             }
+            // 轮播图
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 10
 
-            Rectangle {
-                Layout.preferredWidth: 0.9 * parent.width
-                Layout.preferredHeight: 0.5 * pcGrid.cellHeight
-                radius: 8;
-                color: "#333"
-                ColumnLayout {
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    spacing: 6
-                    Label {
-                        text: "欢迎回来"
-                        font.bold: true; color: "white"
+                Label {
+                    text: "图片轮播"
+                    font.bold: true
+                    color: "white"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                // 图片轮播
+                ListView {
+                    id: listView
+                    width: parent.width
+                    height: 200  // 设置轮播区域的高度
+                    model: ListModel {
+                        ListElement { source: "qrc:/res/example.png" }
+                        ListElement { source: "qrc:/res/example.png" }
+                        ListElement { source: "qrc:/res/example.png" }
+                        // 可以添加更多图片
                     }
-                    Label {
-                        text: "账号：1234567"
-                        color: "#bbb"
+
+                    delegate: Item {
+                        width: parent.width
+                        height: 200
+                        Rectangle {
+                            width: parent.width
+                            height: parent.height
+                            color: "black"
+                            radius: 8
+                            Image {
+                                anchors.fill: parent
+                                source: model.source  // 使用 model.source 来动态绑定图片路径
+                                fillMode: Image.PreserveAspectCrop
+                            }
+                        }
                     }
-                    Button {
-                        text: "退出登录"
+
+                    // 自动切换图片
+                    Timer {
+                        interval: 2000  // 每2秒切换一次图片
+                        running: true
+                        repeat: true
+                        onTriggered: {
+                            // 更新 currentIndex 实现图片轮播
+                            listView.currentIndex = (listView.currentIndex + 1) % listView.model.count
+                            console.log("Current index: " + listView.currentIndex)  // 控制台打印当前索引，方便调试
+                        }
                     }
                 }
             }
