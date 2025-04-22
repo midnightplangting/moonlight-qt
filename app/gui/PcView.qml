@@ -64,7 +64,7 @@ Item {
             id: pcGrid
             focus: true
             activeFocusOnTab: true
-            topMargin: 50
+            topMargin: 110
             bottomMargin: 5
             cellWidth: 310; cellHeight: 330;
             objectName: qsTr("Computers")
