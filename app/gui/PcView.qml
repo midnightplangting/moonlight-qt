@@ -487,47 +487,78 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
                 }
 
-                // 图片轮播
-                ListView {
-                    id: listView
+                // 轮播区域
+                Item {
                     width: parent.width
-                    height: 200  // 设置轮播区域的高度
-                    model: ListModel {
-                        ListElement { source: "qrc:/res/example.png" }
-                        ListElement { source: "qrc:/res/example.png" }
-                        ListElement { source: "qrc:/res/example.png" }
-                        // 可以添加更多图片
-                    }
+                    height: 200  // 设置固定的轮播区域高度
 
-                    delegate: Item {
+                    // ListView 控件
+                    ListView {
+                        id: listView
                         width: parent.width
-                        height: 200
-                        Rectangle {
-                            width: parent.width
-                            height: parent.height
-                            color: "black"
-                            radius: 8
-                            Image {
-                                anchors.fill: parent
-                                source: model.source  // 使用 model.source 来动态绑定图片路径
-                                fillMode: Image.PreserveAspectCrop
+                        height: parent.height
+                        orientation: ListView.Horizontal  // 设置为水平滚动
+                        model: ListModel {
+                            ListElement { source: "qrc:/res/example.png" }
+                            ListElement { source: "qrc:/res/example.png" }
+                            ListElement { source: "qrc:/res/example.png" }
+                            // 可以添加更多图片
+                        }
+
+                        delegate: Item {
+                            width: listView.width  // 让每个项的宽度与 ListView 宽度一致
+                            height: parent.height   // 让每个项的高度与容器一致
+                            Rectangle {
+                                width: parent.width
+                                height: parent.height
+                                color: "black"
+                                radius: 8
+                                Image {
+                                    width: 200  // 设置图片的固定宽度
+                                    height: 200 // 设置图片的固定高度
+                                    anchors.centerIn: parent  // 图片居中显示
+                                    source: model.source  // 使用 model.source 动态绑定图片路径
+                                    fillMode: Image.PreserveAspectFit  // 保持纵横比
+                                }
+                            }
+                        }
+
+                        // 自动切换图片
+                        Timer {
+                            interval: 2000  // 每2秒切换一次图片
+                            running: true
+                            repeat: true
+                            onTriggered: {
+                                // 更新 currentIndex 实现图片轮播
+                                listView.currentIndex = (listView.currentIndex + 1) % listView.model.count
+                                console.log("Current index: " + listView.currentIndex)
                             }
                         }
                     }
 
-                    // 自动切换图片
-                    Timer {
-                        interval: 2000  // 每2秒切换一次图片
-                        running: true
-                        repeat: true
-                        onTriggered: {
-                            // 更新 currentIndex 实现图片轮播
-                            listView.currentIndex = (listView.currentIndex + 1) % listView.model.count
-                            console.log("Current index: " + listView.currentIndex)  // 控制台打印当前索引，方便调试
+                    // 底部进度条
+                    Rectangle {
+                        width: parent.width
+                        height: 5
+                        color: "#555"
+                        anchors.bottom: parent.bottom
+
+                        // 进度条填充
+                        Rectangle {
+                            id: progressBar
+                            width: (listView.currentIndex + 1) / listView.model.count * parent.width
+                            height: parent.height
+                            color: "#4CAF50"
                         }
                     }
                 }
             }
+
+
+
+
+
+
         }
 
     }
