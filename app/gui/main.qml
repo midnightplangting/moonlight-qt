@@ -21,7 +21,6 @@ ApplicationWindow {
     id: window
     width: 1280
     height: 600
-
     // This function runs prior to creation of the initial StackView item
     function doEarlyInit() {
         // Override the background color to Material 2 colors for Qt 6.5+
@@ -241,7 +240,7 @@ ApplicationWindow {
             id: titleLabel
             visible: toolBar.width > 700
             anchors.fill: parent
-            text: stackView.currentItem.objectName
+            text: ""
             font.pointSize: 20
             elide: Label.ElideRight
             horizontalAlignment: Qt.AlignHCenter
@@ -266,6 +265,38 @@ ApplicationWindow {
                     stackView.currentItem.forceActiveFocus(Qt.TabFocus)
                 }
             }
+            // 跑马灯容器
+            Rectangle {
+                id: marqueeContainer
+                width: 300      // 可根据需要调整宽度
+                height: 30
+                radius: 4
+                color: "#444444"
+                clip: true
+                Layout.alignment: Qt.AlignVCenter
+
+                // 公示文本
+                Text {
+                    id: marqueeText
+                    text: "📢 公示：请及时更新至最新版本以获得最佳体验。"
+                    font.pointSize: 12
+                    color: "white"
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: marqueeContainer.width
+
+                    // 当文本滚出容器左侧后，从右侧重新开始
+                    SequentialAnimation on x {
+                        loops: Animation.Infinite
+                        NumberAnimation {
+                            from: marqueeContainer.width
+                            to: -marqueeText.width
+                            duration: 10000 // 调整为更慢或更快
+                            easing.type: Easing.Linear
+                        }
+                    }
+                }
+            }
+
 
             // This label will appear when the window gets too small and
             // we need to ensure the toolbar controls don't collide
@@ -280,7 +311,7 @@ ApplicationWindow {
                 // We need this label to always be visible so it can occupy
                 // the remaining space in the RowLayout. To "hide" it, we
                 // just set the text to empty string.
-                text: !titleLabel.visible ? stackView.currentItem.objectName : ""
+                text: ""
             }
 
             Label {
