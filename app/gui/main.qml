@@ -20,7 +20,7 @@ ApplicationWindow {
 
     id: window
     width: 1280
-    height: 600
+    height: 800
     // This function runs prior to creation of the initial StackView item
     function doEarlyInit() {
         // Override the background color to Material 2 colors for Qt 6.5+
@@ -314,13 +314,20 @@ ApplicationWindow {
                 text: ""
             }
 
+            Image {
+                source: "qrc:/res/update.svg"
+                visible: stackView.depth > 1
+                width: 20 * scaleRatio
+                height: 20 * scaleRatio
+            }
             Label {
                 id: versionLabel
-                visible: qmltypeof(stackView.currentItem, "SettingsView")
-                text: qsTr("Version %1").arg(SystemProperties.versionString)
+                visible: stackView.depth > 1
+                text: "我的金币：9999"
                 font.pointSize: 12
                 horizontalAlignment: Qt.AlignRight
                 verticalAlignment: Qt.AlignVCenter
+
             }
 
             NavigableToolButton {
@@ -444,6 +451,23 @@ ApplicationWindow {
                 iconSource: "qrc:/res/ic_videogame_asset_white_48px.svg"
 
                 onClicked: navigateTo("qrc:/gui/GamepadMapper.qml", "GamepadMapper")
+
+                Keys.onDownPressed: {
+                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                }
+            }
+
+            NavigableToolButton {
+                id: rechargeButton
+
+                iconSource: "qrc:/res/update.svg" // ⚠️ 替换为你的金币图标资源路径
+
+                ToolTip.text: qsTr("充值")
+                ToolTip.visible: hovered
+                ToolTip.delay: 1000
+                ToolTip.timeout: 3000
+
+                onClicked: navigateTo("qrc:/gui/RechargeView.qml", "RechargeView")
 
                 Keys.onDownPressed: {
                     stackView.currentItem.forceActiveFocus(Qt.TabFocus)
