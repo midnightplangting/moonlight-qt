@@ -106,180 +106,127 @@ CenteredGridView {
     model: computerModel
 
     delegate: NavigableItemDelegate {
-        width: 300; height: 320;
+        width: 300
+        height: 150
         grid: pcGrid
 
-        property alias pcContextMenu : pcContextMenuLoader.item
-
-        Image {
-            id: pcIcon
-            anchors.horizontalCenter: parent.horizontalCenter
-            source: "qrc:/res/desktop_windows-48px.svg"
-            sourceSize {
-                width: 200
-                height: 200
-            }
-        }
-
-        Image {
-            // TODO: Tooltip
-            id: stateIcon
-            anchors.horizontalCenter: pcIcon.horizontalCenter
-            anchors.verticalCenter: pcIcon.verticalCenter
-            anchors.verticalCenterOffset: !model.online ? -18 : -16
-            visible: !model.statusUnknown && (!model.online || !model.paired)
-            source: !model.online ? "qrc:/res/warning_FILL1_wght300_GRAD200_opsz24.svg" : "qrc:/res/baseline-lock-24px.svg"
-            sourceSize {
-                width: !model.online ? 75 : 70
-                height: !model.online ? 75 : 70
-            }
-        }
-
-        BusyIndicator {
-            id: statusUnknownSpinner
-            anchors.horizontalCenter: pcIcon.horizontalCenter
-            anchors.verticalCenter: pcIcon.verticalCenter
-            anchors.verticalCenterOffset: -15
-            width: 75
-            height: 75
-            visible: model.statusUnknown
-        }
-
-        Label {
-            id: pcNameText
-            text: model.name
-
-            width: parent.width
-            anchors.top: pcIcon.bottom
-            anchors.bottom: parent.bottom
-            font.pointSize: 36
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.Wrap
-            elide: Text.ElideRight
-        }
-
-        Loader {
-            id: pcContextMenuLoader
-            asynchronous: true
-            sourceComponent: NavigableMenu {
-                id: pcContextMenu
-                MenuItem {
-                    text: qsTr("PC Status: %1").arg(model.online ? qsTr("Online") : qsTr("Offline"))
-                    font.bold: true
-                    enabled: false
-                }
-                NavigableMenuItem {
-                    parentMenu: pcContextMenu
-                    text: qsTr("View All Apps")
-                    onTriggered: {
-                        var component = Qt.createComponent("AppView.qml")
-                        var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name, "showHiddenGames": true})
-                        stackView.push(appView)
-                    }
-                    visible: model.online && model.paired
-                }
-                NavigableMenuItem {
-                    parentMenu: pcContextMenu
-                    text: qsTr("Wake PC")
-                    onTriggered: computerModel.wakeComputer(index)
-                    visible: !model.online && model.wakeable
-                }
-                NavigableMenuItem {
-                    parentMenu: pcContextMenu
-                    text: qsTr("Test Network")
-                    onTriggered: {
-                        computerModel.testConnectionForComputer(index)
-                        testConnectionDialog.open()
-                    }
-                }
-
-                NavigableMenuItem {
-                    parentMenu: pcContextMenu
-                    text: qsTr("Rename PC")
-                    onTriggered: {
-                        renamePcDialog.pcIndex = index
-                        renamePcDialog.originalName = model.name
-                        renamePcDialog.open()
-                    }
-                }
-                NavigableMenuItem {
-                    parentMenu: pcContextMenu
-                    text: qsTr("Delete PC")
-                    onTriggered: {
-                        deletePcDialog.pcIndex = index
-                        deletePcDialog.pcName = model.name
-                        deletePcDialog.open()
-                    }
-                }
-                NavigableMenuItem {
-                    parentMenu: pcContextMenu
-                    text: qsTr("View Details")
-                    onTriggered: {
-                        showPcDetailsDialog.pcDetails = model.details
-                        showPcDetailsDialog.open()
-                    }
-                }
-            }
-        }
-
-        onClicked: {
-            if (model.online) {
-                if (!model.serverSupported) {
-                    errorDialog.text = qsTr("The version of GeForce Experience on %1 is not supported by this build of Moonlight. You must update Moonlight to stream from %1.").arg(model.name)
-                    errorDialog.helpText = ""
-                    errorDialog.open()
-                }
-                else if (model.paired) {
-                    // go to game view
-                    var component = Qt.createComponent("AppView.qml")
-                    var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name})
-                    stackView.push(appView)
-                }
-                else {
-                    var pin = computerModel.generatePinString()
-
-                    // Kick off pairing in the background
-                    computerModel.pairComputer(index, pin)
-
-                    // Display the pairing dialog
-                    pairDialog.pin = pin
-                    pairDialog.open()
-                }
-            } else if (!model.online) {
-                // Using open() here because it may be activated by keyboard
-                pcContextMenu.open()
-            }
-        }
-
-        onPressAndHold: {
-            // popup() ensures the menu appears under the mouse cursor
-            if (pcContextMenu.popup) {
-                pcContextMenu.popup()
-            }
-            else {
-                // Qt 5.9 doesn't have popup()
-                pcContextMenu.open()
-            }
-        }
-
-        MouseArea {
+        Rectangle {
             anchors.fill: parent
-            acceptedButtons: Qt.RightButton;
-            onClicked: {
-                parent.pressAndHold()
+            radius: 12
+            color: "#404040"  // 整体卡片背景色
+            border.color: "#606060"
+            border.width: 1
+
+            Row {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 10
+
+                // --- 左边：图标和设备信息 ---
+                Column {
+                    spacing: 8
+                    width: 0.6 * parent.width  // 左边占60%宽度
+
+                    // 名称
+                    Label {
+                        id: pcNameText
+                        text: model.name
+                        font.pointSize: 16
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.Wrap
+                        elide: Text.ElideRight
+                        width: parent.width
+                    }
+
+                    // 其他信息（比如在线状态，可自行扩展）
+                    Label {
+                        text: model.online ? qsTr("在线") : qsTr("离线")
+                        font.pointSize: 12
+                        color: model.online ? "#00FF00" : "#FF5555"
+                        horizontalAlignment: Text.AlignHCenter
+                        width: parent.width
+                    }
+
+                    // 时间
+                    Label {
+                        text: qsTr("已运行： 1小时")
+                        font.pointSize: 12
+                        color: "#00FF00"
+                        horizontalAlignment: Text.AlignHCenter
+                        width: parent.width
+                    }
+                }
+
+                // --- 右边：操作按钮 ---
+
+                Column {
+                    spacing: 10
+                    width: 0.4 * parent.width  // 右边占40%宽度
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    // 图标
+                    Image {
+                        id: pcIcon
+                        source: "qrc:/res/desktop_windows-48px.svg"
+                        width: 40
+                        height: 40
+                        fillMode: Image.PreserveAspectFit
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    Button {
+                        width: parent.width - 10
+                        height: 35
+
+                        background: Rectangle {
+                            anchors.fill: parent  // 💡背景铺满整个Button
+                            radius: 6
+                            color: pressed ? "#5a45c7" : (hovered ? "#6a55d7" : "#5a5acc")
+                        }
+
+                        contentItem: Text {
+                            text: qsTr("下机结账")
+                            anchors.centerIn: parent  // 💡文本在Button内部居中
+                            color: "white"
+                            font.pixelSize: 14
+                            horizontalAlignment: Text.AlignHCenter  // 横向居中
+                            verticalAlignment: Text.AlignVCenter    // 纵向居中
+                        }
+
+                        onClicked: {
+                            console.log("Offline checkout:" + model.name)
+                            // 下机逻辑
+                        }
+                    }
+
+                    Button {
+                        width: parent.width - 10
+                        height: 35
+
+                        background: Rectangle {
+                            anchors.fill: parent  // 💡背景铺满整个Button
+                            radius: 6
+                            color: pressed ? "#5a45c7" : (hovered ? "#6a55d7" : "#5a5acc")
+                        }
+
+                        contentItem: Text {
+                            text: qsTr("立即连接")
+                            anchors.centerIn: parent  // 💡文本在Button内部居中
+                            color: "white"
+                            font.pixelSize: 14
+                            horizontalAlignment: Text.AlignHCenter  // 横向居中
+                            verticalAlignment: Text.AlignVCenter    // 纵向居中
+                        }
+
+                        onClicked: {
+                            console.log("Connecting devices:" + model.name)
+                            // 连接逻辑
+                        }
+                    }
+
+                }
             }
-        }
-
-        Keys.onMenuPressed: {
-            // We must use open() here so the menu is positioned on
-            // the ItemDelegate and not where the mouse cursor is
-            pcContextMenu.open()
-        }
-
-        Keys.onDeletePressed: {
-            deletePcDialog.pcIndex = index
-            deletePcDialog.pcName = model.name
-            deletePcDialog.open()
         }
     }
 
