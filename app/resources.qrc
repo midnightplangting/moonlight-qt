@@ -86,6 +86,7 @@
         <file>res/wx.svg</file>
         <file>res/zfb.svg</file>
         <file>res/coin.svg</file>
+        <file>res/add.svg</file>
     </qresource>
     <qresource prefix="/data">
         <file alias="gamecontrollerdb.txt">SDL_GameControllerDB/gamecontrollerdb.txt</file>

@@ -321,6 +321,7 @@ ApplicationWindow {
                 width: 20 * scaleRatio
                 height: 20 * scaleRatio
             }
+
             Label {
                 id: versionLabel
                 visible: stackView.depth > 1
@@ -415,30 +416,20 @@ ApplicationWindow {
                 }
             }
 
+            // GPU 购买（计时/包机）视图
             NavigableToolButton {
-                id: helpButton
-                visible: SystemProperties.hasBrowser
-
-                iconSource: "qrc:/res/question_mark.svg"
-
+                id: gpuPurchaseButton
+                iconSource: "qrc:/res/add.svg"   // ⚠️ 换成你的图标
+                ToolTip.text: qsTr("购买时长 / 包机")
+                ToolTip.visible: hovered
                 ToolTip.delay: 1000
                 ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Help") + (helpShortcut.nativeText ? (" ("+helpShortcut.nativeText+")") : "")
 
-                Shortcut {
-                    id: helpShortcut
-                    sequence: StandardKey.HelpContents
-                    onActivated: helpButton.clicked()
-                }
-
-                // TODO need to make sure browser is brought to foreground.
-                onClicked: Qt.openUrlExternally("https://github.com/moonlight-stream/moonlight-docs/wiki/Setup-Guide");
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
+                onClicked: navigateTo("qrc:/gui/RechargeTimeView.qml",  // ⚠️ 路径要跟新文件一致
+                                      "RechargeTimeView")
+                Keys.onDownPressed: stackView.currentItem.forceActiveFocus(Qt.TabFocus)
             }
+
 
             NavigableToolButton {
                 // TODO: Implement gamepad mapping then unhide this button
