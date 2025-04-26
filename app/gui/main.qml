@@ -265,6 +265,7 @@ ApplicationWindow {
                     stackView.currentItem.forceActiveFocus(Qt.TabFocus)
                 }
             }
+
             // 跑马灯容器
             Rectangle {
                 id: marqueeContainer
@@ -315,7 +316,7 @@ ApplicationWindow {
             }
 
             Image {
-                source: "qrc:/res/update.svg"
+                source: "qrc:/res/coin.svg"
                 visible: stackView.depth > 1
                 width: 20 * scaleRatio
                 height: 20 * scaleRatio
@@ -460,7 +461,7 @@ ApplicationWindow {
             NavigableToolButton {
                 id: rechargeButton
 
-                iconSource: "qrc:/res/update.svg" // ⚠️ 替换为你的金币图标资源路径
+                iconSource: "qrc:/res/coin.svg" // ⚠️ 替换为你的金币图标资源路径
 
                 ToolTip.text: qsTr("充值")
                 ToolTip.visible: hovered

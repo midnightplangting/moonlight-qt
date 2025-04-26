@@ -77,7 +77,15 @@
         <file>languages/qml_ta.ts</file>
         <file>languages/qml_ta.qm</file>
         <file>gui/RechargeView.qml</file>
-        <file>res/example.png</file>
+        <file>res/Computer Announcement.svg</file>
+        <file>res/handle.svg</file>
+        <file>res/logo.svg</file>
+        <file>res/logos.svg</file>
+        <file>res/profile picture.svg</file>
+        <file>res/speaker.svg</file>
+        <file>res/wx.svg</file>
+        <file>res/zfb.svg</file>
+        <file>res/coin.svg</file>
     </qresource>
     <qresource prefix="/data">
         <file alias="gamecontrollerdb.txt">SDL_GameControllerDB/gamecontrollerdb.txt</file>
