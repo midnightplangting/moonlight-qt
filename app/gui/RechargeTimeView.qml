@@ -13,7 +13,8 @@ import QtQuick.Layouts 1.3
 
 Item {
     id: root
-    anchors.fill: parent
+    width: parent ? parent.width : 1280
+    height: parent ? parent.height : 800
     focus: true
 
     /* 0 = 计时   1 = 包机 */
@@ -70,23 +71,30 @@ Item {
     /* ---------- 卡片容器（纵向滚动，横向排布） ---------- */
     Flickable {
         id: flick
+        width: Math.min(parent.width, (240 * 4 + 24 * 3) + 48)  // ⭐固定最大宽度（4张卡片+3个间距+两边留白）
+        height: parent.height
+        anchors.horizontalCenter: parent.horizontalCenter    // ⭐居中
         anchors.top: tabRow.bottom
         anchors.topMargin: 24
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
         clip: true
-        contentWidth: width
         flickableDirection: Flickable.VerticalFlick
+        contentWidth: width
 
-        Flow {
-            id: cardFlow
+        Item {
+            id: flickContent
             width: flick.width
-            spacing: 24
 
-            Repeater {
-                model: gpuModel
-                delegate: gpuCardComponent
+            Grid {
+                id: cardGrid
+                anchors.horizontalCenter: parent.horizontalCenter
+                columns: 4
+                columnSpacing: 24
+                rowSpacing: 24
+
+                Repeater {
+                    model: gpuModel
+                    delegate: gpuCardComponent
+                }
             }
         }
     }

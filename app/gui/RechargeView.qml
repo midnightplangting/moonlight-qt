@@ -14,8 +14,8 @@ import QtQuick.Controls.Material 2.15
 
 Item {
     id: root
-    anchors.fill: parent
-    width: 1280; height: 800
+    width: parent ? parent.width : 1280
+    height: parent ? parent.height : 800
     property color bgColor: "#2b2b2b"
 
     Rectangle { anchors.fill: parent; color: bgColor }
@@ -31,26 +31,42 @@ Item {
             width: 400; height: parent.height
             spacing: 20
 
-            // ---------- 用户信息 ----------
-            Row {
-                spacing: 12
+            /* ---------- 用户信息 ---------- */
+            Item {                     // ← 只改这里：用 Item 包裹
+                id: userInfoContainer
+                width: parent.width    // 占满 Column 宽度
                 height: 64
 
-                Rectangle {
-                    width: 64; height: 64
-                    radius: 32; clip: true
-                    Image {
-                        source: "qrc:/res/profile picture.svg"
-                        width: 64; height: 64
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
+                Row {
+                    id: userInfoRow
+                    spacing: 12
+                    anchors.verticalCenter: parent.verticalCenter   // 现在可以用锚点
+
+                    /* 头像 */
+                    Rectangle {
+                        width: 64; height: 64; radius: 32; clip: true
+                        Image {
+                            anchors.fill: parent
+                            source: "qrc:/res/profile picture.svg"
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                        }
+                    }
+
+                    /* 用户名 + “查看并编辑个人资料” */
+                    Column {
+                        spacing: 4
+                        Label { text: qsTr("用户名张三");  font.pixelSize: 20; color: "white"  }
+                        Label { text: qsTr("查看并编辑个人资料"); font.pixelSize: 12; color: "#aaaaaa" }
                     }
                 }
 
-                Column {
-                    spacing: 4
-                    Label { text: qsTr("用户名张三"); font.pixelSize: 20; color: "white" }
-                    Label { text: qsTr("查看并编辑个人资料"); font.pixelSize: 12; color: "#aaaaaa" }
+                /* 覆盖整行的点击层 */
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: stackView.push("qrc:/gui/LoginRegisterView.qml")
                 }
             }
 
@@ -163,32 +179,95 @@ Item {
                 spacing: 10
                 property int selectedPay: 0   // 0=微信 1=支付宝
 
-                Label { text: qsTr("支付方式"); color: "white"; font.pixelSize: 16 }
-
-                Rectangle {
-                    width: 240; height: 48; radius: 4; color: "#444444"
-                    Row {
-                        anchors.fill: parent; anchors.margins: 8; spacing: 10
-                        Image { source: "qrc:/res/wx.svg"; width: 24; height: 24; fillMode: Image.PreserveAspectFit }
-                        Label { text: qsTr("微信付款"); color: "white"; font.pixelSize: 14 }
-                        Item { Layout.fillWidth: true }
-                        Rectangle { width: 16; height: 16; radius: 8; border.color: "#ffffff"; color: paySection.selectedPay === 0 ? "#33cc66" : "transparent" }
-                    }
-                    MouseArea { anchors.fill: parent; onClicked: paySection.selectedPay = 0 }
+                Label {
+                    text: qsTr("支付方式")
+                    color: "white"
+                    font.pixelSize: 16
                 }
 
                 Rectangle {
-                    width: 240; height: 48; radius: 4; color: "#444444"
-                    Row {
-                        anchors.fill: parent; anchors.margins: 8; spacing: 10
-                        Image { source: "qrc:/res/zfb.svg"; width: 24; height: 24; fillMode: Image.PreserveAspectFit }
-                        Label { text: qsTr("支付宝付款"); color: "white"; font.pixelSize: 14 }
+                    width: 240
+                    height: 48
+                    radius: 4
+                    color: "#444444"
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 10
+
+                        Image {
+                            source: "qrc:/res/wx.svg"
+                            fillMode: Image.PreserveAspectFit
+                            Layout.preferredWidth: 24
+                            Layout.preferredHeight: 24
+                        }
+
+                        Label {
+                            text: qsTr("微信付款")
+                            color: "white"
+                            font.pixelSize: 14
+                        }
+
                         Item { Layout.fillWidth: true }
-                        Rectangle { width: 16; height: 16; radius: 8; border.color: "#ffffff"; color: paySection.selectedPay === 1 ? "#33cc66" : "transparent" }
+
+                        Rectangle {
+                            width: 16
+                            height: 16
+                            radius: 8
+                            border.color: "#ffffff"
+                            color: paySection.selectedPay === 0 ? "#33cc66" : "transparent" // ✅ 改成paySection.selectedPay
+                        }
                     }
-                    MouseArea { anchors.fill: parent; onClicked: paySection.selectedPay = 1 }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: paySection.selectedPay = 0
+                    }
+                }
+
+                Rectangle {
+                    width: 240
+                    height: 48
+                    radius: 4
+                    color: "#444444"
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 10
+
+                        Image {
+                            source: "qrc:/res/zfb.svg"
+                            fillMode: Image.PreserveAspectFit
+                            Layout.preferredWidth: 24
+                            Layout.preferredHeight: 24
+                        }
+
+                        Label {
+                            text: qsTr("支付宝付款")
+                            color: "white"
+                            font.pixelSize: 14
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Rectangle {
+                            width: 16
+                            height: 16
+                            radius: 8
+                            border.color: "#ffffff"
+                            color: paySection.selectedPay === 1 ? "#33cc66" : "transparent" // ✅ 改成paySection.selectedPay
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: paySection.selectedPay = 1
+                    }
                 }
             }
+
 
             // ---------- 立即支付按钮 ----------
             Rectangle {

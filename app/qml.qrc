@@ -20,6 +20,7 @@
         <file>gui/CenteredGridView.qml</file>
         <file>gui/CliPair.qml</file>
         <file>gui/RechargeTimeView.qml</file>
-        <file>gui/GpuCard.qml</file>
+        <file>gui/RechargeView.qml</file>
+        <file>gui/LoginRegisterView.qml</file>
     </qresource>
 </RCC>

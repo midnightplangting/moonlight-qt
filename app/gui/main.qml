@@ -318,8 +318,8 @@ ApplicationWindow {
             Image {
                 source: "qrc:/res/coin.svg"
                 visible: stackView.depth > 1
-                width: 20 * scaleRatio
-                height: 20 * scaleRatio
+                width: 20
+                height: 20
             }
 
             Label {
