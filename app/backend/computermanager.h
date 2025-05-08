@@ -154,7 +154,7 @@ public:
                              ->get()
                              ->sync();
 
-        qDebug() << "请求返回：" << result;
+        qDebug() << "response:" << result;
 
         // 解析 JSON
         QJsonDocument doc = QJsonDocument::fromJson(result.toUtf8());
@@ -168,13 +168,13 @@ public:
                     int id = obj.value("deviceGroupId").toInt();
                     QString name = obj.value("name").toString();
                     int deviceCount = obj.value("deviceCount").toInt();
-                    qDebug() << "ID:" << id << "名称:" << name << "设备数量:" << deviceCount;
+                    qDebug() << "ID:" << id << "name:" << name << "device num:" << deviceCount;
                 }
             } else {
-                qDebug() << "服务器返回错误 code:" << code;
+                qDebug() << "server error code:" << code;
             }
         } else {
-            qDebug() << "返回数据不是有效的 JSON";
+            qDebug() << "data is not avilible JSON";
         }
     }
 
