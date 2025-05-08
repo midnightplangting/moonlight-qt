@@ -3,6 +3,10 @@
 #include "nvcomputer.h"
 #include "settings/streamingpreferences.h"
 #include "settings/compatfetcher.h"
+#include "OkHttpUtils.h"
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 #include <qmdnsengine/server.h>
 #include <qmdnsengine/cache.h>
@@ -137,12 +141,43 @@ private:
 
 class ComputerPollingEntry
 {
+
 public:
     ComputerPollingEntry()
         : m_ActiveThread(nullptr)
     {
+        qDebug() << "===============start parse data!========================";
 
+        // 调用接口
+        QString result = OkHttpUtils::builder()
+                             ->url("deviceGroup/getDeviceGroupList")
+                             ->get()
+                             ->sync();
+
+        qDebug() << "请求返回：" << result;
+
+        // 解析 JSON
+        QJsonDocument doc = QJsonDocument::fromJson(result.toUtf8());
+        if (!doc.isNull() && doc.isObject()) {
+            QJsonObject rootObj = doc.object();
+            int code = rootObj.value("code").toInt();
+            if (code == 200) {
+                QJsonArray dataArray = rootObj.value("data").toArray();
+                for (const QJsonValue& item : dataArray) {
+                    QJsonObject obj = item.toObject();
+                    int id = obj.value("deviceGroupId").toInt();
+                    QString name = obj.value("name").toString();
+                    int deviceCount = obj.value("deviceCount").toInt();
+                    qDebug() << "ID:" << id << "名称:" << name << "设备数量:" << deviceCount;
+                }
+            } else {
+                qDebug() << "服务器返回错误 code:" << code;
+            }
+        } else {
+            qDebug() << "返回数据不是有效的 JSON";
+        }
     }
+
 
     virtual ~ComputerPollingEntry()
     {

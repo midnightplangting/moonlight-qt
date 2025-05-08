@@ -389,6 +389,7 @@ void ComputerManager::startPollingComputer(NvComputer* computer)
 
     if (!m_PollEntries.contains(computer->uuid)) {
         pollingEntry = m_PollEntries[computer->uuid] = new ComputerPollingEntry();
+
     }
     else {
         pollingEntry = m_PollEntries[computer->uuid];
