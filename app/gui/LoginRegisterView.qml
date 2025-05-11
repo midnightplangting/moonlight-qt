@@ -1,32 +1,35 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-
-/*
-    LoginRegisterView.qml
-    --------------------
-    登录 / 注册界面（中文注释 + 简洁排版）
-    • 根元素 Item，可嵌入 StackView
-    • 卡片居中，半透明背景，白色文字
-    • 仅使用 QtQuick 基础模块，Qt 6.9 默认即可运行
-*/
+import UserService 1.0  // 注册的 UserService 类型
 
 Item {
     id: root
     anchors.fill: parent
 
-    // ------------------ 对外属性 / 信号 ------------------
-    property alias 用户名: loginUserField.text
-    property alias 密码:   loginPassField.text
-    property alias 确认密码: regConfirmField.text
-    signal 请求登录(string user, string pwd)
-    signal 请求注册(string user, string pwd, string confirmPwd)
+    // ------------------ 外部属性 / 信号 ------------------
+    property alias username: loginUsernameField.text
+    property alias password: loginPasswordField.text
+    property alias confirmPassword: registerConfirmField.text
+    signal requestLogin(string username, string password)
+    signal requestRegister(string username, string password, string confirmPassword)
 
-    // ------------------ 颜色配置 ------------------
+    // ------------------ 背景颜色配置 ------------------
     readonly property color cardColor: "#00000055"
     readonly property color borderColor: "white"
 
-    /* 阴影：用一个稍大的半透明矩形实现，无需额外模块 */
+    // 添加 UserService 实例
+    UserService {
+        id: userService
+
+        onLoginSuccess: console.log("Login success")
+        onLoginFailure: console.log("Login failed:", errorMsg)
+
+        onRegisterSuccess: console.log("Register success")
+        onRegisterFailure: console.log("Register failed:", errorMsg)
+    }
+
+    // 阴影
     Rectangle {
         anchors.centerIn: card
         width: card.width; height: card.height
@@ -36,7 +39,7 @@ Item {
         z: -1
     }
 
-    /* 主卡片 */
+    // 主卡片
     Rectangle {
         id: card
         anchors.centerIn: parent
@@ -51,9 +54,7 @@ Item {
             anchors.margins: 32
             spacing: 24
 
-
-
-            /* 登录 / 注册 标签 */
+            // 登录 / 注册 标签切换
             TabBar {
                 id: tabBar
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -64,26 +65,23 @@ Item {
                 TabButton { text: qsTr("注册") }
             }
 
-            /* 表单 StackLayout */
             StackLayout {
                 id: stack
                 currentIndex: tabBar.currentIndex
                 width: parent.width
 
-                /* -------- 登录表单 -------- */
+                // ---------- 登录表单 ----------
                 Column {
                     spacing: 16
                     width: parent.width
 
-                    // 用户名
                     TextField {
-                        id: loginUserField
+                        id: loginUsernameField
                         placeholderText: qsTr("用户名 / 邮箱")
                         font.pixelSize: 16
                         color: "white"
                         placeholderTextColor: borderColor
-                        width: parent.width
-                        height: 40
+                        width: parent.width; height: 40
                         background: Rectangle {
                             radius: 8
                             color: "#00000055"
@@ -91,16 +89,14 @@ Item {
                         }
                     }
 
-                    // 密码
                     TextField {
-                        id: loginPassField
+                        id: loginPasswordField
                         placeholderText: qsTr("密码")
                         echoMode: TextInput.Password
                         font.pixelSize: 16
                         color: "white"
                         placeholderTextColor: borderColor
-                        width: parent.width
-                        height: 40
+                        width: parent.width; height: 40
                         background: Rectangle {
                             radius: 8
                             color: "#00000055"
@@ -108,35 +104,33 @@ Item {
                         }
                     }
 
-                    // 登录按钮
                     Button {
                         text: qsTr("登录")
-                        width: parent.width
-                        height: 42
-                        onClicked: 请求登录(loginUserField.text, loginPassField.text)
+                        width: parent.width; height: 42
+                        onClicked: userService.login(loginUsernameField.text, loginPasswordField.text)
                         background: Rectangle {
                             radius: 8
                             color: "transparent"
                             border.color: "white"; border.width: 1
                         }
-                        contentItem: Label { text: parent.text; color: "white"; anchors.centerIn: parent }
+                        contentItem: Label {
+                            text: parent.text; color: "white"; anchors.centerIn: parent
+                        }
                     }
                 }
 
-                /* -------- 注册表单 -------- */
+                // ---------- 注册表单 ----------
                 Column {
                     spacing: 16
                     width: parent.width
 
-                    // 用户名
                     TextField {
-                        id: regUserField
+                        id: registerUsernameField
                         placeholderText: qsTr("用户名")
                         font.pixelSize: 16
                         color: "white"
                         placeholderTextColor: borderColor
-                        width: parent.width
-                        height: 40
+                        width: parent.width; height: 40
                         background: Rectangle {
                             radius: 8
                             color: "#00000055"
@@ -144,16 +138,14 @@ Item {
                         }
                     }
 
-                    // 密码
                     TextField {
-                        id: regPassField
+                        id: registerPasswordField
                         placeholderText: qsTr("密码")
                         echoMode: TextInput.Password
                         font.pixelSize: 16
                         color: "white"
                         placeholderTextColor: borderColor
-                        width: parent.width
-                        height: 40
+                        width: parent.width; height: 40
                         background: Rectangle {
                             radius: 8
                             color: "#00000055"
@@ -161,16 +153,14 @@ Item {
                         }
                     }
 
-                    // 确认密码
                     TextField {
-                        id: regConfirmField
+                        id: registerConfirmField
                         placeholderText: qsTr("确认密码")
                         echoMode: TextInput.Password
                         font.pixelSize: 16
                         color: "white"
                         placeholderTextColor: borderColor
-                        width: parent.width
-                        height: 40
+                        width: parent.width; height: 40
                         background: Rectangle {
                             radius: 8
                             color: "#00000055"
@@ -178,18 +168,18 @@ Item {
                         }
                     }
 
-                    // 注册按钮
                     Button {
                         text: qsTr("注册")
-                        width: parent.width
-                        height: 42
-                        onClicked: 请求注册(regUserField.text, regPassField.text, regConfirmField.text)
+                        width: parent.width; height: 42
+                        onClicked: userService.registerUser(registerUsernameField.text, registerPasswordField.text, registerConfirmField.text)
                         background: Rectangle {
                             radius: 8
                             color: "transparent"
                             border.color: "white"; border.width: 1
                         }
-                        contentItem: Label { text: parent.text; color: "white"; anchors.centerIn: parent }
+                        contentItem: Label {
+                            text: parent.text; color: "white"; anchors.centerIn: parent
+                        }
                     }
                 }
             }

@@ -9,6 +9,8 @@ import AutoUpdateChecker 1.0
 import StreamingPreferences 1.0
 import SystemProperties 1.0
 import SdlGamepadKeyNavigation 1.0
+import UserSession 1.0
+import UserService 1.0
 
 ApplicationWindow {
     property bool pollingActive: false
@@ -34,6 +36,14 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        // 尝试恢复登录状态
+        if (UserSession.restoreFromSettings()) {
+            console.log("登录状态恢复成功，用户名：", UserSession.username)
+            stackView.push("qrc:/gui/RechargeView.qml")
+        } else {
+            console.log("未登录")
+            stackView.push("qrc:/gui/LoginRegisterView.qml")
+        }
         // Show the window according to the user's preferences
         if (SystemProperties.hasDesktopEnvironment) {
             if (StreamingPreferences.uiDisplayMode == StreamingPreferences.UI_MAXIMIZED) {

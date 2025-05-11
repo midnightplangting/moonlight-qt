@@ -47,6 +47,8 @@
 #include "streaming/session.h"
 #include "settings/streamingpreferences.h"
 #include "gui/sdlgamepadkeynavigation.h"
+#include "backend/UserService.h"
+#include "backend/UserSession.h"
 
 #if defined(Q_OS_WIN32)
 #define IS_UNSPECIFIED_HANDLE(x) ((x) == INVALID_HANDLE_VALUE || (x) == NULL)
@@ -307,6 +309,7 @@ LONG WINAPI UnhandledExceptionHandler(struct _EXCEPTION_POINTERS *ExceptionInfo)
 int main(int argc, char *argv[])
 {
     SDL_SetMainReady();
+    UserSession::instance()->restoreFromSettings();  // 👈 启动时尝试恢复
 
     // Set the app version for the QCommandLineParser's showVersion() command
     QCoreApplication::setApplicationVersion(VERSION_STR);
@@ -720,6 +723,9 @@ int main(int argc, char *argv[])
                                                    [](QQmlEngine* qmlEngine, QJSEngine*) -> QObject* {
                                                        return StreamingPreferences::get(qmlEngine);
                                                    });
+    qmlRegisterType<UserService>("UserService", 1, 0, "UserService");
+    qmlRegisterSingletonInstance("UserSession", 1, 0, "UserSession", UserSession::instance());
+
 
     // Create the identity manager on the main thread
     IdentityManager::get();

@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls.Material 2.15
+import UserSession 1.0
 
 /*
   RechargeView.qml  (嵌入式页面版)
@@ -17,6 +18,7 @@ Item {
     width: parent ? parent.width : 1280
     height: parent ? parent.height : 800
     property color bgColor: "#2b2b2b"
+    property bool isLoggedIn: UserSession.token !== ""
 
     Rectangle { anchors.fill: parent; color: bgColor }
 
@@ -32,44 +34,64 @@ Item {
             spacing: 20
 
             /* ---------- 用户信息 ---------- */
-            Item {                     // ← 只改这里：用 Item 包裹
+            // 用户信息区域
+            Item {
                 id: userInfoContainer
-                width: parent.width    // 占满 Column 宽度
+                width: parent.width
                 height: 64
 
                 Row {
                     id: userInfoRow
                     spacing: 12
-                    anchors.verticalCenter: parent.verticalCenter   // 现在可以用锚点
+                    anchors.verticalCenter: parent.verticalCenter
 
-                    /* 头像 */
                     Rectangle {
-                        width: 64; height: 64; radius: 32; clip: true
+                        width: 64; height: 64; radius: 32
                         Image {
                             anchors.fill: parent
                             source: "qrc:/res/profile picture.svg"
                             fillMode: Image.PreserveAspectFit
-                            smooth: true
                         }
                     }
 
-                    /* 用户名 + “查看并编辑个人资料” */
                     Column {
                         spacing: 4
-                        Label { text: qsTr("用户名张三");  font.pixelSize: 20; color: "white"  }
-                        Label { text: qsTr("查看并编辑个人资料"); font.pixelSize: 12; color: "#aaaaaa" }
+                        Label {
+                            text: isLoggedIn ? UserSession.username : qsTr("未登录")
+                            font.pixelSize: 20
+                            color: "white"
+                        }
+                        Label {
+                            text: isLoggedIn ? qsTr("点击查看或修改资料") : qsTr("点击登录/注册")
+                            font.pixelSize: 12
+                            color: "#aaaaaa"
+                        }
                     }
                 }
 
-                /* 覆盖整行的点击层 */
                 MouseArea {
                     anchors.fill: parent
-                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: stackView.push("qrc:/gui/LoginRegisterView.qml")
+                    onClicked: {
+                        if (isLoggedIn) {
+                            // 👇 推出一个资料编辑页（你自己可以创建 ModifyUserView.qml）
+                            stackView.push("qrc:/gui/ModifyUserView.qml")
+                        } else {
+                            stackView.push("qrc:/gui/LoginRegisterView.qml")
+                        }
+                    }
                 }
             }
 
+            // 可选：添加一个退出按钮
+            Button {
+                text: qsTr("退出登录")
+                visible: isLoggedIn
+                onClicked: {
+                    UserSession.logout()
+                    stackView.push("qrc:/gui/LoginRegisterView.qml")
+                }
+            }
             // ---------- 轮播 Banner ----------
             Rectangle {
                 id: bannerFrame

@@ -175,6 +175,8 @@ macx {
 
 SOURCES += \
     backend/OkHttpUtils.cpp \
+    backend/UserService.cpp \
+    backend/UserSession.cpp \
     backend/nvaddress.cpp \
     backend/nvapp.cpp \
     cli/pair.cpp \
@@ -217,6 +219,8 @@ SOURCES += \
 HEADERS += \
     SDL_compat.h \
     backend/OkHttpUtils.h \
+    backend/UserService.h \
+    backend/UserSession.h \
     backend/nvaddress.h \
     backend/nvapp.h \
     cli/pair.h \
