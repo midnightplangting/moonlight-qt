@@ -58,15 +58,15 @@ Item {
     }
 
     /* ---------- GPU 数据 ---------- */
-    ListModel {
-        id: gpuModel
-        /* hourly = 按时价格   day / week / month = 包天/周/月 */
-        ListElement { name: "1080显卡"; hourly: 20; day: 120; week: 700;  month: 2500 }
-        ListElement { name: "2060显卡"; hourly: 20; day: 120; week: 700;  month: 2500 }
-        ListElement { name: "3060显卡"; hourly: 25; day: 150; week: 900;  month: 3200 }
-        ListElement { name: "4060显卡"; hourly: 30; day: 180; week: 1050; month: 3800 }
-        ListElement { name: "4070显卡"; hourly: 40; day: 240; week: 1400; month: 5200 }
-    }
+    // ListModel {
+    //     id: gpuModel
+    //     /* hourly = 按时价格   day / week / month = 包天/周/月 */
+    //     ListElement { name: "1080显卡"; hourly: 20; day: 120; week: 700;  month: 2500 }
+    //     ListElement { name: "2060显卡"; hourly: 20; day: 120; week: 700;  month: 2500 }
+    //     ListElement { name: "3060显卡"; hourly: 25; day: 150; week: 900;  month: 3200 }
+    //     ListElement { name: "4060显卡"; hourly: 30; day: 180; week: 1050; month: 3800 }
+    //     ListElement { name: "4070显卡"; hourly: 40; day: 240; week: 1400; month: 5200 }
+    // }
 
     /* ---------- 卡片容器（纵向滚动，横向排布） ---------- */
     Flickable {

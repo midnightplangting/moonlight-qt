@@ -49,6 +49,8 @@
 #include "gui/sdlgamepadkeynavigation.h"
 #include "backend/UserService.h"
 #include "backend/UserSession.h"
+#include "backend/DeviceGroupModel.h"
+#include "backend/OkHttpUtils.h"
 
 #if defined(Q_OS_WIN32)
 #define IS_UNSPECIFIED_HANDLE(x) ((x) == INVALID_HANDLE_VALUE || (x) == NULL)
@@ -747,6 +749,36 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     QString initialView;
     bool hasGUI = true;
+
+    // === [数据获取] ===
+    DeviceGroupModel* deviceGroupModel = new DeviceGroupModel();
+
+    QString result = OkHttpUtils::builder()
+                         ->url("deviceGroup/getDeviceGroupList")
+                         ->get()
+                         ->sync();
+
+    QVector<DeviceGroup> parsed;
+    QJsonDocument doc = QJsonDocument::fromJson(result.toUtf8());
+    if (doc.isObject()) {
+        QJsonArray array = doc["data"].toArray();
+        for (const auto& val : array) {
+            QJsonObject obj = val.toObject();
+            DeviceGroup group;
+            group.name = obj["name"].toString();
+            group.timingPrice = obj["timingPrice"].toInt();
+
+            QJsonArray charter = obj["charterFlightCost"].toArray();
+            for (const auto& price : charter) {
+                group.charterPrices.append(price.toInt());
+            }
+            parsed.append(group);
+        }
+    }
+
+    // === [模型注入] ===
+    deviceGroupModel->setDeviceGroups(parsed);
+    engine.rootContext()->setContextProperty("gpuModel", deviceGroupModel);
 
     switch (commandLineParserResult) {
     case GlobalCommandLineParser::NormalStartRequested:
