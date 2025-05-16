@@ -83,15 +83,6 @@ Item {
                 }
             }
 
-            // 可选：添加一个退出按钮
-            Button {
-                text: qsTr("退出登录")
-                visible: isLoggedIn
-                onClicked: {
-                    UserSession.logout()
-                    stackView.push("qrc:/gui/LoginRegisterView.qml")
-                }
-            }
             // ---------- 轮播 Banner ----------
             Rectangle {
                 id: bannerFrame

@@ -7,29 +7,44 @@ Item {
     id: root
     anchors.fill: parent
 
-    // ------------------ 外部属性 / 信号 ------------------
     property alias username: loginUsernameField.text
     property alias password: loginPasswordField.text
     property alias confirmPassword: registerConfirmField.text
     signal requestLogin(string username, string password)
     signal requestRegister(string username, string password, string confirmPassword)
 
-    // ------------------ 背景颜色配置 ------------------
+    property string registerErrorMessage: ""
+    property string loginErrorMessage: ""
+
     readonly property color cardColor: "#00000055"
     readonly property color borderColor: "white"
 
-    // 添加 UserService 实例
     UserService {
         id: userService
 
-        onLoginSuccess: console.log("Login success")
-        onLoginFailure: console.log("Login failed:", errorMsg)
+        onLoginSuccess: {
+            console.log("Login success")
+            loginErrorMessage = ""
+            stackView.pop()
+        }
 
-        onRegisterSuccess: console.log("Register success")
-        onRegisterFailure: console.log("Register failed:", errorMsg)
+        onLoginFailure: (errorMsg) => {
+            console.log("Login failed:", errorMsg)
+            loginErrorMessage = errorMsg
+        }
+
+        onRegisterSuccess: {
+            console.log("Register success")
+            registerErrorMessage = ""
+            stackView.pop()
+        }
+
+        onRegisterFailure: (errorMsg) => {
+            console.log("Register failed:", errorMsg)
+            registerErrorMessage = errorMsg
+        }
     }
 
-    // 阴影
     Rectangle {
         anchors.centerIn: card
         width: card.width; height: card.height
@@ -39,7 +54,6 @@ Item {
         z: -1
     }
 
-    // 主卡片
     Rectangle {
         id: card
         anchors.centerIn: parent
@@ -54,7 +68,6 @@ Item {
             anchors.margins: 32
             spacing: 24
 
-            // 登录 / 注册 标签切换
             TabBar {
                 id: tabBar
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -70,7 +83,6 @@ Item {
                 currentIndex: tabBar.currentIndex
                 width: parent.width
 
-                // ---------- 登录表单 ----------
                 Column {
                     spacing: 16
                     width: parent.width
@@ -104,6 +116,13 @@ Item {
                         }
                     }
 
+                    Label {
+                        text: loginErrorMessage
+                        color: "red"
+                        font.pixelSize: 12
+                        visible: loginErrorMessage !== ""
+                    }
+
                     Button {
                         text: qsTr("登录")
                         width: parent.width; height: 42
@@ -119,7 +138,6 @@ Item {
                     }
                 }
 
-                // ---------- 注册表单 ----------
                 Column {
                     spacing: 16
                     width: parent.width
@@ -166,6 +184,13 @@ Item {
                             color: "#00000055"
                             border.color: borderColor; border.width: 1
                         }
+                    }
+
+                    Label {
+                        text: registerErrorMessage
+                        color: "red"
+                        font.pixelSize: 12
+                        visible: registerErrorMessage !== ""
                     }
 
                     Button {

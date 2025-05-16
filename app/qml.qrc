@@ -22,5 +22,6 @@
         <file>gui/RechargeTimeView.qml</file>
         <file>gui/RechargeView.qml</file>
         <file>gui/LoginRegisterView.qml</file>
+        <file>gui/ModifyUserView.qml</file>
     </qresource>
 </RCC>
