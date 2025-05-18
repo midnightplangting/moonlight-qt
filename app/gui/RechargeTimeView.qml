@@ -56,6 +56,13 @@ Page {
                     delegate: Rectangle {
                         id: card
                         width:240; height: currentTab===0?200:220; radius:12;
+                        // ① 对 height 加动画
+                        Behavior on height {
+                            NumberAnimation {
+                                duration: 200
+                                easing.type: Easing.OutQuad
+                            }
+                        }
                         color: hovered?"#4A4A4A":"#3C3C3C"
 
                         // 缩放效果
