@@ -55,27 +55,38 @@ Page {
                     model: gpuModel
                     delegate: Rectangle {
                         id: card
-                        width:240; height: currentTab===0?300:360; radius:12;
+                        width:240; height: currentTab===0?200:220; radius:12;
                         color: hovered?"#4A4A4A":"#3C3C3C"
-                        property bool hovered: false
-                        MouseArea { anchors.fill:parent; hoverEnabled:true;
-                                     onEntered: hovered=true; onExited: hovered=false }
 
-                        // 包机滑块
-                        property int packageMode:0
-                        property int currentPrice: currentTab===0? hourly : (packageMode===0?day:(packageMode===1?week:month))
+                        // 缩放效果
+                        scale: 1
+                        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
+
+                        property bool hovered: false
+                        property int packageMode: 0
+                        property int currentPrice: currentTab===0? hourly : (packageMode===0? day : (packageMode===1? week : month))
+
+                        MouseArea {
+                            anchors.fill: parent; hoverEnabled: true
+                            onEntered: hovered = true
+                            onExited: hovered = false
+                            onPressed:  card.scale = 0.95
+                            onReleased: card.scale = 1
+                            // 如果有卡片点击逻辑，可在这里处理
+                        }
 
                         Column {
                             anchors.fill: parent; anchors.margins:16; spacing:14
-                            Text { text:name; font.pixelSize:22; color:"white"; horizontalAlignment:Text.AlignHCenter; width:parent.width }
-                            Text { text:qsTr("最高视频码率：23 Mbps"); font.pixelSize:12; color:"#CCCCCC"; horizontalAlignment:Text.AlignHCenter; width:parent.width }
+                            Text { text: name; font.pixelSize:22; color:"white"; horizontalAlignment:Text.AlignHCenter; width:parent.width }
+                            Text { text: qsTr("最高视频码率：23 Mbps"); font.pixelSize:12; color:"#CCCCCC"; horizontalAlignment:Text.AlignHCenter; width:parent.width }
 
-                            // 包机模式 switch
+                            // 包机模式切换
                             Rectangle {
                                 id: pkgSwitch
                                 visible: currentTab===1
                                 width: parent.width; height:24; radius:12; color:"#3C3C3C"
                                 anchors.horizontalCenter: parent.horizontalCenter
+
                                 Rectangle {
                                     id: pkgThumb
                                     width: pkgSwitch.width/3; height: pkgSwitch.height; radius:12; color:"#FFA500"
@@ -84,7 +95,7 @@ Page {
                                 }
                                 Row { anchors.fill: parent
                                     Repeater {
-                                        model: [qsTr("包天"),qsTr("包周"),qsTr("包月")]
+                                        model: [qsTr("包天"), qsTr("包周"), qsTr("包月")]
                                         delegate: Item {
                                             width: pkgSwitch.width/3; height: pkgSwitch.height
                                             Text { anchors.centerIn: parent; text:modelData; font.pixelSize:12;
@@ -96,16 +107,25 @@ Page {
                             }
 
                             Row { anchors.horizontalCenter:parent.horizontalCenter; spacing:4
-                                Text { text:qsTr("当前价格"); font.pixelSize:14; color:"#CCCCCC" }
+                                Text { text: qsTr("当前价格"); font.pixelSize:14; color:"#CCCCCC" }
                                 Text { text: currentPrice + qsTr(" 金币") + (currentTab===0?qsTr("/小时"):""); font.pixelSize:18; font.bold:true; color:"#FFA500" }
                             }
 
+                            // 开机按钮
                             Button {
-                                text:qsTr("开机"); width:100;height:36;font.pixelSize:16;anchors.horizontalCenter:parent.horizontalCenter
-                                background:Rectangle{anchors.fill:parent;color:"transparent"}
-                                contentItem:Text{anchors.centerIn:parent;text:startBtn.text;font.pixelSize:16;color:"#2196F3"}
-                                id:startBtn
-                                onClicked: console.log("Start",name,currentPrice)
+                                id: startBtn
+                                text: qsTr("开机"); width:60; height:36; font.pixelSize:16; anchors.horizontalCenter:parent.horizontalCenter
+
+                                // 缩放效果
+                                scale: 1
+                                Behavior on scale { NumberAnimation { duration: 80; easing.type: Easing.OutQuad } }
+
+                                onPressed:  startBtn.scale = 0.9
+                                onReleased: startBtn.scale = 1
+
+                                background: Rectangle{anchors.fill:parent;color:"transparent"}
+                                contentItem: Text{anchors.centerIn:parent;text:startBtn.text;font.pixelSize:16;color:"#2196F3"}
+                                onClicked: console.log("Start", name, currentPrice)
                             }
                         }
                     }
@@ -116,12 +136,12 @@ Page {
 
     /* 内嵌手动添加 */
     Rectangle {
-        anchors.top:flick.bottom; anchors.topMargin:24; anchors.horizontalCenter:parent.horizontalCenter
-        width:flick.width;height:48;radius:24;color:"#3C3C3C"
+        anchors.top: flick.bottom; anchors.topMargin:24; anchors.horizontalCenter:parent.horizontalCenter
+        width: flick.width - 400; height:48; radius:24; color:"#3C3C3C"
         Row{anchors.fill:parent;anchors.margins:12;spacing:8
             Image{source:"qrc:/res/ic_add_to_queue_white_48px.svg";width:24;height:24}
             TextField{placeholderText:qsTr("手动添加电脑");font.pixelSize:14;color:"#DDDDDD";background:Rectangle{color:"transparent"}
-                onAccepted:{console.log("Add PC:",text);text=""}
+                onAccepted:{console.log("Add PC:", text); text=""}
             }
         }
     }
