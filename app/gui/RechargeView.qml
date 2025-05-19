@@ -5,13 +5,6 @@ import QtQuick.Window 2.15
 import QtQuick.Controls.Material 2.15
 import UserSession 1.0
 
-/*
-  RechargeView.qml  (嵌入式页面版)
-  -----------------------------------------------------------------------------
-  • 作为主界面内部页面使用，根元素为 Item。
-  • 所有图片暂用 "qrc:/res/update.png" 占位。
-  • 已修复此前截断导致的缺失代码。
-*/
 
 Item {
     id: root
@@ -83,6 +76,58 @@ Item {
                 }
             }
 
+            /* ---------- 2. 菜单 + 图片 ---------- */
+            RowLayout {
+                width: parent.width; height: 120; spacing: 20
+
+                // 菜单列表（带圆角背景）
+                Rectangle {
+                    id: menuContainer
+                    Layout.preferredWidth: 160
+                    height: parent.height
+                    radius: 8
+                    color: "#3C3C3C"
+                    clip: true
+
+                    ListView {
+                        id: menuList
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 8
+                        model: [qsTr("账单明细"), qsTr("激活体验码"), qsTr("联系客服"), qsTr("关于我们")]
+                        delegate: Rectangle {
+                            width: parent.width; height: 32
+                            color: "transparent"
+                            Label {
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.left: parent.left; anchors.leftMargin: 8
+                                text: modelData; color: "#dddddd"; font.pixelSize: 14
+                            }
+                            MouseArea {
+                                anchors.fill: parent; hoverEnabled: true
+                                onPressed:  parent.color = "#444444"
+                                onReleased: parent.color = "transparent"
+                                onClicked:  console.debug("点击菜单", modelData)
+                            }
+                        }
+                    }
+                }
+
+                // 静态图片占位
+                Rectangle {
+                    id: staticImage
+                    Layout.fillWidth: true
+                    height: 120
+                    radius: 8
+                    color: "#555555"
+                    Label {
+                        anchors.centerIn: parent
+                        text: qsTr("图片链接")
+                        color: "#0ebb76"; font.pixelSize: 20
+                    }
+                }
+            }
+
             // ---------- 轮播 Banner ----------
             Rectangle {
                 id: bannerFrame
@@ -117,25 +162,6 @@ Item {
                 }
 
                 Timer { interval: 3000; running: true; repeat: true; onTriggered: bannerView.currentIndex = (bannerView.currentIndex+1)%bannerModel.count }
-            }
-
-            // ---------- 菜单列表 ----------
-            ListView {
-                id: menuList
-                width: parent.width; height: 200
-                spacing: 8; clip: true
-                model: [qsTr("账单明细"), qsTr("激活体验码"), qsTr("操作手册"), qsTr("联系客服"), qsTr("关于我们")]
-                delegate: Rectangle {
-                    width: parent.width; height: 32
-                    color: "transparent"; border.color: "transparent"
-                    MouseArea {
-                        anchors.fill: parent; hoverEnabled: true
-                        onPressed: parent.color = "#444444"
-                        onReleased: parent.color = "transparent"
-                        onClicked: console.debug("点击菜单", modelData)
-                    }
-                    Label { anchors.verticalCenter: parent.verticalCenter; anchors.left: parent.left; anchors.leftMargin: 8; text: modelData; color: "#dddddd"; font.pixelSize: 14 }
-                }
             }
         }
 
