@@ -13,74 +13,84 @@ Item {
     property color bgColor: "#2b2b2b"
     property bool isLoggedIn: UserSession.token !== ""
 
+    // 背景色
     Rectangle { anchors.fill: parent; color: bgColor }
 
+    // ---------- 1. 顶部左侧 用户信息 ----------
+    Item {
+        id: userInfoHeader
+        width: 400; height: 64
+        anchors.top: parent.top
+        anchors.topMargin: 80      // 顶部边距
+        anchors.left: parent.left
+        anchors.leftMargin: 80     // 左侧边距
+
+        Row {
+            id: userInfoRow
+            spacing: 12
+            anchors.verticalCenter: parent.verticalCenter
+
+            Rectangle {
+                width: 64; height: 64; radius: 32
+                Image {
+                    anchors.fill: parent
+                    source: "qrc:/res/profile picture.svg"
+                    fillMode: Image.PreserveAspectFit
+                }
+            }
+
+            Column {
+                spacing: 4
+                Label {
+                    text: isLoggedIn ? UserSession.username : qsTr("未登录")
+                    font.pixelSize: 20
+                    color: "white"
+                }
+                Label {
+                    text: isLoggedIn ? qsTr("点击查看或修改资料") : qsTr("点击登录/注册")
+                    font.pixelSize: 12
+                    color: "#aaaaaa"
+                }
+            }
+        }
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+                if (isLoggedIn) {
+                    stackView.push("qrc:/gui/ModifyUserView.qml")
+                } else {
+                    stackView.push("qrc:/gui/LoginRegisterView.qml")
+                }
+            }
+        }
+    }
+
+    // ---------- 2. 主体布局：左右面板 ----------
     RowLayout {
-        anchors.fill: parent
-        anchors.margins: 80
+        id: mainLayout
+        anchors.top: userInfoHeader.bottom
+        anchors.topMargin: 20     // 用户信息与主体布局之间的垂直间距
+        anchors.left: parent.left
+        anchors.leftMargin: 80     // 左侧边距
+        anchors.right: parent.right
+        anchors.rightMargin: 80    // 右侧边距
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 80   // 底部边距
         spacing: 200
 
         /* ================= 左侧面板 ================= */
         Column {
             id: leftPanel
-            width: 400; height: parent.height
+            width: 400
+            Layout.alignment: Qt.AlignTop
             spacing: 20
 
-            /* ---------- 用户信息 ---------- */
-            // 用户信息区域
-            Item {
-                id: userInfoContainer
-                width: parent.width
-                height: 64
-
-                Row {
-                    id: userInfoRow
-                    spacing: 12
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    Rectangle {
-                        width: 64; height: 64; radius: 32
-                        Image {
-                            anchors.fill: parent
-                            source: "qrc:/res/profile picture.svg"
-                            fillMode: Image.PreserveAspectFit
-                        }
-                    }
-
-                    Column {
-                        spacing: 4
-                        Label {
-                            text: isLoggedIn ? UserSession.username : qsTr("未登录")
-                            font.pixelSize: 20
-                            color: "white"
-                        }
-                        Label {
-                            text: isLoggedIn ? qsTr("点击查看或修改资料") : qsTr("点击登录/注册")
-                            font.pixelSize: 12
-                            color: "#aaaaaa"
-                        }
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (isLoggedIn) {
-                            // 👇 推出一个资料编辑页（你自己可以创建 ModifyUserView.qml）
-                            stackView.push("qrc:/gui/ModifyUserView.qml")
-                        } else {
-                            stackView.push("qrc:/gui/LoginRegisterView.qml")
-                        }
-                    }
-                }
-            }
-
-            /* ---------- 2. 菜单 + 图片 ---------- */
+            // 中部：菜单 + 静态图片
             RowLayout {
                 width: parent.width; height: 120; spacing: 20
 
-                // 菜单列表（带圆角背景）
+                // 菜单容器
                 Rectangle {
                     id: menuContainer
                     Layout.preferredWidth: 160
@@ -128,7 +138,7 @@ Item {
                 }
             }
 
-            // ---------- 轮播 Banner ----------
+            // 底部：轮播 Banner
             Rectangle {
                 id: bannerFrame
                 width: parent.width; height: 230; radius: 8
@@ -139,7 +149,6 @@ Item {
                     ListElement { source: "qrc:/res/update.svg" }
                     ListElement { source: "qrc:/res/update.svg" }
                 }
-
                 ListView {
                     id: bannerView
                     anchors.fill: parent
@@ -150,7 +159,6 @@ Item {
                     interactive: false
                     delegate: Image { source: model.source; width: bannerFrame.width; height: bannerFrame.height; fillMode: Image.PreserveAspectCrop }
                 }
-
                 Row {
                     spacing: 6
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -160,11 +168,9 @@ Item {
                         Rectangle { width: 8; height: 8; radius: 4; color: index === bannerView.currentIndex ? "#ffffff" : "#888888" }
                     }
                 }
-
                 Timer { interval: 3000; running: true; repeat: true; onTriggered: bannerView.currentIndex = (bannerView.currentIndex+1)%bannerModel.count }
             }
         }
-
         /* ================= 右侧面板 ================= */
         Column {
             id: rightPanel
