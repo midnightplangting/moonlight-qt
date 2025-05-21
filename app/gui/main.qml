@@ -23,13 +23,14 @@ ApplicationWindow {
     id: window
     width: 1280
     height: 800
+    property color appBackgroundColor: "black"
     // This function runs prior to creation of the initial StackView item
     function doEarlyInit() {
         // Override the background color to Material 2 colors for Qt 6.5+
         // in order to improve contrast between GFE's placeholder box art
         // and the background of the app grid.
         if (SystemProperties.usesMaterial3Theme) {
-            Material.background = "#303030"
+            Material.background = appBackgroundColor
         }
 
         SdlGamepadKeyNavigation.enable()

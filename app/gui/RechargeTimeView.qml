@@ -12,10 +12,10 @@ Page {
     Rectangle {
         id: modeSwitch
         anchors.top: parent.top; anchors.horizontalCenter: parent.horizontalCenter; anchors.topMargin: 16
-        width: 160; height: 32; radius: 16; color: "#3C3C3C"
+        width: 300; height: 32; radius: 5; color: "#1C1C1E"
 
         Rectangle {
-            id: thumb; width: modeSwitch.width/2; height: modeSwitch.height; radius: 16; color: "#FFA500"
+            id: thumb; width: modeSwitch.width/2; height: modeSwitch.height; radius: 10; color: "#3A3A3C"
         }
         states: [
             State { name: "left"; when: currentTab===0; PropertyChanges{target:thumb; x:0} },
@@ -63,7 +63,7 @@ Page {
                                 easing.type: Easing.OutQuad
                             }
                         }
-                        color: hovered?"#4A4A4A":"#3C3C3C"
+                        color: hovered?"#4A4A4A":"#1C1C1E"
 
                         // 缩放效果
                         scale: 1
@@ -91,12 +91,12 @@ Page {
                             Rectangle {
                                 id: pkgSwitch
                                 visible: currentTab===1
-                                width: parent.width; height:24; radius:12; color:"#3C3C3C"
+                                width: parent.width; height:24; radius:12; color:"#1C1C14"
                                 anchors.horizontalCenter: parent.horizontalCenter
 
                                 Rectangle {
                                     id: pkgThumb
-                                    width: pkgSwitch.width/3; height: pkgSwitch.height; radius:12; color:"#FFA500"
+                                    width: pkgSwitch.width/3; height: pkgSwitch.height; radius:12; color:"#3A3A3C"
                                     x: packageMode * pkgSwitch.width/3
                                     Behavior on x { NumberAnimation { duration:200 } }
                                 }
@@ -144,7 +144,7 @@ Page {
     /* 内嵌手动添加 */
     Rectangle {
         anchors.top: flick.bottom; anchors.topMargin:24; anchors.horizontalCenter:parent.horizontalCenter
-        width: flick.width - 400; height:48; radius:24; color:"#3C3C3C"
+        width: flick.width - 400; height:48; radius:24; color:"#1C1C1E"
         Row{anchors.fill:parent;anchors.margins:12;spacing:8
             Image{source:"qrc:/res/ic_add_to_queue_white_48px.svg";width:24;height:24}
             TextField{placeholderText:qsTr("手动添加电脑");font.pixelSize:14;color:"#DDDDDD";background:Rectangle{color:"transparent"}
