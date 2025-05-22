@@ -12,7 +12,7 @@ Page {
     Rectangle {
         id: modeSwitch
         anchors.top: parent.top; anchors.horizontalCenter: parent.horizontalCenter; anchors.topMargin: 16
-        width: 300; height: 32; radius: 5; color: "#1C1C1E"
+        width: 400; height: 32; radius: 5; color: "#1C1C1E"
 
         Rectangle {
             id: thumb; width: modeSwitch.width/2; height: modeSwitch.height; radius: 10; color: "#3A3A3C"
@@ -39,10 +39,10 @@ Page {
     /* 卡片列表 */
     Flickable {
         id: flick
-        anchors.top: modeSwitch.bottom; anchors.topMargin:24; anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: modeSwitch.bottom; anchors.topMargin:30; anchors.horizontalCenter: parent.horizontalCenter
         width: Math.min(parent.width, 4*240 + 3*24 + 48)
         height: parent.height - modeSwitch.height - 130
-        clip:true; flickableDirection: Flickable.VerticalFlick
+        flickableDirection: Flickable.VerticalFlick
         contentWidth: width; contentHeight: cardGrid.height
 
         Item { width: flick.width; height: cardGrid.height
@@ -75,10 +75,10 @@ Page {
 
                         MouseArea {
                             anchors.fill: parent; hoverEnabled: true
-                            onEntered: hovered = true
-                            onExited: hovered = false
+                            onEntered: {hovered = true; card.scale = 1.02}
+                            onExited: {hovered = false; card.scale = 1.0}
                             onPressed:  card.scale = 0.95
-                            onReleased: card.scale = 1
+                            onReleased: card.scale = 1.02
                             // 如果有卡片点击逻辑，可在这里处理
                         }
 

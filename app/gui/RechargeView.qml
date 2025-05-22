@@ -167,15 +167,31 @@ Item {
                         ListElement { coins: 20000; price: 2000; gift: 20000 }
                     }
                     Repeater { model: comboModel
-                        Rectangle { width: 150; height: 90; radius: 12; color: index === comboGrid.selectedCombo ? "#3A3A3C" : "#1C1C14";clip: true
-                            Rectangle { visible: model.gift>0; width: parent.width*0.7; height:20; radius:6; anchors.horizontalCenter: parent.horizontalCenter; y:-3; color:"#FFBF00";
-                                Label { anchors.centerIn: parent; text: qsTr("赠")+model.gift+qsTr("金币"); font.pixelSize:14;font.bold: true; color:"#333333" }
+                        Rectangle {
+                            id: comboCard
+                            width: 150; height: 90; radius: 12;
+                            color: index === comboGrid.selectedCombo ? "#3A3A3C" : "#1C1C14"; clip: true
+                            scale: 1; transformOrigin: Item.Center
+                            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
+
+                            MouseArea {
+                                anchors.fill: parent; hoverEnabled: true
+                                onEntered: comboCard.scale = 1.05
+                                onExited: comboCard.scale = 1.0
+                                onPressed: comboCard.scale = 0.95
+                                onReleased: comboCard.scale = 1.05
+                                onClicked: comboGrid.selectedCombo = index
                             }
+
+                            // 赠送徽章
+                            Rectangle { visible: model.gift > 0; width: parent.width * 0.7; height: 20; radius: 6; anchors.horizontalCenter: parent.horizontalCenter; y: -3; color: "#FFBF00"
+                                Label { anchors.centerIn: parent; text: qsTr("赠") + model.gift + qsTr("金币"); font.pixelSize: 14; font.bold: true; color: "#333333" }
+                            }
+                            // 主信息
                             Column { anchors.centerIn: parent; spacing: 4
-                                Label { text: model.coins+qsTr("金币"); font.pixelSize:18;font.bold: true; color:"#FFC000" }
-                                Label { text: "¥ "+model.price.toFixed(2); font.pixelSize:14;font.bold: true; color:"#cccccc" }
+                                Label { text: model.coins + qsTr("金币"); font.pixelSize: 18; font.bold: true; color: "#FFC000" }
+                                Label { text: "¥ " + model.price.toFixed(2); font.pixelSize: 14; font.bold: true; color: "#cccccc" }
                             }
-                            MouseArea { anchors.fill: parent; onClicked: comboGrid.selectedCombo=index }
                         }
                     }
                 }
@@ -196,15 +212,20 @@ Item {
                             }
                         }
                     }
-                    Rectangle { id:payButton;width:240;height:60;radius:6;color:"#FFBF00";Layout.alignment:Qt.AlignVCenter
-                        Label{anchors.centerIn:parent;text:qsTr("立即支付");font.pixelSize:25;color:"black";font.bold: true}
-
-                        MouseArea{anchors.fill:parent;hoverEnabled:true
-                            onEntered:payButton.color="#ffbb55";onExited:payButton.color="#ffaa33"
-                            onPressed:payButton.color="#ff9933";onReleased:payButton.color=containsMouse?"#ffbb55":"#ffaa33"
-                            onClicked:{const combo=comboModel.get(comboGrid.selectedCombo);console.log("Pay",combo.coins,"coins by",paySection.selectedPay===0?"微信":"支付宝")}
+                    // 立即支付按钮
+                    Rectangle {
+                        id: payButton; width: 240; height: 60; radius: 6; color: "#FFBF00"
+                        scale: 1; transformOrigin: Item.Center
+                        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
+                        Label { anchors.centerIn: parent; text: qsTr("立即支付"); font.pixelSize: 25; color: "black"; font.bold: true }
+                        MouseArea {
+                            anchors.fill: parent; hoverEnabled: true
+                            onEntered: payButton.scale = 1.05
+                            onExited: payButton.scale = 1.0
+                            onPressed: payButton.scale = 0.95
+                            onReleased: payButton.scale = 1.05
+                            onClicked: { const combo = comboModel.get(comboGrid.selectedCombo); console.log("Pay", combo.coins, "coins by", paySection.selectedPay === 0 ? "微信" : "支付宝") }
                         }
-
                     }
                 }
                 Label { text:qsTr("购买即同意《用户协议》和《隐私政策》"); color:"#ffffff";font.pixelSize:15;horizontalAlignment:Text.AlignHCenter;width:parent.width }
