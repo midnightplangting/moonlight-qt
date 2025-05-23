@@ -147,7 +147,8 @@ Page {
         width: flick.width - 400; height:48; radius:24; color:"#1C1C1E"
         Row{anchors.fill:parent;anchors.margins:12;spacing:8
             Image{source:"qrc:/res/ic_add_to_queue_white_48px.svg";width:24;height:24}
-            TextField{placeholderText:qsTr("手动添加电脑");font.pixelSize:14;color:"#DDDDDD";background:Rectangle{color:"transparent"}
+            TextField{placeholderText:qsTr("手动添加电脑                                                                                                                                                                        ");
+                font.pixelSize:14;color:"#DDDDDD";background:Rectangle{color:"transparent"}
                 onAccepted:{console.log("Add PC:", text); text=""}
             }
         }
