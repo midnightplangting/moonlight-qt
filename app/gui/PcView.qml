@@ -106,129 +106,132 @@ CenteredGridView {
     model: computerModel
 
     delegate: NavigableItemDelegate {
-        width: 300
-        height: 150
+        width: 330; height: 100
         grid: pcGrid
 
+        // 用于控制按下状态
+        property bool pressed: false
+
+        // 1. 背景圆角长方形 + 动画
         Rectangle {
+            id: background
             anchors.fill: parent
-            radius: 12
-            color: "#404040"  // 整体卡片背景色
-            border.color: "#606060"
-            border.width: 1
+            radius: 8
+            // 默认色 和 按下色
+            property color normalColor: "#2C2C2E"
+            property color pressedColor: "#444448"
+            color: parent.pressed ? pressedColor : normalColor
 
-            Row {
-                anchors.fill: parent
-                anchors.margins: 10
-                spacing: 10
+            // 颜色过渡动画
+            Behavior on color { ColorAnimation { duration: 150; easing.type: Easing.OutQuad } }
+            // 缩放过渡动画
+            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
+            // 默认不缩放
+            scale: parent.pressed ? 0.97 : 1.0
+        }
 
-                // --- 左边：图标和设备信息 ---
-                Column {
-                    spacing: 8
-                    width: 0.6 * parent.width  // 左边占60%宽度
+        Row {
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 16
 
-                    // 名称
-                    Label {
-                        id: pcNameText
+            // 1. 左侧图标
+            Image {
+                id: pcIcon
+                source: "qrc:/res/desktop_windows-48px.svg"
+                width: 24; height: 24
+                fillMode: Image.PreserveAspectFit
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            // 2. 中间信息列
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 4
+                Layout.fillWidth: true
+
+                // 2.1 机器名 + 状态徽章
+                Row {
+                    spacing: 6
+                    // 机器名
+                    Text {
                         text: model.name
-                        font.pointSize: 16
-                        color: "white"
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.Wrap
-                        elide: Text.ElideRight
-                        width: parent.width
+                        font.pixelSize: 16
+                        font.bold: true
+                        color: "#FFFFFF"
                     }
+                    // 状态徽章
+                    Rectangle {
+                        visible: model.online !== undefined
+                        color: "#FFD43A"
+                        radius: 4
+                        height: 20
+                        anchors.verticalCenter: parent.verticalCenter
+                        // 宽度根据文字自动撑开
+                        implicitWidth: statusText.paintedWidth + 16
 
-                    // 其他信息（比如在线状态，可自行扩展）
-                    Label {
-                        text: model.online ? qsTr("在线") : qsTr("离线")
-                        font.pointSize: 12
-                        color: model.online ? "#00FF00" : "#FF5555"
-                        horizontalAlignment: Text.AlignHCenter
-                        width: parent.width
-                    }
-
-                    // 时间
-                    Label {
-                        text: qsTr("已运行： 1小时")
-                        font.pointSize: 12
-                        color: "#00FF00"
-                        horizontalAlignment: Text.AlignHCenter
-                        width: parent.width
+                        Text {
+                            id: statusText
+                            text: model.online ? qsTr("在线") : qsTr("离线")
+                            font.pixelSize: 12
+                            color: "#FFFFFF"
+                            anchors.centerIn: parent
+                        }
                     }
                 }
 
-                // --- 右边：操作按钮 ---
+                // 2.2 使用时长
+                Text {
+                    text: qsTr("使用时长：%1").arg(model.usageTime)
+                    font.pixelSize: 14
+                    color: "#CCCCCC"
+                }
+                // 2.3 串流码率
+                Text {
+                    text: qsTr("串流码率：%1 Mbps").arg(model.bitrate)
+                    font.pixelSize: 14
+                    color: "#CCCCCC"
+                }
+            }
 
-                Column {
-                    spacing: 10
-                    width: 0.4 * parent.width  // 右边占40%宽度
-                    anchors.verticalCenter: parent.verticalCenter
+            // 3. 右侧操作按钮
+            Rectangle {
+                id: actionBtn
+                width: 60; height: 28
+                color: "transparent"
+                radius: 4
+                anchors.verticalCenter: parent.verticalCenter
 
-                    // 图标
-                    Image {
-                        id: pcIcon
-                        source: "qrc:/res/desktop_windows-48px.svg"
-                        width: 40
-                        height: 40
-                        fillMode: Image.PreserveAspectFit
-                        anchors.horizontalCenter: parent.horizontalCenter
+                // 缩放效果
+                property real normalScale: 1.0
+                property real pressedScale: 0.9
+                scale: normalScale
+                Behavior on scale {
+                    NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+                }
+
+                // 按钮文字
+                Text {
+                    anchors.centerIn: parent
+                    text: qsTr("结账下机")      // 或者根据 model 来决定显示 “关机” 等
+                    font.pixelSize: 14
+                    color: "#007AFF"
+                }
+
+                // 点击交互
+                MouseArea {
+                    anchors.fill: parent
+                    onPressed:  actionBtn.scale = actionBtn.pressedScale
+                    onReleased: actionBtn.scale = actionBtn.normalScale
+                    onClicked: {
+                        // TODO: 在这里处理“结账”或“关机”等逻辑
+                        console.log("action clicked for", model.name)
                     }
-
-                    Button {
-                        width: parent.width - 10
-                        height: 35
-
-                        background: Rectangle {
-                            anchors.fill: parent  // 💡背景铺满整个Button
-                            radius: 6
-                            color: pressed ? "#5a45c7" : (hovered ? "#6a55d7" : "#5a5acc")
-                        }
-
-                        contentItem: Text {
-                            text: qsTr("下机结账")
-                            anchors.centerIn: parent  // 💡文本在Button内部居中
-                            color: "white"
-                            font.pixelSize: 14
-                            horizontalAlignment: Text.AlignHCenter  // 横向居中
-                            verticalAlignment: Text.AlignVCenter    // 纵向居中
-                        }
-
-                        onClicked: {
-                            console.log("Offline checkout:" + model.name)
-                            // 下机逻辑
-                        }
-                    }
-
-                    Button {
-                        width: parent.width - 10
-                        height: 35
-
-                        background: Rectangle {
-                            anchors.fill: parent  // 💡背景铺满整个Button
-                            radius: 6
-                            color: pressed ? "#5a45c7" : (hovered ? "#6a55d7" : "#5a5acc")
-                        }
-
-                        contentItem: Text {
-                            text: qsTr("立即连接")
-                            anchors.centerIn: parent  // 💡文本在Button内部居中
-                            color: "white"
-                            font.pixelSize: 14
-                            horizontalAlignment: Text.AlignHCenter  // 横向居中
-                            verticalAlignment: Text.AlignVCenter    // 纵向居中
-                        }
-
-                        onClicked: {
-                            console.log("Connecting devices:" + model.name)
-                            // 连接逻辑
-                        }
-                    }
-
                 }
             }
         }
     }
+
 
     ErrorMessageDialog {
         id: errorDialog

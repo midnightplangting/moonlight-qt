@@ -247,6 +247,10 @@ ApplicationWindow {
         anchors.topMargin: 5
         anchors.bottomMargin: 5
 
+        background: Rectangle {
+            color: "#3F2C96"
+        }
+
         Label {
             id: titleLabel
             visible: toolBar.width > 700
