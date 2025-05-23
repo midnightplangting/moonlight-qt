@@ -106,68 +106,55 @@ CenteredGridView {
     model: computerModel
 
     delegate: NavigableItemDelegate {
-        width: 330; height: 100
+        width: 450; height: 100
         grid: pcGrid
 
-        // 用于控制按下状态
-        property bool pressed: false
+        property alias pcContextMenu : pcContextMenuLoader.item
 
-        // 1. 背景圆角长方形 + 动画
+        // 1. 背景圆角长方形
         Rectangle {
-            id: background
             anchors.fill: parent
-            radius: 8
-            // 默认色 和 按下色
-            property color normalColor: "#2C2C2E"
-            property color pressedColor: "#444448"
-            color: parent.pressed ? pressedColor : normalColor
-
-            // 颜色过渡动画
-            Behavior on color { ColorAnimation { duration: 150; easing.type: Easing.OutQuad } }
-            // 缩放过渡动画
-            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
-            // 默认不缩放
-            scale: parent.pressed ? 0.97 : 1.0
+            radius: 16                  // 圆角半径
+            // color: "#1C1C1E"           // 背景色，可根据主题调整
+            color: "transparent"
+            clip: true
         }
 
+        // 2. 内容
         Row {
             anchors.fill: parent
             anchors.margins: 12
             spacing: 16
 
-            // 1. 左侧图标
+            // 左侧图标
             Image {
-                id: pcIcon
                 source: "qrc:/res/desktop_windows-48px.svg"
-                width: 24; height: 24
+                width: 50; height: 50
                 fillMode: Image.PreserveAspectFit
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            // 2. 中间信息列
+            // 中间信息列
             Column {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 4
                 Layout.fillWidth: true
 
-                // 2.1 机器名 + 状态徽章
+                // 机器名 + 状态徽章
                 Row {
                     spacing: 6
-                    // 机器名
                     Text {
                         text: model.name
-                        font.pixelSize: 16
+                        font.pixelSize: 24
                         font.bold: true
                         color: "#FFFFFF"
                     }
-                    // 状态徽章
                     Rectangle {
                         visible: model.online !== undefined
                         color: "#FFD43A"
                         radius: 4
                         height: 20
                         anchors.verticalCenter: parent.verticalCenter
-                        // 宽度根据文字自动撑开
                         implicitWidth: statusText.paintedWidth + 16
 
                         Text {
@@ -176,25 +163,26 @@ CenteredGridView {
                             font.pixelSize: 12
                             color: "#FFFFFF"
                             anchors.centerIn: parent
+                            font.bold: true
                         }
                     }
                 }
 
-                // 2.2 使用时长
+                // 使用时长
                 Text {
                     text: qsTr("使用时长：%1").arg(model.usageTime)
-                    font.pixelSize: 14
+                    font.pixelSize: 20
                     color: "#CCCCCC"
                 }
-                // 2.3 串流码率
+                // 串流码率
                 Text {
                     text: qsTr("串流码率：%1 Mbps").arg(model.bitrate)
-                    font.pixelSize: 14
+                    font.pixelSize: 20
                     color: "#CCCCCC"
                 }
             }
 
-            // 3. 右侧操作按钮
+            // 右侧操作按钮
             Rectangle {
                 id: actionBtn
                 width: 60; height: 28
@@ -202,7 +190,6 @@ CenteredGridView {
                 radius: 4
                 anchors.verticalCenter: parent.verticalCenter
 
-                // 缩放效果
                 property real normalScale: 1.0
                 property real pressedScale: 0.9
                 scale: normalScale
@@ -210,27 +197,148 @@ CenteredGridView {
                     NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
                 }
 
-                // 按钮文字
                 Text {
                     anchors.centerIn: parent
-                    text: qsTr("结账下机")      // 或者根据 model 来决定显示 “关机” 等
-                    font.pixelSize: 14
+                    text: qsTr("结账下机")
+                    font.pixelSize: 20
                     color: "#007AFF"
                 }
 
-                // 点击交互
                 MouseArea {
                     anchors.fill: parent
                     onPressed:  actionBtn.scale = actionBtn.pressedScale
                     onReleased: actionBtn.scale = actionBtn.normalScale
                     onClicked: {
-                        // TODO: 在这里处理“结账”或“关机”等逻辑
                         console.log("action clicked for", model.name)
                     }
                 }
             }
         }
+        Loader {
+            id: pcContextMenuLoader
+            asynchronous: true
+            sourceComponent: NavigableMenu {
+                id: pcContextMenu
+                MenuItem {
+                    text: qsTr("PC Status: %1").arg(model.online ? qsTr("Online") : qsTr("Offline"))
+                    font.bold: true
+                    enabled: false
+                }
+                NavigableMenuItem {
+                    parentMenu: pcContextMenu
+                    text: qsTr("View All Apps")
+                    onTriggered: {
+                        var component = Qt.createComponent("AppView.qml")
+                        var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name, "showHiddenGames": true})
+                        stackView.push(appView)
+                    }
+                    visible: model.online && model.paired
+                }
+                NavigableMenuItem {
+                    parentMenu: pcContextMenu
+                    text: qsTr("Wake PC")
+                    onTriggered: computerModel.wakeComputer(index)
+                    visible: !model.online && model.wakeable
+                }
+                NavigableMenuItem {
+                    parentMenu: pcContextMenu
+                    text: qsTr("Test Network")
+                    onTriggered: {
+                        computerModel.testConnectionForComputer(index)
+                        testConnectionDialog.open()
+                    }
+                }
+
+                NavigableMenuItem {
+                    parentMenu: pcContextMenu
+                    text: qsTr("Rename PC")
+                    onTriggered: {
+                        renamePcDialog.pcIndex = index
+                        renamePcDialog.originalName = model.name
+                        renamePcDialog.open()
+                    }
+                }
+                NavigableMenuItem {
+                    parentMenu: pcContextMenu
+                    text: qsTr("Delete PC")
+                    onTriggered: {
+                        deletePcDialog.pcIndex = index
+                        deletePcDialog.pcName = model.name
+                        deletePcDialog.open()
+                    }
+                }
+                NavigableMenuItem {
+                    parentMenu: pcContextMenu
+                    text: qsTr("View Details")
+                    onTriggered: {
+                        showPcDetailsDialog.pcDetails = model.details
+                        showPcDetailsDialog.open()
+                    }
+                }
+            }
+        }
+
+        onClicked: {
+            if (model.online) {
+                if (!model.serverSupported) {
+                    errorDialog.text = qsTr("The version of GeForce Experience on %1 is not supported by this build of Moonlight. You must update Moonlight to stream from %1.").arg(model.name)
+                    errorDialog.helpText = ""
+                    errorDialog.open()
+                }
+                else if (model.paired) {
+                    // go to game view
+                    var component = Qt.createComponent("AppView.qml")
+                    var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name})
+                    stackView.push(appView)
+                }
+                else {
+                    var pin = computerModel.generatePinString()
+
+                    // Kick off pairing in the background
+                    computerModel.pairComputer(index, pin)
+
+                    // Display the pairing dialog
+                    pairDialog.pin = pin
+                    pairDialog.open()
+                }
+            } else if (!model.online) {
+                // Using open() here because it may be activated by keyboard
+                pcContextMenu.open()
+            }
+        }
+
+        onPressAndHold: {
+            // popup() ensures the menu appears under the mouse cursor
+            if (pcContextMenu.popup) {
+                pcContextMenu.popup()
+            }
+            else {
+                // Qt 5.9 doesn't have popup()
+                pcContextMenu.open()
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.RightButton;
+            onClicked: {
+                parent.pressAndHold()
+            }
+        }
+
+        Keys.onMenuPressed: {
+            // We must use open() here so the menu is positioned on
+            // the ItemDelegate and not where the mouse cursor is
+            pcContextMenu.open()
+        }
+
+        Keys.onDeletePressed: {
+            deletePcDialog.pcIndex = index
+            deletePcDialog.pcName = model.name
+            deletePcDialog.open()
+        }
     }
+
 
 
     ErrorMessageDialog {
