@@ -23,5 +23,6 @@
         <file>gui/RechargeView.qml</file>
         <file>gui/LoginRegisterView.qml</file>
         <file>gui/ModifyUserView.qml</file>
+        <file>gui/BillDetailView.qml</file>
     </qresource>
 </RCC>

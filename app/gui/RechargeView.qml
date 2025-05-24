@@ -106,7 +106,12 @@ Item {
                                 MouseArea { anchors.fill: parent; hoverEnabled: true
                                     onPressed: parent.color = "#1C1C14"
                                     onReleased: parent.color = "transparent"
-                                    onClicked: console.debug("点击菜单", modelData)
+                                    onClicked: {
+                                        console.debug("点击菜单", modelData)
+                                        if (modelData === qsTr("账单明细")) {
+                                            stackView.push("qrc:/gui/BillDetailView.qml")
+                                        }
+                                    }
                                 }
                             }
                         }
