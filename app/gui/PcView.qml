@@ -105,28 +105,72 @@ CenteredGridView {
 
     model: computerModel
 
-    delegate: NavigableItemDelegate {
-        width: 450; height: 100
-        grid: pcGrid
+    delegate: Rectangle {
+        width: 450; height: 130
+        radius: 16
+        color: "#1C1C1E"
+        clip: true
 
-        property alias pcContextMenu : pcContextMenuLoader.item
+        property alias pcContextMenu: pcContextMenuLoader.item
+        property int index: -1
 
-        // 1. 背景圆角长方形
-        Rectangle {
-            anchors.fill: parent
-            radius: 16                  // 圆角半径
-            // color: "#1C1C1E"           // 背景色，可根据主题调整
-            color: "transparent"
-            clip: true
+        // 使用安全默认值避免 undefined 警告
+        property string name: model && model.name !== undefined ? model.name : ""
+        property string usageTime: model && model.usageTime !== undefined ? model.usageTime : "--"
+        property real bitrate: model && model.bitrate !== undefined ? model.bitrate : 0
+        property bool online: model && model.online !== undefined ? model.online : false
+        property bool paired: model && model.paired !== undefined ? model.paired : false
+        property bool serverSupported: model && model.serverSupported !== undefined ? model.serverSupported : false
+
+        // 缩放动画属性
+        property real hoverScale: 1.02
+        property real pressScale: 0.95
+        property real normalScale: 1.0
+        scale: normalScale
+
+        Behavior on scale {
+            NumberAnimation {
+                duration: 100
+                easing.type: Easing.OutQuad
+            }
         }
 
-        // 2. 内容
+        MouseArea {
+            id: clickArea
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.AllButtons
+
+            onEntered: parent.scale = hoverScale
+            onExited: parent.scale = normalScale
+            onPressed: parent.scale = pressScale
+            onReleased: parent.scale = hoverScale
+            onClicked: {
+                if (mouse.button === Qt.RightButton) {
+                    parent.pressAndHold()
+                } else {
+                    parent.clicked()
+                }
+            }
+            onPressAndHold: parent.pressAndHold()
+        }
+
+        signal clicked()
+        signal pressAndHold()
+
+        focus: true
+        Keys.onMenuPressed: pcContextMenu.open()
+        Keys.onDeletePressed: {
+            deletePcDialog.pcIndex = index
+            deletePcDialog.pcName = model.name
+            deletePcDialog.open()
+        }
+
         Row {
             anchors.fill: parent
             anchors.margins: 12
             spacing: 16
 
-            // 左侧图标
             Image {
                 source: "qrc:/res/desktop_windows-48px.svg"
                 width: 50; height: 50
@@ -134,13 +178,11 @@ CenteredGridView {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            // 中间信息列
             Column {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 4
                 Layout.fillWidth: true
 
-                // 机器名 + 状态徽章
                 Row {
                     spacing: 6
                     Text {
@@ -151,7 +193,7 @@ CenteredGridView {
                     }
                     Rectangle {
                         visible: model.online !== undefined
-                        color: "#FFD43A"
+                        color: "#FFA54F"
                         radius: 4
                         height: 20
                         anchors.verticalCenter: parent.verticalCenter
@@ -160,7 +202,7 @@ CenteredGridView {
                         Text {
                             id: statusText
                             text: model.online ? qsTr("在线") : qsTr("离线")
-                            font.pixelSize: 12
+                            font.pixelSize: 15
                             color: "#FFFFFF"
                             anchors.centerIn: parent
                             font.bold: true
@@ -168,13 +210,12 @@ CenteredGridView {
                     }
                 }
 
-                // 使用时长
                 Text {
                     text: qsTr("使用时长：%1").arg(model.usageTime)
                     font.pixelSize: 20
                     color: "#CCCCCC"
                 }
-                // 串流码率
+
                 Text {
                     text: qsTr("串流码率：%1 Mbps").arg(model.bitrate)
                     font.pixelSize: 20
@@ -182,7 +223,6 @@ CenteredGridView {
                 }
             }
 
-            // 右侧操作按钮
             Rectangle {
                 id: actionBtn
                 width: 60; height: 28
@@ -191,7 +231,7 @@ CenteredGridView {
                 anchors.verticalCenter: parent.verticalCenter
 
                 property real normalScale: 1.0
-                property real pressedScale: 0.9
+                property real pressedScale: 0.95
                 scale: normalScale
                 Behavior on scale {
                     NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
@@ -214,6 +254,7 @@ CenteredGridView {
                 }
             }
         }
+
         Loader {
             id: pcContextMenuLoader
             asynchronous: true
@@ -277,65 +318,31 @@ CenteredGridView {
                 }
             }
         }
-
         onClicked: {
-            if (model.online) {
-                if (!model.serverSupported) {
-                    errorDialog.text = qsTr("The version of GeForce Experience on %1 is not supported by this build of Moonlight. You must update Moonlight to stream from %1.").arg(model.name)
-                    errorDialog.helpText = ""
-                    errorDialog.open()
+                if (model.online) {
+                    if (!model.serverSupported) {
+                        errorDialog.text = qsTr("当前 GeForce Experience 版本不受支持。请更新 Moonlight。")
+                        errorDialog.open()
+                    } else if (model.paired) {
+                        var component = Qt.createComponent("AppView.qml")
+                        var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name})
+                        stackView.push(appView)
+                    } else {
+                        var pin = computerModel.generatePinString()
+                        computerModel.pairComputer(index, pin)
+                        pairDialog.pin = pin
+                        pairDialog.open()
+                    }
+                } else {
+                    pcContextMenu.open()
                 }
-                else if (model.paired) {
-                    // go to game view
-                    var component = Qt.createComponent("AppView.qml")
-                    var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name})
-                    stackView.push(appView)
-                }
-                else {
-                    var pin = computerModel.generatePinString()
-
-                    // Kick off pairing in the background
-                    computerModel.pairComputer(index, pin)
-
-                    // Display the pairing dialog
-                    pairDialog.pin = pin
-                    pairDialog.open()
-                }
-            } else if (!model.online) {
-                // Using open() here because it may be activated by keyboard
-                pcContextMenu.open()
             }
-        }
 
         onPressAndHold: {
-            // popup() ensures the menu appears under the mouse cursor
-            if (pcContextMenu.popup) {
+            if (pcContextMenu.popup)
                 pcContextMenu.popup()
-            }
-            else {
-                // Qt 5.9 doesn't have popup()
+            else
                 pcContextMenu.open()
-            }
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.RightButton;
-            onClicked: {
-                parent.pressAndHold()
-            }
-        }
-
-        Keys.onMenuPressed: {
-            // We must use open() here so the menu is positioned on
-            // the ItemDelegate and not where the mouse cursor is
-            pcContextMenu.open()
-        }
-
-        Keys.onDeletePressed: {
-            deletePcDialog.pcIndex = index
-            deletePcDialog.pcName = model.name
-            deletePcDialog.open()
         }
     }
 
