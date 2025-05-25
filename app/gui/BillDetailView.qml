@@ -31,9 +31,10 @@ Item {
 
                 delegate: Rectangle {
                     id: card
-                    width: parent.width - 40
+                    width: parent.width - 30
                     height: 150
                     radius: 10
+                    anchors.horizontalCenter: parent.horizontalCenter
                     color: hovered ? "#2A2A2A" : "#1C1C1E"
                     scale: 1
 
