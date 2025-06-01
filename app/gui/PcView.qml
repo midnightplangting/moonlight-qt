@@ -145,7 +145,7 @@ CenteredGridView {
             onExited: parent.scale = normalScale
             onPressed: parent.scale = pressScale
             onReleased: parent.scale = hoverScale
-            onClicked: {
+            onClicked: function(mouse) {
                 if (mouse.button === Qt.RightButton) {
                     parent.pressAndHold()
                 } else {

@@ -11,28 +11,26 @@ Item {
     height: parent ? parent.height : 800
     property bool isLoggedIn: UserSession.token !== ""
 
-    // 背景色
     Rectangle {
         anchors.fill: parent
         color: window.appBackgroundColor
+        z: -1  // 放在最底层
     }
 
-    // ---------- 页面容器：居中并限宽 ----------
     ColumnLayout {
         id: pageLayout
-        anchors.top: parent.top               // 固定在顶部
-        anchors.topMargin: 20                 // 与顶部距离
-        anchors.horizontalCenter: parent.horizontalCenter  // 水平居中
+        anchors.top: parent.top
+        anchors.topMargin: 20
+        anchors.horizontalCenter: parent.horizontalCenter
         spacing: 30
-        width: Math.min(parent.width, 1080)   // 最大宽度限制
+        width: Math.min(parent.width, 1080)
 
-        // ---------- 1. 用户信息区：水平居中后左移 ----------
         Item {
             id: userInfoHeader
             width: 400; height: 64
             Layout.alignment: Qt.AlignLeft
-            Layout.topMargin: 0      // 上边距由页面容器的 anchors.topMargin 控制
-            Layout.leftMargin: 0     // 左边距可以调整
+            Layout.topMargin: 0
+            Layout.leftMargin: 0
 
             Row {
                 spacing: 12
@@ -40,7 +38,6 @@ Item {
                 anchors.margins: 0
                 anchors.verticalCenter: parent.verticalCenter
 
-                // 头像
                 Rectangle {
                     width: 64; height: 64; radius: 32; color: "#444444"
                     Image {
@@ -50,7 +47,6 @@ Item {
                     }
                 }
 
-                // 用户名及提示
                 Column {
                     spacing: 4
                     Label {
@@ -68,10 +64,11 @@ Item {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    if (isLoggedIn) stackView.push("qrc:/gui/ModifyUserView.qml")
+                    if (isLoggedIn) profileOverlay.open()
                     else            stackView.push("qrc:/gui/LoginRegisterView.qml")
                 }
             }
+
         }
 
         // ---------- 2. 主体布局：左右面板 ----------
@@ -235,6 +232,20 @@ Item {
                 }
                 Label { text:qsTr("购买即同意《用户协议》和《隐私政策》"); color:"#ffffff";font.pixelSize:15;horizontalAlignment:Text.AlignHCenter;width:parent.width }
             }
+        }
+    }
+    // 遮罩背景 + 弹窗浮层
+    Popup {
+        id: profileOverlay
+        modal: true
+        dim: true
+        focus: true
+        anchors.centerIn: Overlay.overlay
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+
+        contentItem: ModifyUserView {
+            onRequestClose: profileOverlay.close()
         }
     }
 }
