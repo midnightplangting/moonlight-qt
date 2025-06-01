@@ -9,7 +9,10 @@ struct DeviceGroup {
     QString name;
     int timingPrice;
     QList<int> charterPrices;  // [day, week, month]
+    int deviceCount;
+    double bitrate;
 };
+
 
 class DeviceGroupModel : public QAbstractListModel {
     Q_OBJECT
@@ -20,8 +23,11 @@ public:
         HourlyRole,
         DayRole,
         WeekRole,
-        MonthRole
+        MonthRole,
+        DeviceCountRole,
+        BitrateRole
     };
+
 
     DeviceGroupModel(QObject* parent = nullptr);
 

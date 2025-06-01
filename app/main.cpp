@@ -767,6 +767,8 @@ int main(int argc, char *argv[])
             DeviceGroup group;
             group.name = obj["name"].toString();
             group.timingPrice = obj["timingPrice"].toInt();
+            group.deviceCount = obj["deviceCount"].toInt();
+            group.bitrate = obj["bitrate"].toDouble();
 
             QJsonArray charter = obj["charterFlightCost"].toArray();
             for (const auto& price : charter) {

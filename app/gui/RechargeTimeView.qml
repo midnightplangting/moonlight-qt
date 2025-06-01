@@ -55,7 +55,7 @@ Page {
                     model: gpuModel
                     delegate: Rectangle {
                         id: card
-                        width:240; height: currentTab===0?200:220; radius:12;
+                        width:240; height: currentTab===0?200:235; radius:12;
                         // ① 对 height 加动画
                         Behavior on height {
                             NumberAnimation {
@@ -85,7 +85,7 @@ Page {
                         Column {
                             anchors.fill: parent; anchors.margins:16; spacing:14
                             Text { text: name; font.pixelSize:22; color:"white"; horizontalAlignment:Text.AlignHCenter; width:parent.width }
-                            Text { text: qsTr("最高视频码率：23 Mbps"); font.pixelSize:12; color:"#CCCCCC"; horizontalAlignment:Text.AlignHCenter; width:parent.width }
+                            Text { text: qsTr("最高视频码率：") + bitrate + " Mbps"; font.pixelSize:12; color:"#CCCCCC"; horizontalAlignment:Text.AlignHCenter; width:parent.width }
 
                             // 包机模式切换
                             Rectangle {
@@ -114,8 +114,12 @@ Page {
                             }
 
                             Row { anchors.horizontalCenter:parent.horizontalCenter; spacing:4
-                                Text { text: qsTr("当前价格"); font.pixelSize:14; color:"#CCCCCC" }
+                                Text { text: qsTr("当前价格"); font.pixelSize:15; color:"#CCCCCC" }
                                 Text { text: currentPrice + qsTr(" 金币") + (currentTab===0?qsTr("/小时"):""); font.pixelSize:18; font.bold:true; color:"#FFA500" }
+                            }
+                            Row { anchors.horizontalCenter:parent.horizontalCenter; spacing:4
+                                Text { text: qsTr("剩余设备数量"); font.pixelSize:12; color:"#CCCCCC" }
+                                Text { text: deviceCount + qsTr(" 台"); font.pixelSize:15; font.bold:true; color:"white" }
                             }
 
                             // 开机按钮
