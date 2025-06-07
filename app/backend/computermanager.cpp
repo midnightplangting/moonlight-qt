@@ -11,6 +11,13 @@
 #include <QCoreApplication>
 
 #include <random>
+#include "OkHttpUtils.h"      // 访问后端 REST API
+#include <QJsonDocument>      // 解析 JSON
+#include <QJsonArray>
+#include <QJsonObject>
+#include "UserSession.h"      // （若之前已包含可忽略）
+#include <atomic>             // 线程一次性标记
+
 
 #define SER_HOSTS "hosts"
 #define SER_HOSTS_BACKUP "hostsbackup"
@@ -23,9 +30,13 @@ class PcMonitorThread : public QThread
 #define POLLS_PER_APPLIST_FETCH 10
 
 public:
-    PcMonitorThread(NvComputer* computer)
-        : m_Computer(computer)
-    {
+    // PcMonitorThread(NvComputer* computer)
+    //     : m_Computer(computer)
+    // {
+    //     setObjectName("Polling thread for " + computer->name);
+    // }
+    PcMonitorThread(NvComputer* computer, ComputerManager* mgr)
+        : m_Computer(computer), m_Manager(mgr) {
         setObjectName("Polling thread for " + computer->name);
     }
 
@@ -75,8 +86,24 @@ private:
 
     void run() override
     {
+        qInfo() << "[PcMonitorThread] run() started for"
+                << m_Computer->name << "@" ;
+
         // Always fetch the applist the first time
         int pollsSinceLastAppListFetch = POLLS_PER_APPLIST_FETCH;
+
+        // ---- 恢复用户订单中的设备（仅执行一次）----
+        static std::atomic_bool recovered{false};
+        if (!recovered.exchange(true)) {                 // 并发线程只进来一次
+            qint64 uid = UserSession::instance()->userId();
+            if (uid != 0) {
+                // 主线程里调用 ComputerManager::getDeviceOrderInfoList(uid)
+                QMetaObject::invokeMethod(m_Manager, "getDeviceOrderInfoList",
+                                          Qt::QueuedConnection,
+                                          Q_ARG(qint64, uid));
+            }
+        }
+
         while (!isInterruptionRequested()) {
             bool stateChanged = false;
             bool online = false;
@@ -142,6 +169,7 @@ signals:
 
 private:
     NvComputer* m_Computer;
+    ComputerManager* m_Manager;
 };
 
 ComputerManager::ComputerManager(StreamingPreferences* prefs)
@@ -396,7 +424,7 @@ void ComputerManager::startPollingComputer(NvComputer* computer)
     }
 
     if (!pollingEntry->isActive()) {
-        PcMonitorThread* thread = new PcMonitorThread(computer);
+        PcMonitorThread* thread = new PcMonitorThread(computer, this);
         connect(thread, &PcMonitorThread::computerStateChanged,
                 this, &ComputerManager::handleComputerStateChanged);
         pollingEntry->setActiveThread(thread);
@@ -975,6 +1003,45 @@ QString ComputerManager::generatePinString()
     std::mt19937 engine(rd());
 
     return QString::asprintf("%04u", dist(engine));
+}
+
+// 获取并恢复用户订单中的设备
+void ComputerManager::getDeviceOrderInfoList(qint64 userId)
+{
+    qInfo() << "[ComputerManager] >>> Requesting order list for user" << userId;
+    OkHttpUtils::builder()
+    ->url("user/getAllDeviceOrderInfoByUserId")
+        ->addParam("userId", QString::number(userId))
+        ->post(false)
+        ->async(
+            // success λ
+            [this](QString data) {
+                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+                if (!doc.isObject()) {
+                    emit getDeviceOrderInfoListFailure("响应格式错误");
+                    return;
+                }
+                QJsonObject obj = doc.object();
+                if (obj.value("code").toInt() != 200) {
+                    emit getDeviceOrderInfoListFailure(obj.value("message").toString());
+                    return;
+                }
+
+                QJsonArray arr = obj.value("data").toArray();
+                for (const QJsonValue& v : arr) {
+                    QJsonObject item = v.toObject();
+                    QString ip   = item.value("IP").toString();
+                    quint16 port  = item.value("port").toString().toUShort();
+
+                    // 把设备重新加入本地轮询
+                    addNewHost(NvAddress(ip, port), false);
+                }
+                emit getDeviceOrderInfoListSuccess();   // 仅通知完成即可
+            },
+            // failure λ
+            [this](QString err) {
+                emit getDeviceOrderInfoListFailure("网络错误: " + err);
+            });
 }
 
 #include "computermanager.moc"

@@ -25,10 +25,12 @@ void UserService::login(const QString& username, const QString& password) {
                         QJsonObject userData = obj.value("data").toObject();
                         QString token = userData.value("token").toString();
                         QString user = userData.value("username").toString();
+                        qint64  userId = userData.value("userId").toVariant().toLongLong();
 
                         // ✅ 保存到全局 session
                         UserSession::instance()->setToken(token);
                         UserSession::instance()->setUsername(user);
+                        UserSession::instance()->setUserId(userId);
                         UserSession::instance()->saveToSettings();  // 持久化保存
 
                         emit loginSuccess(token);

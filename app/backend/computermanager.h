@@ -263,6 +263,8 @@ public:
 
     Q_INVOKABLE void addNewHostManually(QString address);
 
+    Q_INVOKABLE void getDeviceOrderInfoList(qint64 userId);
+
     void addNewHost(NvAddress address, bool mdns, NvAddress mdnsIpv6Address = NvAddress());
 
     QString generatePinString();
@@ -288,6 +290,10 @@ signals:
     void computerAddCompleted(QVariant success, QVariant detectedPortBlocking);
 
     void quitAppCompleted(QVariant error);
+
+    void getDeviceOrderInfoListSuccess();
+
+    void getDeviceOrderInfoListFailure(QString errorMsg);
 
 private slots:
     void handleAboutToQuit();

@@ -51,3 +51,10 @@ void UserSession::logout() {
     settings.remove("username");
     settings.remove("token");
 }
+
+void UserSession::setUserId(qint64 id) {
+    if (m_userId != id) {
+        m_userId = id;
+        emit userIdChanged();
+    }
+}
