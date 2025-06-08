@@ -17,7 +17,7 @@ CenteredGridView {
     activeFocusOnTab: true
     topMargin: 20
     bottomMargin: 5
-    cellWidth: 310; cellHeight: 330;
+    cellWidth: 420; cellHeight: 150;
     objectName: qsTr("Computers")
 
     Component.onCompleted: {
@@ -106,7 +106,8 @@ CenteredGridView {
     model: computerModel
 
     delegate: Rectangle {
-        width: 450; height: 130
+        width: 400; height: 130
+        // anchors.centerIn: parent
         radius: 16
         color: "#1C1C1E"
         clip: true
@@ -187,7 +188,7 @@ CenteredGridView {
                     spacing: 6
                     Text {
                         text: model.name
-                        font.pixelSize: 24
+                        font.pixelSize: 22
                         font.bold: true
                         color: "#FFFFFF"
                     }
@@ -202,7 +203,7 @@ CenteredGridView {
                         Text {
                             id: statusText
                             text: model.online ? qsTr("在线") : qsTr("离线")
-                            font.pixelSize: 15
+                            font.pixelSize: 13
                             color: "#FFFFFF"
                             anchors.centerIn: parent
                             font.bold: true
@@ -212,20 +213,20 @@ CenteredGridView {
 
                 Text {
                     text: qsTr("使用时长：%1").arg(model.usageTime)
-                    font.pixelSize: 20
+                    font.pixelSize: 18
                     color: "#CCCCCC"
                 }
 
                 Text {
                     text: qsTr("串流码率：%1 Mbps").arg(model.bitrate)
-                    font.pixelSize: 20
+                    font.pixelSize: 18
                     color: "#CCCCCC"
                 }
             }
 
             Rectangle {
                 id: actionBtn
-                width: 60; height: 28
+                width: 40; height: 28
                 color: "transparent"
                 radius: 4
                 anchors.verticalCenter: parent.verticalCenter
@@ -345,8 +346,6 @@ CenteredGridView {
                 pcContextMenu.open()
         }
     }
-
-
 
     ErrorMessageDialog {
         id: errorDialog
