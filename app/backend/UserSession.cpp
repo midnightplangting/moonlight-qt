@@ -29,15 +29,18 @@ void UserSession::saveToSettings() {
     QSettings settings("YourCompany", "Moonlight");
     settings.setValue("username", m_username);
     settings.setValue("token", m_token);
+    settings.setValue("userId",   m_userId);
 }
 
 bool UserSession::restoreFromSettings() {
     QSettings settings("YourCompany", "Moonlight");
     QString savedUsername = settings.value("username").toString();
     QString savedToken = settings.value("token").toString();
+    qint64 savedUid = settings.value("userId").toLongLong();
     if (!savedToken.isEmpty()) {
         setUsername(savedUsername);
         setToken(savedToken);
+        setUserId(savedUid);
         return true;
     }
     return false;

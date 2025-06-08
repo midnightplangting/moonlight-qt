@@ -92,19 +92,23 @@ private:
         // Always fetch the applist the first time
         int pollsSinceLastAppListFetch = POLLS_PER_APPLIST_FETCH;
 
-        // ---- 恢复用户订单中的设备（仅执行一次）----
-        static std::atomic_bool recovered{false};
-        if (!recovered.exchange(true)) {                 // 并发线程只进来一次
-            qint64 uid = UserSession::instance()->userId();
-            if (uid != 0) {
-                // 主线程里调用 ComputerManager::getDeviceOrderInfoList(uid)
-                QMetaObject::invokeMethod(m_Manager, "getDeviceOrderInfoList",
-                                          Qt::QueuedConnection,
-                                          Q_ARG(qint64, uid));
-            }
-        }
-
         while (!isInterruptionRequested()) {
+            // ---- 恢复用户订单中的设备（只有真正拿到 uid 后才置位 recovered）----
+            static std::atomic_bool recovered{false};
+
+            // 每轮循环都检查 uid，直到成功再标记 recovered = true
+            if (!recovered.load()) {
+                qint64 uid = UserSession::instance()->userId();
+                qInfo() << "[PcMonitorThread] UserSession uid =" << uid;
+
+                if (uid != 0) {
+                    recovered.store(true);  // 只有成功触发才设置为 true
+                    QMetaObject::invokeMethod(m_Manager,
+                                              "getDeviceOrderInfoList",
+                                              Qt::QueuedConnection,
+                                              Q_ARG(qint64, uid));
+                }
+            }
             bool stateChanged = false;
             bool online = false;
             bool wasOnline = m_Computer->state == NvComputer::CS_ONLINE;
@@ -1016,30 +1020,47 @@ void ComputerManager::getDeviceOrderInfoList(qint64 userId)
         ->async(
             // success λ
             [this](QString data) {
+                /* ——① 原始响应 —— */
+                qInfo() << "[ComputerManager] Order-list raw JSON:" << data;
+
                 QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
                 if (!doc.isObject()) {
+                    qWarning() << "[ComputerManager] JSON root 不是 object";
                     emit getDeviceOrderInfoListFailure("响应格式错误");
                     return;
                 }
+
                 QJsonObject obj = doc.object();
-                if (obj.value("code").toInt() != 200) {
+                int code = obj.value("code").toInt();
+                qInfo() << "[ComputerManager] code =" << code
+                        << "message =" << obj.value("message").toString();
+
+                if (code != 200) {
                     emit getDeviceOrderInfoListFailure(obj.value("message").toString());
                     return;
                 }
 
                 QJsonArray arr = obj.value("data").toArray();
+                qInfo() << "[ComputerManager] device count =" << arr.size();
+
                 for (const QJsonValue& v : arr) {
                     QJsonObject item = v.toObject();
-                    QString ip   = item.value("IP").toString();
-                    quint16 port  = item.value("port").toString().toUShort();
+                    QString name  = item.value("name").toString();
+                    QString ip    = item.value("ip").toString();
+                    QString portS = item.value("port").toString();
+                    quint16 port  = portS.toUShort();
 
-                    // 把设备重新加入本地轮询
+                    qInfo() << "[getDeviceOrderInfoList]device:" << name << ip << port;
+
+                    /* 把设备重新加入本地轮询 */
                     addNewHost(NvAddress(ip, port), false);
                 }
-                emit getDeviceOrderInfoListSuccess();   // 仅通知完成即可
+                emit getDeviceOrderInfoListSuccess();
             },
+
             // failure λ
             [this](QString err) {
+                qWarning() << "[ComputerManager] 请求订单列表失败:" << err;
                 emit getDeviceOrderInfoListFailure("网络错误: " + err);
             });
 }

@@ -13,7 +13,6 @@
 #include <QTimer>
 #include <QMap>
 
-
 class OkHttpUtils : public QObject
 {
     Q_OBJECT
@@ -58,6 +57,5 @@ private:
 
     QByteArray buildRequestBody();
 };
-
 
 #endif // OKHTTPUTILS_H

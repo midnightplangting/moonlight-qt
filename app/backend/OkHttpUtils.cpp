@@ -1,4 +1,5 @@
 #include "OkHttpUtils.h"
+#include "UserSession.h"
 #include <QEventLoop>
 #include <QUrl>
 #include <QUrlQuery>
@@ -6,7 +7,7 @@
 #include <QJsonObject>
 #include <QDebug>
 
-#define BASE_URL "http://117.184.68.150:18080/"
+#define BASE_URL "https://gzydn.cn:18081/"
 
 OkHttpUtils* OkHttpUtils::builder(QObject* parent) {
     return new OkHttpUtils(parent);
@@ -60,7 +61,6 @@ QByteArray OkHttpUtils::buildRequestBody() {
 QString OkHttpUtils::sync() {
     QNetworkReply* reply = nullptr;
 
-    // 创建请求
     QUrl fullUrl = QUrl(m_url);
     if (!m_isPost && !m_params.isEmpty()) {
         QUrlQuery query;
@@ -69,33 +69,46 @@ QString OkHttpUtils::sync() {
         }
         fullUrl.setQuery(query);
     }
-
     m_request.setUrl(fullUrl);
 
-    // 设置 Headers
+    // 打印完整请求信息
+    qDebug() << "[OkHttpUtils] URL:" << m_request.url().toString();
+    qDebug() << "[OkHttpUtils] Method:" << (m_isPost ? "POST" : "GET");
+    qDebug() << "[OkHttpUtils] Headers:";
+    for (const auto& key : m_request.rawHeaderList()) {
+        qDebug() << "    " << key << ":" << m_request.rawHeader(key);
+    }
+    if (m_isPost) {
+        qDebug() << "[OkHttpUtils] Body:" << buildRequestBody();
+    }
+
+    // 设置 headers
     for (auto it = m_headers.begin(); it != m_headers.end(); ++it) {
         m_request.setRawHeader(it.key().toUtf8(), it.value().toUtf8());
     }
 
-    // 发送请求
+    // 自动附加 Authorization
+    QString token = UserSession::instance()->token();
+    qDebug() << "[OkHttpUtils] token:" << token;
+    if (!token.isEmpty()) {
+        m_request.setRawHeader("Authorization", token.toUtf8());
+    }
+
+    // qDebug() << "[OkHttpUtils] token:" << token;
+
     if (m_isPost) {
         QByteArray body = buildRequestBody();
-        if (m_isJsonPost)
-            m_request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        else
-            m_request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-
+        m_request.setHeader(QNetworkRequest::ContentTypeHeader,
+                            m_isJsonPost ? "application/json" : "application/x-www-form-urlencoded");
         reply = m_manager.post(m_request, body);
     } else {
         reply = m_manager.get(m_request);
     }
 
-    // 等待同步返回
     QEventLoop loop;
     connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
     loop.exec();
 
-    // 处理结果
     if (reply->error() != QNetworkReply::NoError) {
         QString error = reply->errorString();
         reply->deleteLater();
@@ -116,29 +129,41 @@ void OkHttpUtils::async(std::function<void(QString)> onSuccess, std::function<vo
         }
         fullUrl.setQuery(query);
     }
-
     m_request.setUrl(fullUrl);
 
-    // 设置 Headers
+    // 打印完整请求信息
+    qDebug() << "[OkHttpUtils] URL:" << m_request.url().toString();
+    qDebug() << "[OkHttpUtils] Method:" << (m_isPost ? "POST" : "GET");
+    qDebug() << "[OkHttpUtils] Headers:";
+    for (const auto& key : m_request.rawHeaderList()) {
+        qDebug() << "    " << key << ":" << m_request.rawHeader(key);
+    }
+    if (m_isPost) {
+        qDebug() << "[OkHttpUtils] Body:" << buildRequestBody();
+    }
+
+    // 设置 headers
     for (auto it = m_headers.begin(); it != m_headers.end(); ++it) {
         m_request.setRawHeader(it.key().toUtf8(), it.value().toUtf8());
     }
 
-    QNetworkReply* reply = nullptr;
+    // 自动附加 Authorization
+    QString token = UserSession::instance()->token();
+    qDebug() << "[OkHttpUtils] token:" << token;
+    if (!token.isEmpty()) {
+        m_request.setRawHeader("Authorization", token.toUtf8());
+    }
 
+    QNetworkReply* reply = nullptr;
     if (m_isPost) {
         QByteArray body = buildRequestBody();
-        if (m_isJsonPost)
-            m_request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        else
-            m_request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-
+        m_request.setHeader(QNetworkRequest::ContentTypeHeader,
+                            m_isJsonPost ? "application/json" : "application/x-www-form-urlencoded");
         reply = m_manager.post(m_request, body);
     } else {
         reply = m_manager.get(m_request);
     }
 
-    // 异步结果处理
     connect(reply, &QNetworkReply::finished, this, [reply, onSuccess, onFailure]() {
         if (reply->error() != QNetworkReply::NoError) {
             onFailure(reply->errorString());
@@ -149,4 +174,3 @@ void OkHttpUtils::async(std::function<void(QString)> onSuccess, std::function<vo
         reply->deleteLater();
     });
 }
-
