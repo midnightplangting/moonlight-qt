@@ -325,4 +325,7 @@ private:
     QMutex m_DelayedFlushMutex; // Lock ordering: Must never be acquired while holding NvComputer lock
     QWaitCondition m_DelayedFlushCondition;
     bool m_NeedsDelayedFlush;
+    QTimer* m_OrderSyncTimer = nullptr;            // 定时器，每 5s 拉订单
+    QSet<QString> m_OrderDeviceKeys;               // 上一轮订单 key: "ip:port"
+    void syncOrderDevices();  // 新增的订单同步逻辑
 };

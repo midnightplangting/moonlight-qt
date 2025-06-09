@@ -93,22 +93,6 @@ private:
         int pollsSinceLastAppListFetch = POLLS_PER_APPLIST_FETCH;
 
         while (!isInterruptionRequested()) {
-            // ---- 恢复用户订单中的设备（只有真正拿到 uid 后才置位 recovered）----
-            static std::atomic_bool recovered{false};
-
-            // 每轮循环都检查 uid，直到成功再标记 recovered = true
-            if (!recovered.load()) {
-                qint64 uid = UserSession::instance()->userId();
-                qInfo() << "[PcMonitorThread] UserSession uid =" << uid;
-
-                if (uid != 0) {
-                    recovered.store(true);  // 只有成功触发才设置为 true
-                    QMetaObject::invokeMethod(m_Manager,
-                                              "getDeviceOrderInfoList",
-                                              Qt::QueuedConnection,
-                                              Q_ARG(qint64, uid));
-                }
-            }
             bool stateChanged = false;
             bool online = false;
             bool wasOnline = m_Computer->state == NvComputer::CS_ONLINE;
@@ -216,6 +200,14 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
     // while quitting, however this is a one time signal - additional
     // requests would not be aborted and block termination.
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &ComputerManager::handleAboutToQuit);
+    // 添加：初始化定时器
+    m_OrderSyncTimer = new QTimer(this);
+    connect(m_OrderSyncTimer, &QTimer::timeout, this, &ComputerManager::syncOrderDevices);
+    m_OrderSyncTimer->start(5000);  // 每5秒同步一次订单设备
+
+    // 启动后立即拉一次
+    QTimer::singleShot(0, this, &ComputerManager::syncOrderDevices);
+
 }
 
 ComputerManager::~ComputerManager()
@@ -1063,6 +1055,62 @@ void ComputerManager::getDeviceOrderInfoList(qint64 userId)
                 qWarning() << "[ComputerManager] 请求订单列表失败:" << err;
                 emit getDeviceOrderInfoListFailure("网络错误: " + err);
             });
+}
+
+void ComputerManager::syncOrderDevices()
+{
+    qint64 uid = UserSession::instance()->userId();
+    if (uid == 0) return;
+
+    OkHttpUtils::builder()
+        ->url("user/getAllDeviceOrderInfoByUserId")
+        ->addParam("userId", QString::number(uid))
+        ->post(false)
+        ->async(
+            [this](QString json) {
+                QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+                if (!doc.isObject()) return;
+
+                QJsonArray arr = doc["data"].toArray();
+                QSet<QString> newKeys;
+                QList<std::tuple<QString, quint16, QString>> newDevices;
+
+                for (auto v : arr) {
+                    QJsonObject o = v.toObject();
+                    QString ip = o["ip"].toString();
+                    quint16 port = o["port"].toString().toUShort();
+                    QString key = QString("%1:%2").arg(ip).arg(port);
+                    newKeys << key;
+
+                    if (!m_OrderDeviceKeys.contains(key))
+                        newDevices.append({ip, port, o["name"].toString()});
+                }
+
+                // 添加新设备
+                for (auto& d : newDevices)
+                    addNewHost(NvAddress(std::get<0>(d), std::get<1>(d)), false);
+
+                // 删除消失的设备
+                QSet<QString> removed = m_OrderDeviceKeys - newKeys;
+                if (!removed.isEmpty()) {
+                    QReadLocker rlock(&m_Lock);
+                    for (NvComputer* pc : m_KnownHosts) {
+                        QString key = QString("%1:%2")
+                        .arg(pc->activeAddress.address())
+                            .arg(pc->activeAddress.port());
+                        if (removed.contains(key)) {
+                            deleteHost(pc);  // 延迟删除
+                            break;
+                        }
+                    }
+                }
+
+                m_OrderDeviceKeys = std::move(newKeys);
+            },
+            [](QString err) {
+                qWarning() << "[OrderSync] 请求失败:" << err;
+            }
+            );
 }
 
 #include "computermanager.moc"
