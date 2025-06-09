@@ -113,7 +113,7 @@ CenteredGridView {
         clip: true
 
         property alias pcContextMenu: pcContextMenuLoader.item
-        property int index: -1
+        property int index: model.index
 
         // 使用安全默认值避免 undefined 警告
         property string name: model && model.name !== undefined ? model.name : ""
