@@ -33,7 +33,7 @@ CenteredGridView {
     StackView.onActivated: {
         // Setup signals on CM
         ComputerManager.computerAddCompleted.connect(addComplete)
-
+        ComputerManager.syncOrderDevices()
         // Highlight the first item if a gamepad is connected
         if (currentIndex == -1 && SdlGamepadKeyNavigation.getConnectedGamepads() > 0) {
             currentIndex = 0

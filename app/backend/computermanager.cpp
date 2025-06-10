@@ -200,13 +200,6 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
     // while quitting, however this is a one time signal - additional
     // requests would not be aborted and block termination.
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &ComputerManager::handleAboutToQuit);
-    // 添加：初始化定时器
-    m_OrderSyncTimer = new QTimer(this);
-    connect(m_OrderSyncTimer, &QTimer::timeout, this, &ComputerManager::syncOrderDevices);
-    m_OrderSyncTimer->start(5000);  // 每5秒同步一次订单设备
-
-    // 启动后立即拉一次
-    QTimer::singleShot(0, this, &ComputerManager::syncOrderDevices);
 
 }
 
@@ -999,62 +992,6 @@ QString ComputerManager::generatePinString()
     std::mt19937 engine(rd());
 
     return QString::asprintf("%04u", dist(engine));
-}
-
-// 获取并恢复用户订单中的设备
-void ComputerManager::getDeviceOrderInfoList(qint64 userId)
-{
-    qInfo() << "[ComputerManager] >>> Requesting order list for user" << userId;
-    OkHttpUtils::builder()
-    ->url("user/getAllDeviceOrderInfoByUserId")
-        ->addParam("userId", QString::number(userId))
-        ->post(false)
-        ->async(
-            // success λ
-            [this](QString data) {
-                /* ——① 原始响应 —— */
-                qInfo() << "[ComputerManager] Order-list raw JSON:" << data;
-
-                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
-                if (!doc.isObject()) {
-                    qWarning() << "[ComputerManager] JSON root 不是 object";
-                    emit getDeviceOrderInfoListFailure("响应格式错误");
-                    return;
-                }
-
-                QJsonObject obj = doc.object();
-                int code = obj.value("code").toInt();
-                qInfo() << "[ComputerManager] code =" << code
-                        << "message =" << obj.value("message").toString();
-
-                if (code != 200) {
-                    emit getDeviceOrderInfoListFailure(obj.value("message").toString());
-                    return;
-                }
-
-                QJsonArray arr = obj.value("data").toArray();
-                qInfo() << "[ComputerManager] device count =" << arr.size();
-
-                for (const QJsonValue& v : arr) {
-                    QJsonObject item = v.toObject();
-                    QString name  = item.value("name").toString();
-                    QString ip    = item.value("ip").toString();
-                    QString portS = item.value("port").toString();
-                    quint16 port  = portS.toUShort();
-
-                    qInfo() << "[getDeviceOrderInfoList]device:" << name << ip << port;
-
-                    /* 把设备重新加入本地轮询 */
-                    addNewHost(NvAddress(ip, port), false);
-                }
-                emit getDeviceOrderInfoListSuccess();
-            },
-
-            // failure λ
-            [this](QString err) {
-                qWarning() << "[ComputerManager] 请求订单列表失败:" << err;
-                emit getDeviceOrderInfoListFailure("网络错误: " + err);
-            });
 }
 
 void ComputerManager::syncOrderDevices()
