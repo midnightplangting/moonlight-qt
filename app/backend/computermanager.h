@@ -289,6 +289,8 @@ signals:
 
     void quitAppCompleted(QVariant error);
 
+    void hostRemoved(NvComputer* computer);
+
 public slots:
     Q_INVOKABLE void syncOrderDevices();
 

@@ -518,6 +518,9 @@ public:
             m_ComputerManager->m_KnownHosts.remove(m_Computer->uuid);
         }
 
+        // 发出信号通知 model 有主机被删
+        emit m_ComputerManager->hostRemoved(m_Computer);
+
         // Persist the new host list with this computer deleted
         m_ComputerManager->saveHosts();
 
@@ -1024,24 +1027,37 @@ void ComputerManager::syncOrderDevices()
                 }
 
                 // 添加新设备
-                for (auto& d : newDevices)
+                for (auto& d : newDevices) {
+                    qInfo() << "[OrderSync] add device:" << std::get<2>(d)
+                    << std::get<0>(d) << std::get<1>(d);
                     addNewHost(NvAddress(std::get<0>(d), std::get<1>(d)), false);
+                }
 
-                // 删除消失的设备
+                // 删除消失的设备（支持多个）
                 QSet<QString> removed = m_OrderDeviceKeys - newKeys;
                 if (!removed.isEmpty()) {
+                    QList<NvComputer*> toDelete;
+
                     QReadLocker rlock(&m_Lock);
                     for (NvComputer* pc : m_KnownHosts) {
                         QString key = QString("%1:%2")
                         .arg(pc->activeAddress.address())
                             .arg(pc->activeAddress.port());
+
                         if (removed.contains(key)) {
-                            deleteHost(pc);  // 延迟删除
-                            break;
+                            qInfo() << "[OrderSync] mark for delete:" << pc->name;
+                            toDelete.append(pc);
                         }
+                    }
+
+                    // 延迟删除所有主机
+                    for (NvComputer* pc : toDelete) {
+                        handleComputerStateChanged(pc);  //  主动发信号刷新 UI
+                        deleteHost(pc);                 //  延迟删除（含线程清理）
                     }
                 }
 
+                // 更新内部状态
                 m_OrderDeviceKeys = std::move(newKeys);
             },
             [](QString err) {
@@ -1049,5 +1065,6 @@ void ComputerManager::syncOrderDevices()
             }
             );
 }
+
 
 #include "computermanager.moc"

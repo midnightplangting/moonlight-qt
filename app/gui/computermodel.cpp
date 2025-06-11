@@ -12,8 +12,11 @@ void ComputerModel::initialize(ComputerManager* computerManager)
             this, &ComputerModel::handleComputerStateChanged);
     connect(m_ComputerManager, &ComputerManager::pairingCompleted,
             this, &ComputerModel::handlePairingCompleted);
+    connect(m_ComputerManager, &ComputerManager::hostRemoved,
+            this, &ComputerModel::handleComputerRemoved);
 
     m_Computers = m_ComputerManager->getComputers();
+
 }
 
 QVariant ComputerModel::data(const QModelIndex& index, int role) const
@@ -240,6 +243,13 @@ void ComputerModel::handleComputerStateChanged(NvComputer* computer)
         int index = m_Computers.indexOf(computer);
         emit dataChanged(createIndex(index, 0), createIndex(index, 0));
     }
+}
+
+void ComputerModel::handleComputerRemoved(NvComputer*)
+{
+    beginResetModel();
+    m_Computers = m_ComputerManager->getComputers();
+    endResetModel();
 }
 
 #include "computermodel.moc"

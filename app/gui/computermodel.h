@@ -52,6 +52,8 @@ signals:
 private slots:
     void handleComputerStateChanged(NvComputer* computer);
 
+    void handleComputerRemoved(NvComputer* computer);
+
     void handlePairingCompleted(NvComputer* computer, QString error);
 
 private:
