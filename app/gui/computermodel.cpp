@@ -15,7 +15,10 @@ void ComputerModel::initialize(ComputerManager* computerManager)
     connect(m_ComputerManager, &ComputerManager::hostRemoved,
             this, &ComputerModel::handleComputerRemoved);
 
+    beginResetModel();
     m_Computers = m_ComputerManager->getComputers();
+    qDebug() << "[ComputerModel] initialize: count =" << m_Computers.size();
+    endResetModel();
 
 }
 

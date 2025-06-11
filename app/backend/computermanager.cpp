@@ -985,6 +985,7 @@ void ComputerManager::addNewHost(NvAddress address, bool mdns, NvAddress mdnsIpv
     // UI while waiting for serverinfo query to complete
     PendingAddTask* addTask = new PendingAddTask(this, address, mdnsIpv6Address, mdns);
     QThreadPool::globalInstance()->start(addTask);
+
 }
 
 // TODO: Use QRandomGenerator when we drop Qt 5.9 support
