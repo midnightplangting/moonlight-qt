@@ -8,6 +8,10 @@ Page {
 
     property int currentTab: 0  // 0=计时,1=包机
 
+    StackView.onActivated: {
+        gpuModel.refresh()
+    }
+
     /* 滑块切换 */
     Rectangle {
         id: modeSwitch

@@ -37,6 +37,8 @@ public:
 
     void setDeviceGroups(const QVector<DeviceGroup>& list);
 
+    Q_INVOKABLE void refresh();
+
 private:
     QVector<DeviceGroup> m_data;
 };

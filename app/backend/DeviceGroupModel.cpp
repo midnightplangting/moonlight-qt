@@ -1,4 +1,9 @@
 #include "DeviceGroupModel.h"
+#include "OkHttpUtils.h"
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QDebug>
 
 DeviceGroupModel::DeviceGroupModel(QObject* parent)
     : QAbstractListModel(parent) {}
@@ -42,4 +47,40 @@ void DeviceGroupModel::setDeviceGroups(const QVector<DeviceGroup>& list) {
     beginResetModel();
     m_data = list;
     endResetModel();
+}
+
+void DeviceGroupModel::refresh()
+{
+    OkHttpUtils::builder()
+        ->url("deviceGroup/getDeviceGroupList")
+        ->get()
+        ->async([
+            this
+        ](QString data) {
+            QVector<DeviceGroup> parsed;
+            QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+            if (doc.isObject()) {
+                QJsonArray array = doc["data"].toArray();
+                for (const auto& val : array) {
+                    QJsonObject obj = val.toObject();
+                    DeviceGroup group;
+                    group.name = obj["name"].toString();
+                    group.timingPrice = obj["timingPrice"].toInt();
+                    group.deviceCount = obj["deviceCount"].toInt();
+                    group.bitrate = obj["bitrate"].toDouble();
+
+                    QJsonArray charter = obj["charterFlightCost"].toArray();
+                    for (const auto& price : charter) {
+                        group.charterPrices.append(price.toInt());
+                    }
+                    parsed.append(group);
+                }
+            }
+
+            setDeviceGroups(parsed);
+        }, [
+            this
+        ](QString err) {
+            qWarning() << "Failed to fetch device group list:" << err;
+        });
 }
