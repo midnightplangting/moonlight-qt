@@ -17,7 +17,7 @@
 #include <QJsonObject>
 #include "UserSession.h"      // （若之前已包含可忽略）
 #include <atomic>             // 线程一次性标记
-
+#include <QDateTime>
 
 #define SER_HOSTS "hosts"
 #define SER_HOSTS_BACKUP "hostsbackup"
@@ -474,6 +474,17 @@ void ComputerManager::saveHost(NvComputer *computer)
 
 void ComputerManager::handleComputerStateChanged(NvComputer* computer)
 {
+    // Apply order information if available
+    QString key = QString("%1:%2").arg(computer->activeAddress.address())
+                      .arg(computer->activeAddress.port());
+    if (m_OrderDeviceInfo.contains(key)) {
+        const OrderDeviceInfo info = m_OrderDeviceInfo.value(key);
+        QWriteLocker wlock(&computer->lock);
+        if (!computer->orderStartedAt.isValid())
+            computer->orderStartedAt = info.startedAt;
+        if (computer->orderBitrate == 0.0)
+            computer->orderBitrate = info.bitrate;
+    }
     emit computerStateChanged(computer);
 
     if (computer->pendingQuit && computer->currentGameId == 0) {
@@ -1022,6 +1033,12 @@ void ComputerManager::syncOrderDevices()
                     quint16 port = o["port"].toString().toUShort();
                     QString key = QString("%1:%2").arg(ip).arg(port);
                     newKeys << key;
+                    // 保存订单附带的信息，供 UI 展示
+                    OrderDeviceInfo info;
+                    QJsonObject orderObj = o["deviceOrderInfo"].toObject();
+                    info.bitrate = orderObj["bitrate"].toDouble();
+                    info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
+                    m_OrderDeviceInfo.insert(key, info);
 
                     if (!m_OrderDeviceKeys.contains(key))
                         newDevices.append({ip, port, o["name"].toString()});

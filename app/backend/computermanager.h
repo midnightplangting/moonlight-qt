@@ -21,6 +21,12 @@
 #include <QTimer>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QDateTime>
+
+struct OrderDeviceInfo {
+    double bitrate = 0.0;
+    QDateTime startedAt;
+};
 
 class ComputerManager;
 
@@ -324,5 +330,6 @@ private:
     QMutex m_DelayedFlushMutex; // Lock ordering: Must never be acquired while holding NvComputer lock
     QWaitCondition m_DelayedFlushCondition;
     bool m_NeedsDelayedFlush;
+    QHash<QString, OrderDeviceInfo> m_OrderDeviceInfo; // key: "ip:port" -> info
     QSet<QString> m_OrderDeviceKeys;               // 上一轮订单 key: "ip:port"
 };

@@ -127,8 +127,17 @@ CenteredGridView {
 
         // 使用安全默认值避免 undefined 警告
         property string name: model && model.name !== undefined ? model.name : ""
-        property string usageTime: model && model.usageTime !== undefined ? model.usageTime : "--"
+        property real startedAt: model && model.startedAt !== undefined ? model.startedAt : 0
         property real bitrate: model && model.bitrate !== undefined ? model.bitrate : 0
+        property string usageTimeText: startedAt > 0 ? Math.floor((Date.now() - startedAt)/60000).toString() : "--"
+        Timer {
+            id: usageTimer
+            interval: 60000
+            repeat: true
+            running: startedAt > 0
+            onTriggered: usageTimeText = startedAt > 0 ? Math.floor((Date.now() - startedAt)/60000).toString() : "--"
+        }
+        Component.onCompleted: if (startedAt > 0) usageTimer.start()
         property bool online: model && model.online !== undefined ? model.online : false
         property bool paired: model && model.paired !== undefined ? model.paired : false
         property bool serverSupported: model && model.serverSupported !== undefined ? model.serverSupported : false
@@ -222,13 +231,13 @@ CenteredGridView {
                 }
 
                 Text {
-                    text: qsTr("使用时长：%1").arg(model.usageTime)
+                    text: qsTr("使用时长：%1 分钟").arg(usageTimeText)
                     font.pixelSize: 18
                     color: "#CCCCCC"
                 }
 
                 Text {
-                    text: qsTr("串流码率：%1 Mbps").arg(model.bitrate)
+                    text: qsTr("串流码率：%1 Mbps").arg(bitrate)
                     font.pixelSize: 18
                     color: "#CCCCCC"
                 }

@@ -7,6 +7,7 @@
 #include <QReadWriteLock>
 #include <QSettings>
 #include <QRunnable>
+#include <QDateTime>
 
 class CopySafeReadWriteLock : public QReadWriteLock
 {
@@ -100,6 +101,10 @@ public:
     int serverCodecModeSupport;
     QString gpuModel;
     bool isSupportedServerVersion;
+
+    // Order info
+    double orderBitrate = 0.0;
+    QDateTime orderStartedAt;
 
     // Persisted traits
     NvAddress localAddress;
