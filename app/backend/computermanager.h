@@ -295,10 +295,13 @@ signals:
 
     void quitAppCompleted(QVariant error);
 
+    void allocateDeviceFinished(bool success, QString message);
+
     void hostRemoved(NvComputer* computer);
 
 public slots:
     Q_INVOKABLE void syncOrderDevices();
+    Q_INVOKABLE void allocateDevice(int deviceGroupId, int billingType);
 
 private slots:
     void handleAboutToQuit();

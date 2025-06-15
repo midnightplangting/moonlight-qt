@@ -6,6 +6,7 @@
 #include <QVector>
 
 struct DeviceGroup {
+    int groupId;
     QString name;
     int timingPrice;
     QList<int> charterPrices;  // [day, week, month]
@@ -25,7 +26,8 @@ public:
         WeekRole,
         MonthRole,
         DeviceCountRole,
-        BitrateRole
+        BitrateRole,
+        GroupIdRole
     };
 
 

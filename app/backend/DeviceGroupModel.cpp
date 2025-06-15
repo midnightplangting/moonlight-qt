@@ -26,6 +26,7 @@ QVariant DeviceGroupModel::data(const QModelIndex& index, int role) const {
     case MonthRole: return item.charterPrices.value(2, 0);
     case DeviceCountRole: return item.deviceCount;
     case BitrateRole: return item.bitrate;
+    case GroupIdRole: return item.groupId;
 
     }
     return {};
@@ -39,7 +40,8 @@ QHash<int, QByteArray> DeviceGroupModel::roleNames() const {
         { WeekRole, "week" },
         { MonthRole, "month" },
         { DeviceCountRole, "deviceCount" },
-        { BitrateRole, "bitrate" }
+        { BitrateRole, "bitrate" },
+        { GroupIdRole, "groupId" }
     };
 }
 

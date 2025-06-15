@@ -18,6 +18,7 @@
 #include "UserSession.h"      // （若之前已包含可忽略）
 #include <atomic>             // 线程一次性标记
 #include <QDateTime>
+#include <QUuid>
 
 #define SER_HOSTS "hosts"
 #define SER_HOSTS_BACKUP "hostsbackup"
@@ -1082,6 +1083,46 @@ void ComputerManager::syncOrderDevices()
                 qWarning() << "[OrderSync] 请求失败:" << err;
             }
             );
+}
+
+void ComputerManager::allocateDevice(int deviceGroupId, int billingType)
+{
+    qint64 uid = UserSession::instance()->userId();
+    if (uid == 0) {
+        emit allocateDeviceFinished(false, QStringLiteral("Invalid user"));
+        return;
+    }
+
+    QString reqId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    OkHttpUtils::builder()
+        ->url("device/allocateDevice")
+        ->addParam("userId", QString::number(uid))
+        ->addParam("deviceGroupId", QString::number(deviceGroupId))
+        ->addParam("billingType", QString::number(billingType))
+        ->addParam("requestId", reqId)
+        ->post(true)
+        ->async(
+            [this](QString json) {
+                QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+                if (!doc.isObject()) {
+                    emit allocateDeviceFinished(false, QStringLiteral("Invalid response"));
+                    return;
+                }
+                QJsonObject obj = doc.object();
+                int code = obj.value("code").toInt();
+                QString msg = obj.value("message").toString();
+                bool data = obj.value("data").toBool();
+                if (code == 200 && data) {
+                    emit allocateDeviceFinished(true, msg);
+                } else {
+                    emit allocateDeviceFinished(false, msg.isEmpty() ? QString::number(code) : msg);
+                }
+            },
+            [this](QString err) {
+                emit allocateDeviceFinished(false, err);
+            }
+        );
 }
 
 

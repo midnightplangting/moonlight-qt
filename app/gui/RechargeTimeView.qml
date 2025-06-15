@@ -1,6 +1,7 @@
 import QtQuick 2.9
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
+import ComputerManager 1.0
 
 Page {
     id: root
@@ -59,6 +60,7 @@ Page {
                     model: gpuModel
                     delegate: Rectangle {
                         id: card
+                        property int groupIdValue: groupId
                         width:240; height: currentTab===0?200:235; radius:12;
                         // ① 对 height 加动画
                         Behavior on height {
@@ -140,7 +142,11 @@ Page {
 
                                 background: Rectangle{anchors.fill:parent;color:"transparent"}
                                 contentItem: Text{anchors.centerIn:parent;text:startBtn.text;font.pixelSize:16;color:"#2196F3"}
-                                onClicked: console.log("Start", name, currentPrice)
+                                onClicked: {
+                                    allocatingDialog.open()
+                                    var type = currentTab === 0 ? 1 : (packageMode===0 ? 2 : (packageMode===1 ? 3 : 4))
+                                    ComputerManager.allocateDevice(groupIdValue, type)
+                                }
                             }
                         }
                     }
@@ -158,6 +164,33 @@ Page {
             TextField{placeholderText:qsTr("手动添加电脑                                                                                                                                                                        ");
                 font.pixelSize:14;color:"#DDDDDD";background:Rectangle{color:"transparent"}
                 onAccepted:{console.log("Add PC:", text); text=""}
+            }
+        }
+    }
+
+    NavigableMessageDialog {
+        id: allocatingDialog
+        modal: true
+        closePolicy: Popup.NoAutoClose
+        text: qsTr("正在开机，请稍候…")
+        showSpinner: true
+        standardButtons: Dialog.NoButton
+    }
+
+    NavigableMessageDialog {
+        id: allocateErrorDialog
+        standardButtons: Dialog.Ok
+    }
+
+    Connections {
+        target: ComputerManager
+        onAllocateDeviceFinished: function(success, msg) {
+            allocatingDialog.close()
+            if (success) {
+                navigateTo("qrc:/gui/PcView.qml", "PcView")
+            } else {
+                allocateErrorDialog.text = msg
+                allocateErrorDialog.open()
             }
         }
     }
