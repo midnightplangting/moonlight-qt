@@ -41,6 +41,10 @@ void allocateDevice(const QString& userId, const QString& deviceGroupId, const Q
                     std::function<void(QString)> onSuccess,
                     std::function<void(QString)> onFailure);
 
+void closeOrder(const QString& orderId,
+                std::function<void(QString)> onSuccess,
+                std::function<void(QString)> onFailure);
+
 }
 
 #endif // APISERVICE_H

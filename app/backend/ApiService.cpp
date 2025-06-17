@@ -110,3 +110,14 @@ void ApiService::allocateDevice(const QString& userId, const QString& deviceGrou
         ->post(true)
         ->async(onSuccess, onFailure);
 }
+
+void ApiService::closeOrder(const QString& orderId,
+                            std::function<void(QString)> onSuccess,
+                            std::function<void(QString)> onFailure)
+{
+    OkHttpUtils::builder()
+        ->url("device/closeOrder")
+        ->addParam("orderId", orderId)
+        ->post(false)
+        ->async(onSuccess, onFailure);
+}

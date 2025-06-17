@@ -24,6 +24,7 @@
 #include <QDateTime>
 
 struct OrderDeviceInfo {
+    qint64 orderId = 0;
     double bitrate = 0.0;
     QDateTime startedAt;
 };
@@ -293,12 +294,14 @@ signals:
     void quitAppCompleted(QVariant error);
 
     void allocateDeviceFinished(bool success, QString message);
+    void closeOrderFinished(bool success, QString message);
 
     void hostRemoved(NvComputer* computer);
 
 public slots:
     Q_INVOKABLE void syncOrderDevices();
     Q_INVOKABLE void allocateDevice(int deviceGroupId, int billingType);
+    void closeOrder(NvComputer* computer);
 
 private slots:
     void handleAboutToQuit();

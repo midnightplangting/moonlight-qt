@@ -192,6 +192,13 @@ void ComputerModel::renameComputer(int computerIndex, QString name)
     m_ComputerManager->renameHost(m_Computers[computerIndex], name);
 }
 
+void ComputerModel::checkoutComputer(int computerIndex)
+{
+    Q_ASSERT(computerIndex < m_Computers.count());
+
+    m_ComputerManager->closeOrder(m_Computers[computerIndex]);
+}
+
 QString ComputerModel::generatePinString()
 {
     return m_ComputerManager->generatePinString();

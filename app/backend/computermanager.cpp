@@ -1049,6 +1049,7 @@ void ComputerManager::syncOrderDevices()
                     // 保存订单附带的信息，供 UI 展示
                     OrderDeviceInfo info;
                     QJsonObject orderObj = o["deviceOrderInfo"].toObject();
+                    info.orderId = orderObj["orderId"].toVariant().toLongLong();
                     info.bitrate = orderObj["bitrate"].toDouble();
                     info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
                     m_OrderDeviceInfo.insert(key, info);
@@ -1135,6 +1136,46 @@ void ComputerManager::allocateDevice(int deviceGroupId, int billingType)
                 emit allocateDeviceFinished(false, err);
             }
         );
+}
+
+void ComputerManager::closeOrder(NvComputer* computer)
+{
+    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
+                                               : computer->localAddress.address();
+    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
+                                                    : computer->localAddress.port();
+    QString key = QString("%1:%2").arg(addr).arg(port);
+
+    if (!m_OrderDeviceInfo.contains(key)) {
+        emit closeOrderFinished(false, QStringLiteral("Order ID not found"));
+        return;
+    }
+
+    qint64 orderId = m_OrderDeviceInfo.value(key).orderId;
+
+    ApiService::closeOrder(QString::number(orderId),
+            [this, computer, key](QString json) {
+                QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+                if (!doc.isObject()) {
+                    emit closeOrderFinished(false, QStringLiteral("Invalid response"));
+                    return;
+                }
+                QJsonObject obj = doc.object();
+                int code = obj.value("code").toInt();
+                QString msg = obj.value("message").toString();
+                bool data = obj.value("data").toBool();
+                if (code == 200 && data) {
+                    m_OrderDeviceInfo.remove(key);
+                    m_OrderDeviceKeys.remove(key);
+                    deleteHost(computer);
+                    emit closeOrderFinished(true, msg);
+                } else {
+                    emit closeOrderFinished(false, msg.isEmpty() ? QString::number(code) : msg);
+                }
+            },
+            [this](QString err) {
+                emit closeOrderFinished(false, err);
+            });
 }
 
 

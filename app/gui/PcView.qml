@@ -48,6 +48,12 @@ CenteredGridView {
             // 重新拉取设备列表，刷新 UI
             computerModel.initialize(ComputerManager)
         }
+        onCloseOrderFinished: {
+            if (!success) {
+                errorDialog.text = message
+                errorDialog.open()
+            }
+        }
     }
 
     StackView.onDeactivating: {
@@ -269,7 +275,7 @@ CenteredGridView {
                     onPressed:  actionBtn.scale = actionBtn.pressedScale
                     onReleased: actionBtn.scale = actionBtn.normalScale
                     onClicked: {
-                        console.log("action clicked for", model.name)
+                        computerModel.checkoutComputer(index)
                     }
                 }
             }

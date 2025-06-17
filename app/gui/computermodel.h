@@ -45,6 +45,8 @@ public:
 
     Q_INVOKABLE void renameComputer(int computerIndex, QString name);
 
+    Q_INVOKABLE void checkoutComputer(int computerIndex);
+
     Q_INVOKABLE Session* createSessionForCurrentGame(int computerIndex);
 
 signals:
