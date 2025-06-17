@@ -12,6 +12,7 @@
 #include <QElapsedTimer>
 #include <QTemporaryFile>
 #include <QRegularExpression>
+#include "backend/Logger.h"
 
 // Don't let SDL hook our main function, since Qt is already
 // doing the same thing. This needs to be before any headers
@@ -339,6 +340,19 @@ int main(int argc, char *argv[])
     if (qEnvironmentVariableIsEmpty("QML_DISK_CACHE_PATH")) {
         qputenv("QML_DISK_CACHE_PATH", Path::getQmlCacheDir().toUtf8());
     }
+
+    QString logLevel = QString::fromUtf8(qgetenv("ML_LOG_LEVEL"));
+    if (logLevel == "debug")
+        Logger::setLevel(LogLevel::Debug);
+    else if (logLevel == "info")
+        Logger::setLevel(LogLevel::Info);
+    else if (logLevel == "warning")
+        Logger::setLevel(LogLevel::Warning);
+    else if (logLevel == "error")
+        Logger::setLevel(LogLevel::Error);
+
+    if (!qEnvironmentVariableIsEmpty("ML_LOG_ENABLE"))
+        Logger::enable(qgetenv("ML_LOG_ENABLE") != "0");
 
 #ifdef Q_OS_WIN32
     // Grab the original std handles before we potentially redirect them later

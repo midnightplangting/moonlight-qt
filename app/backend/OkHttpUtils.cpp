@@ -1,5 +1,6 @@
 #include "OkHttpUtils.h"
 #include "UserSession.h"
+#include "Logger.h"
 #include <QEventLoop>
 #include <QUrl>
 #include <QUrlQuery>
@@ -72,14 +73,16 @@ QString OkHttpUtils::sync() {
     m_request.setUrl(fullUrl);
 
     // 打印完整请求信息
-    qDebug() << "[OkHttpUtils] URL:" << m_request.url().toString();
-    qDebug() << "[OkHttpUtils] Method:" << (m_isPost ? "POST" : "GET");
-    qDebug() << "[OkHttpUtils] Headers:";
+    LOG_DEBUG(QStringLiteral("[OkHttpUtils] URL: %1").arg(m_request.url().toString()));
+    LOG_DEBUG(QStringLiteral("[OkHttpUtils] Method: %1").arg(m_isPost ? "POST" : "GET"));
+    LOG_DEBUG(QStringLiteral("[OkHttpUtils] Headers:"));
     for (const auto& key : m_request.rawHeaderList()) {
-        qDebug() << "    " << key << ":" << m_request.rawHeader(key);
+        LOG_DEBUG(QStringLiteral("    %1: %2")
+                       .arg(QString::fromUtf8(key))
+                       .arg(QString::fromUtf8(m_request.rawHeader(key))));
     }
     if (m_isPost) {
-        qDebug() << "[OkHttpUtils] Body:" << buildRequestBody();
+        LOG_DEBUG(QStringLiteral("[OkHttpUtils] Body: %1").arg(QString::fromUtf8(buildRequestBody())));
     }
 
     // 设置 headers
@@ -89,7 +92,7 @@ QString OkHttpUtils::sync() {
 
     // 自动附加 Authorization
     QString token = UserSession::instance()->token();
-    qDebug() << "[OkHttpUtils] token:" << token;
+    LOG_DEBUG(QStringLiteral("[OkHttpUtils] token: %1").arg(token));
     if (!token.isEmpty()) {
         m_request.setRawHeader("Authorization", token.toUtf8());
     }
@@ -132,14 +135,16 @@ void OkHttpUtils::async(std::function<void(QString)> onSuccess, std::function<vo
     m_request.setUrl(fullUrl);
 
     // 打印完整请求信息
-    qDebug() << "[OkHttpUtils] URL:" << m_request.url().toString();
-    qDebug() << "[OkHttpUtils] Method:" << (m_isPost ? "POST" : "GET");
-    qDebug() << "[OkHttpUtils] Headers:";
+    LOG_DEBUG(QStringLiteral("[OkHttpUtils] URL: %1").arg(m_request.url().toString()));
+    LOG_DEBUG(QStringLiteral("[OkHttpUtils] Method: %1").arg(m_isPost ? "POST" : "GET"));
+    LOG_DEBUG(QStringLiteral("[OkHttpUtils] Headers:"));
     for (const auto& key : m_request.rawHeaderList()) {
-        qDebug() << "    " << key << ":" << m_request.rawHeader(key);
+        LOG_DEBUG(QStringLiteral("    %1: %2")
+                       .arg(QString::fromUtf8(key))
+                       .arg(QString::fromUtf8(m_request.rawHeader(key))));
     }
     if (m_isPost) {
-        qDebug() << "[OkHttpUtils] Body:" << buildRequestBody();
+        LOG_DEBUG(QStringLiteral("[OkHttpUtils] Body: %1").arg(QString::fromUtf8(buildRequestBody())));
     }
 
     // 设置 headers
@@ -149,7 +154,7 @@ void OkHttpUtils::async(std::function<void(QString)> onSuccess, std::function<vo
 
     // 自动附加 Authorization
     QString token = UserSession::instance()->token();
-    qDebug() << "[OkHttpUtils] token:" << token;
+    LOG_DEBUG(QStringLiteral("[OkHttpUtils] token: %1").arg(token));
     if (!token.isEmpty()) {
         m_request.setRawHeader("Authorization", token.toUtf8());
     }

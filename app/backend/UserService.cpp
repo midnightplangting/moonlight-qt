@@ -1,6 +1,6 @@
 #include "UserService.h"
 #include "UserSession.h"
-#include "OkHttpUtils.h"
+#include "ApiService.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QDebug>
@@ -9,13 +9,7 @@ UserService::UserService(QObject* parent)
     : QObject(parent) {}
 
 void UserService::login(const QString& username, const QString& password) {
-    OkHttpUtils::builder()
-    ->url("user/login")
-        ->addParam("type", "1")  // ⚠️ 改为 0 表示用户名密码登录方式
-        ->addParam("username", username)
-        ->addParam("password", password)
-        ->post(true)
-        ->async(
+    ApiService::login(username, password,
             [=](QString data) {
                 QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
                 if (!doc.isNull() && doc.isObject()) {
@@ -53,15 +47,7 @@ void UserService::registerUser(const QString& username, const QString& password,
         return;
     }
 
-    OkHttpUtils::builder()
-        ->url("user/register")
-        ->addParam("username", username)
-        ->addParam("password", password)
-        ->addParam("email", username + "@default.com")  // 先默认填充
-        ->addParam("phone", "00000000000")
-        ->addParam("role", "0")
-        ->post(true)
-        ->async(
+    ApiService::registerUser(username, password, confirmPwd,
             [=](QString data) {
                 QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
                 if (!doc.isNull() && doc.isObject()) {

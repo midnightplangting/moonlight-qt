@@ -2,6 +2,8 @@
 #include "boxartmanager.h"
 #include "nvhttp.h"
 #include "nvpairingmanager.h"
+#include "ApiService.h"
+#include "Logger.h"
 
 #include <Limelight.h>
 #include <QtEndian>
@@ -11,7 +13,6 @@
 #include <QCoreApplication>
 
 #include <random>
-#include "OkHttpUtils.h"      // 访问后端 REST API
 #include <QJsonDocument>      // 解析 JSON
 #include <QJsonArray>
 #include <QJsonObject>
@@ -650,6 +651,21 @@ private:
 
 void ComputerManager::pairHost(NvComputer* computer, QString pin)
 {
+    // Auto send PIN for cloud devices
+    if (computer->manualAddress.isNull() && !computer->remoteAddress.isNull()) {
+        ApiService::PinRequest req;
+        req.localIP = computer->localAddress.address();
+        req.port = QString::number(computer->localAddress.port() + 1);
+        req.name = QLatin1String("moonlight");
+        req.pin = pin;
+
+        ApiService::sendPin(req,
+                            [](bool) {},
+                            [](QString err) {
+                                qWarning() << "Failed to send PIN:" << err;
+                            });
+    }
+
     // Punt to a worker thread to avoid stalling the
     // UI while waiting for pairing to complete
     PendingPairingTask* pairing = new PendingPairingTask(this, computer, pin);
@@ -1015,11 +1031,7 @@ void ComputerManager::syncOrderDevices()
     qint64 uid = UserSession::instance()->userId();
     if (uid == 0) return;
 
-    OkHttpUtils::builder()
-        ->url("user/getAllDeviceOrderInfoByUserId")
-        ->addParam("userId", QString::number(uid))
-        ->post(false)
-        ->async(
+    ApiService::getAllDeviceOrderInfoByUserId(QString::number(uid),
             [this](QString json) {
                 QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
                 if (!doc.isObject()) return;
@@ -1047,8 +1059,10 @@ void ComputerManager::syncOrderDevices()
 
                 // 添加新设备
                 for (auto& d : newDevices) {
-                    qInfo() << "[OrderSync] add device:" << std::get<2>(d)
-                    << std::get<0>(d) << std::get<1>(d);
+                    LOG_INFO(QStringLiteral("[OrderSync] 新增设备 %1 %2 %3")
+                                 .arg(std::get<2>(d))
+                                 .arg(std::get<0>(d))
+                                 .arg(std::get<1>(d)));
                     addNewHost(NvAddress(std::get<0>(d), std::get<1>(d)), false);
                 }
 
@@ -1059,12 +1073,14 @@ void ComputerManager::syncOrderDevices()
 
                     QReadLocker rlock(&m_Lock);
                     for (NvComputer* pc : m_KnownHosts) {
-                        QString key = QString("%1:%2")
-                        .arg(pc->activeAddress.address())
-                            .arg(pc->activeAddress.port());
+                        QString addr = !pc->manualAddress.isNull() ? pc->manualAddress.address()
+                                                         : pc->localAddress.address();
+                        quint16 port = !pc->manualAddress.isNull() ? pc->manualAddress.port()
+                                                         : pc->localAddress.port();
+                        QString key = QString("%1:%2").arg(addr).arg(port);
 
                         if (removed.contains(key)) {
-                            qInfo() << "[OrderSync] mark for delete:" << pc->name;
+                            LOG_INFO(QStringLiteral("[OrderSync] 标记删除设备 %1").arg(pc->name));
                             toDelete.append(pc);
                         }
                     }
@@ -1080,7 +1096,7 @@ void ComputerManager::syncOrderDevices()
                 m_OrderDeviceKeys = std::move(newKeys);
             },
             [](QString err) {
-                qWarning() << "[OrderSync] 请求失败:" << err;
+                LOG_WARN(QStringLiteral("[OrderSync] 请求失败: %1").arg(err));
             }
             );
 }
@@ -1095,14 +1111,10 @@ void ComputerManager::allocateDevice(int deviceGroupId, int billingType)
 
     QString reqId = QUuid::createUuid().toString(QUuid::WithoutBraces);
 
-    OkHttpUtils::builder()
-        ->url("device/allocateDevice")
-        ->addParam("userId", QString::number(uid))
-        ->addParam("deviceGroupId", QString::number(deviceGroupId))
-        ->addParam("billingType", QString::number(billingType))
-        ->addParam("requestId", reqId)
-        ->post(true)
-        ->async(
+    ApiService::allocateDevice(QString::number(uid),
+                               QString::number(deviceGroupId),
+                               QString::number(billingType),
+                               reqId,
             [this](QString json) {
                 QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
                 if (!doc.isObject()) {

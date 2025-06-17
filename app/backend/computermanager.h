@@ -3,7 +3,7 @@
 #include "nvcomputer.h"
 #include "settings/streamingpreferences.h"
 #include "settings/compatfetcher.h"
-#include "OkHttpUtils.h"
+#include "ApiService.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -155,10 +155,7 @@ public:
         qDebug() << "===============start parse data!========================";
 
         // 调用接口
-        QString result = OkHttpUtils::builder()
-                             ->url("deviceGroup/getDeviceGroupList")
-                             ->get()
-                             ->sync();
+        QString result = ApiService::getDeviceGroupListSync();
 
         qDebug() << "response:" << result;
 

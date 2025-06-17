@@ -174,7 +174,9 @@ macx {
 }
 
 SOURCES += \
+    backend/Logger.cpp \
     backend/DeviceGroupModel.cpp \
+    backend/ApiService.cpp \
     backend/OkHttpUtils.cpp \
     backend/UserService.cpp \
     backend/UserSession.cpp \
@@ -218,8 +220,10 @@ SOURCES += \
     wm.cpp
 
 HEADERS += \
+    backend/Logger.h \
     SDL_compat.h \
     backend/DeviceGroupModel.h \
+    backend/ApiService.h \
     backend/OkHttpUtils.h \
     backend/UserService.h \
     backend/UserSession.h \

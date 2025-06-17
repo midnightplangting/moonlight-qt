@@ -1,6 +1,7 @@
 #include "computermodel.h"
 
 #include <QThreadPool>
+#include "../backend/Logger.h"
 
 ComputerModel::ComputerModel(QObject* object)
     : QAbstractListModel(object) {}
@@ -17,7 +18,7 @@ void ComputerModel::initialize(ComputerManager* computerManager)
 
     beginResetModel();
     m_Computers = m_ComputerManager->getComputers();
-    qDebug() << "[ComputerModel] initialize: count =" << m_Computers.size();
+    LOG_INFO(QStringLiteral("[ComputerModel] 初始化完成，数量=%1").arg(m_Computers.size()));
     endResetModel();
 
 }

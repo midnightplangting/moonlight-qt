@@ -1,5 +1,5 @@
 #include "DeviceGroupModel.h"
-#include "OkHttpUtils.h"
+#include "ApiService.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -53,12 +53,9 @@ void DeviceGroupModel::setDeviceGroups(const QVector<DeviceGroup>& list) {
 
 void DeviceGroupModel::refresh()
 {
-    OkHttpUtils::builder()
-        ->url("deviceGroup/getDeviceGroupList")
-        ->get()
-        ->async([
-            this
-        ](QString data) {
+    ApiService::getDeviceGroupList([
+        this
+    ](QString data) {
             QVector<DeviceGroup> parsed;
             QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
             if (doc.isObject()) {
