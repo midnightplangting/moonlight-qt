@@ -482,13 +482,16 @@ void ComputerManager::handleComputerStateChanged(NvComputer* computer)
     // Apply order information if available
     QString key = QString("%1:%2").arg(computer->activeAddress.address())
                       .arg(computer->activeAddress.port());
-    if (m_OrderDeviceInfo.contains(key)) {
-        const OrderDeviceInfo info = m_OrderDeviceInfo.value(key);
-        QWriteLocker wlock(&computer->lock);
-        if (!computer->orderStartedAt.isValid())
-            computer->orderStartedAt = info.startedAt;
-        if (computer->orderBitrate == 0.0)
-            computer->orderBitrate = info.bitrate;
+    {
+        QReadLocker rlock(&m_OrderLock);
+        if (m_OrderDeviceInfo.contains(key)) {
+            const OrderDeviceInfo info = m_OrderDeviceInfo.value(key);
+            QWriteLocker wlock(&computer->lock);
+            if (!computer->orderStartedAt.isValid())
+                computer->orderStartedAt = info.startedAt;
+            if (computer->orderBitrate == 0.0)
+                computer->orderBitrate = info.bitrate;
+        }
     }
     emit computerStateChanged(computer);
 
@@ -583,6 +586,7 @@ bool ComputerManager::isOrderDevice(NvComputer* computer)
     quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
                                                  : computer->localAddress.port();
     QString key = QString("%1:%2").arg(addr).arg(port);
+    QReadLocker rlock(&m_OrderLock);
     return m_OrderDeviceInfo.contains(key);
 }
 
@@ -671,11 +675,19 @@ void ComputerManager::pairHost(NvComputer* computer, QString pin)
                                                      : computer->localAddress.port();
     QString key = QString("%1:%2").arg(addr).arg(port);
 
-    if (m_OrderDeviceInfo.contains(key) ||
-            (computer->manualAddress.isNull() && !computer->remoteAddress.isNull())) {
+    bool orderDevice = false;
+    qint64 orderId = 0;
+    {
+        QReadLocker rlock(&m_OrderLock);
+        orderDevice = m_OrderDeviceInfo.contains(key);
+        if (orderDevice)
+            orderId = m_OrderDeviceInfo.value(key).orderId;
+    }
+
+    if (orderDevice || (computer->manualAddress.isNull() && !computer->remoteAddress.isNull())) {
         ApiService::PinRequest req;
-        if (m_OrderDeviceInfo.contains(key))
-            req.orderId = m_OrderDeviceInfo.value(key).orderId;
+        if (orderDevice)
+            req.orderId = orderId;
         req.localIP = computer->localAddress.address();
         req.port = QString::number(port);
         req.name = computer->name;
@@ -1053,13 +1065,16 @@ void ComputerManager::syncOrderDevices()
     qint64 uid = UserSession::instance()->userId();
     if (uid == 0) return;
 
+    LOG_DEBUG("----------------------------------------");
+    LOG_DEBUG(QStringLiteral("[ComputerManager::syncOrderDevices] uid=%1").arg(uid));
+
     ApiService::getAllDeviceOrderInfoByUserId(QString::number(uid),
             [this](QString json) {
-                LOG_INFO(QStringLiteral("[OrderSync] response: %1").arg(json));
+                LOG_INFO(QStringLiteral("[syncOrderDevices result] %1").arg(json));
                 updateOrderInfoFromJson(json);
             },
             [](QString err) {
-                LOG_WARN(QStringLiteral("[OrderSync] 请求失败: %1").arg(err));
+                LOG_WARN(QStringLiteral("[syncOrderDevices] 请求失败: %1").arg(err));
             }
             );
 }
@@ -1070,37 +1085,55 @@ void ComputerManager::syncOrderDevicesSync(const QString& logPrefix)
     if (uid == 0)
         return;
 
+    LOG_DEBUG("----------------------------------------");
+    LOG_DEBUG(QStringLiteral("[ComputerManager::syncOrderDevicesSync] uid=%1").arg(uid));
+
     QString json = ApiService::getAllDeviceOrderInfoByUserIdSync(QString::number(uid));
-    LOG_INFO(QStringLiteral("[%1] getAllDeviceOrderInfoByUserId: %2").arg(logPrefix, json));
+    LOG_INFO(QStringLiteral("[%1 result] %2").arg(logPrefix, json));
     updateOrderInfoFromJson(json);
 }
 
 void ComputerManager::updateOrderInfoFromJson(const QString& json)
 {
+    LOG_DEBUG("----------------------------------------");
+    LOG_DEBUG("[ComputerManager::updateOrderInfoFromJson]");
+
     QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
-    if (!doc.isObject())
+    if (!doc.isObject()) {
+        LOG_WARN(QStringLiteral("[updateOrderInfoFromJson] 无效的 JSON: %1").arg(json));
         return;
+    }
 
     QJsonArray arr = doc["data"].toArray();
     QSet<QString> newKeys;
     QList<std::tuple<QString, quint16, QString>> newDevices;
+    QSet<QString> removed;
 
-    for (auto v : arr) {
-        QJsonObject o = v.toObject();
-        QString ip = o["ip"].toString();
-        quint16 port = o["port"].toString().toUShort();
-        QString key = QString("%1:%2").arg(ip).arg(port);
-        newKeys << key;
-        // 保存订单附带的信息，供 UI 展示
-        OrderDeviceInfo info;
-        QJsonObject orderObj = o["deviceOrderInfo"].toObject();
-        info.orderId = orderObj["orderId"].toVariant().toLongLong();
-        info.bitrate = orderObj["bitrate"].toDouble();
-        info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
-        m_OrderDeviceInfo.insert(key, info);
+    {
+        // 写锁保护订单数据
+        QWriteLocker wlock(&m_OrderLock);
 
-        if (!m_OrderDeviceKeys.contains(key))
-            newDevices.append({ip, port, o["name"].toString()});
+        for (auto v : arr) {
+            QJsonObject o = v.toObject();
+            QString ip = o["ip"].toString();
+            quint16 port = o["port"].toString().toUShort();
+            QString key = QString("%1:%2").arg(ip).arg(port);
+            newKeys << key;
+
+            // 保存订单附带的信息，供 UI 展示
+            OrderDeviceInfo info;
+            QJsonObject orderObj = o["deviceOrderInfo"].toObject();
+            info.orderId = orderObj["orderId"].toVariant().toLongLong();
+            info.bitrate = orderObj["bitrate"].toDouble();
+            info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
+            m_OrderDeviceInfo.insert(key, info);
+
+            if (!m_OrderDeviceKeys.contains(key))
+                newDevices.append({ip, port, o["name"].toString()});
+        }
+
+        removed = m_OrderDeviceKeys - newKeys;
+        m_OrderDeviceKeys = newKeys;
     }
 
     // 添加新设备
@@ -1113,7 +1146,6 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
     }
 
     // 删除消失的设备（支持多个）
-    QSet<QString> removed = m_OrderDeviceKeys - newKeys;
     if (!removed.isEmpty()) {
         QList<NvComputer*> toDelete;
 
@@ -1137,9 +1169,6 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             deleteHost(pc);                 //  延迟删除（含线程清理）
         }
     }
-
-    // 更新内部状态
-    m_OrderDeviceKeys = std::move(newKeys);
 }
 
 void ComputerManager::allocateDevice(int deviceGroupId, int billingType)
@@ -1151,6 +1180,13 @@ void ComputerManager::allocateDevice(int deviceGroupId, int billingType)
     }
 
     QString reqId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    LOG_DEBUG("----------------------------------------");
+    LOG_DEBUG(QStringLiteral("[ComputerManager::allocateDevice] uid=%1 group=%2 billing=%3 reqId=%4")
+                      .arg(uid)
+                      .arg(deviceGroupId)
+                      .arg(billingType)
+                      .arg(reqId));
 
     ApiService::allocateDevice(QString::number(uid),
                                QString::number(deviceGroupId),
@@ -1166,6 +1202,10 @@ void ComputerManager::allocateDevice(int deviceGroupId, int billingType)
                 int code = obj.value("code").toInt();
                 QString msg = obj.value("message").toString();
                 bool data = obj.value("data").toBool();
+                LOG_INFO(QStringLiteral("[allocateDevice result] code=%1 msg=%2 data=%3")
+                             .arg(code)
+                             .arg(msg)
+                             .arg(data));
                 if (code == 200 && data) {
                     emit allocateDeviceFinished(true, msg);
                 } else {
@@ -1186,12 +1226,18 @@ void ComputerManager::closeOrder(NvComputer* computer)
                                                     : computer->localAddress.port();
     QString key = QString("%1:%2").arg(addr).arg(port);
 
-    if (!m_OrderDeviceInfo.contains(key)) {
-        emit closeOrderFinished(false, QStringLiteral("Order ID not found"));
-        return;
+    qint64 orderId = 0;
+    {
+        QReadLocker rlock(&m_OrderLock);
+        if (!m_OrderDeviceInfo.contains(key)) {
+            emit closeOrderFinished(false, QStringLiteral("Order ID not found"));
+            return;
+        }
+        orderId = m_OrderDeviceInfo.value(key).orderId;
     }
 
-    qint64 orderId = m_OrderDeviceInfo.value(key).orderId;
+    LOG_DEBUG("----------------------------------------");
+    LOG_DEBUG(QStringLiteral("[ComputerManager::closeOrder] orderId=%1").arg(orderId));
 
     ApiService::closeOrder(QString::number(orderId),
             [this, computer, key](QString json) {
@@ -1204,9 +1250,16 @@ void ComputerManager::closeOrder(NvComputer* computer)
                 int code = obj.value("code").toInt();
                 QString msg = obj.value("message").toString();
                 bool data = obj.value("data").toBool();
+                LOG_INFO(QStringLiteral("[closeOrder result] code=%1 msg=%2 data=%3")
+                             .arg(code)
+                             .arg(msg)
+                             .arg(data));
                 if (code == 200 && data) {
-                    m_OrderDeviceInfo.remove(key);
-                    m_OrderDeviceKeys.remove(key);
+                    {
+                        QWriteLocker wlock(&m_OrderLock);
+                        m_OrderDeviceInfo.remove(key);
+                        m_OrderDeviceKeys.remove(key);
+                    }
                     deleteHost(computer);
                     emit closeOrderFinished(true, msg);
                 } else {

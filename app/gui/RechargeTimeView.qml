@@ -2,6 +2,7 @@ import QtQuick 2.9
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 import ComputerManager 1.0
+import UserSession 1.0
 
 Page {
     id: root
@@ -143,9 +144,13 @@ Page {
                                 background: Rectangle{anchors.fill:parent;color:"transparent"}
                                 contentItem: Text{anchors.centerIn:parent;text:startBtn.text;font.pixelSize:16;color:"#2196F3"}
                                 onClicked: {
-                                    allocatingDialog.open()
-                                    var type = currentTab === 0 ? 1 : (packageMode===0 ? 2 : (packageMode===1 ? 3 : 4))
-                                    ComputerManager.allocateDevice(groupIdValue, type)
+                                    if (UserSession.token === "") {
+                                        loginPromptDialog.open()
+                                    } else {
+                                        confirmStartDialog.groupId = groupIdValue
+                                        confirmStartDialog.billingType = currentTab === 0 ? 1 : (packageMode===0 ? 2 : (packageMode===1 ? 3 : 4))
+                                        confirmStartDialog.open()
+                                    }
                                 }
                             }
                         }
@@ -175,6 +180,27 @@ Page {
         text: qsTr("正在开机，请稍候…")
         showSpinner: true
         standardButtons: Dialog.NoButton
+    }
+
+    NavigableMessageDialog {
+        id: confirmStartDialog
+        text: qsTr("确认要开机吗？")
+        property int groupId: -1
+        property int billingType: 0
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        onAccepted: {
+            allocatingDialog.open()
+            ComputerManager.allocateDevice(groupId, billingType)
+        }
+    }
+
+    NavigableMessageDialog {
+        id: loginPromptDialog
+        text: qsTr("请登录后使用")
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        onAccepted: {
+            stackView.push("qrc:/gui/LoginRegisterView.qml")
+        }
     }
 
     NavigableMessageDialog {

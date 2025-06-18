@@ -327,6 +327,8 @@ private:
     StreamingPreferences* m_Prefs;
     int m_PollingRef;
     QReadWriteLock m_Lock;
+    // 保护订单相关数据，避免轮询线程与 UI 线程并发访问导致竞争
+    QReadWriteLock m_OrderLock;
     QMap<QString, NvComputer*> m_KnownHosts;
     QMap<QString, ComputerPollingEntry*> m_PollEntries;
     QHash<QString, NvComputer> m_LastSerializedHosts; // Protected by m_DelayedFlushMutex

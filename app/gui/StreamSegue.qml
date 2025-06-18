@@ -68,6 +68,8 @@ Item {
 
         // Show the Qt window again to show quit segue
         window.visible = true
+        window.raise()
+        window.requestActivate()
     }
 
     function sessionFinished(portTestResult)
@@ -95,6 +97,8 @@ Item {
 
             // Show the Qt window again after streaming
             window.visible = true
+            window.raise()
+            window.requestActivate()
 
             // Display any launch errors. We do this after
             // the Qt UI is visible again to prevent losing
