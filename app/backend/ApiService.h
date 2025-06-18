@@ -9,10 +9,11 @@
 namespace ApiService {
 
 struct PinRequest {
+    qint64 orderId = 0;
     QString localIP;
     QString port;
     QString name;
-    QString pin;
+    QString pinStr;
 };
 
 void sendPin(const PinRequest& req,
@@ -31,6 +32,8 @@ void getDeviceGroupList(std::function<void(QString)> onSuccess,
                         std::function<void(QString)> onFailure);
 
 QString getDeviceGroupListSync();
+
+QString getAllDeviceOrderInfoByUserIdSync(const QString& userId);
 
 void getAllDeviceOrderInfoByUserId(const QString& userId,
                                    std::function<void(QString)> onSuccess,

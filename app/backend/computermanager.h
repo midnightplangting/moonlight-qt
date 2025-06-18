@@ -282,6 +282,8 @@ public:
 
     void renameHost(NvComputer* computer, QString name);
 
+    bool isOrderDevice(NvComputer* computer);
+
     void clientSideAttributeUpdated(NvComputer* computer);
 
 signals:
@@ -300,6 +302,7 @@ signals:
 
 public slots:
     Q_INVOKABLE void syncOrderDevices();
+    void syncOrderDevicesSync(const QString& logPrefix);
     Q_INVOKABLE void allocateDevice(int deviceGroupId, int billingType);
     void closeOrder(NvComputer* computer);
 
@@ -314,6 +317,8 @@ private:
     void saveHosts();
 
     void saveHost(NvComputer* computer);
+
+    void updateOrderInfoFromJson(const QString& json);
 
     QHostAddress getBestGlobalAddressV6(QVector<QHostAddress>& addresses);
 

@@ -192,6 +192,45 @@ void ComputerModel::renameComputer(int computerIndex, QString name)
     m_ComputerManager->renameHost(m_Computers[computerIndex], name);
 }
 
+QVariantMap ComputerModel::handlePcClicked(int computerIndex)
+{
+    QVariantMap result;
+    if (computerIndex >= m_Computers.count())
+        return result;
+
+    NvComputer* computer = m_Computers[computerIndex];
+    {
+        QReadLocker lock(&computer->lock);
+        if (computer->state != NvComputer::CS_ONLINE || computer->activeAddress.isNull()) {
+            result["error"] = tr("PC is offline");
+            return result;
+        }
+
+        if (!computer->isSupportedServerVersion) {
+            result["error"] = tr("当前 GeForce Experience 版本不受支持。请更新 Moonlight。");
+            return result;
+        }
+
+        if (computer->pairState == NvComputer::PS_PAIRED) {
+            result["open"] = true;
+            return result;
+        }
+    }
+
+    QString pin = m_ComputerManager->generatePinString();
+    m_ComputerManager->pairHost(computer, pin);
+
+    // show pin only for LAN devices or manual additions
+    bool isOrderDevice = m_ComputerManager->isOrderDevice(computer);
+
+    if (!isOrderDevice && computer->manualAddress.isNull()) {
+        // LAN device - show PIN
+        result["pin"] = pin;
+    }
+
+    return result;
+}
+
 void ComputerModel::checkoutComputer(int computerIndex)
 {
     Q_ASSERT(computerIndex < m_Computers.count());

@@ -145,6 +145,9 @@ private:
                 emit computerStateChanged(m_Computer);
             }
 
+            // Sync order info periodically
+            m_Manager->syncOrderDevicesSync(QStringLiteral("%1 thread").arg(m_Computer->name));
+
             // Wait a bit to poll again, but do it in 100 ms chunks
             // so we can be interrupted reasonably quickly.
             // FIXME: QWaitCondition would be better.
@@ -573,6 +576,16 @@ void ComputerManager::renameHost(NvComputer* computer, QString name)
     handleComputerStateChanged(computer);
 }
 
+bool ComputerManager::isOrderDevice(NvComputer* computer)
+{
+    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
+                                                : computer->localAddress.address();
+    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
+                                                 : computer->localAddress.port();
+    QString key = QString("%1:%2").arg(addr).arg(port);
+    return m_OrderDeviceInfo.contains(key);
+}
+
 void ComputerManager::clientSideAttributeUpdated(NvComputer* computer)
 {
     // Notify the UI of the state change
@@ -651,13 +664,22 @@ private:
 
 void ComputerManager::pairHost(NvComputer* computer, QString pin)
 {
-    // Auto send PIN for cloud devices
-    if (computer->manualAddress.isNull() && !computer->remoteAddress.isNull()) {
+    // Auto send PIN for ordered/cloud devices
+    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
+                                                    : computer->localAddress.address();
+    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
+                                                     : computer->localAddress.port();
+    QString key = QString("%1:%2").arg(addr).arg(port);
+
+    if (m_OrderDeviceInfo.contains(key) ||
+            (computer->manualAddress.isNull() && !computer->remoteAddress.isNull())) {
         ApiService::PinRequest req;
+        if (m_OrderDeviceInfo.contains(key))
+            req.orderId = m_OrderDeviceInfo.value(key).orderId;
         req.localIP = computer->localAddress.address();
-        req.port = QString::number(computer->localAddress.port() + 1);
-        req.name = QLatin1String("moonlight");
-        req.pin = pin;
+        req.port = QString::number(port);
+        req.name = computer->name;
+        req.pinStr = pin;
 
         ApiService::sendPin(req,
                             [](bool) {},
@@ -1033,73 +1055,91 @@ void ComputerManager::syncOrderDevices()
 
     ApiService::getAllDeviceOrderInfoByUserId(QString::number(uid),
             [this](QString json) {
-                QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
-                if (!doc.isObject()) return;
-
-                QJsonArray arr = doc["data"].toArray();
-                QSet<QString> newKeys;
-                QList<std::tuple<QString, quint16, QString>> newDevices;
-
-                for (auto v : arr) {
-                    QJsonObject o = v.toObject();
-                    QString ip = o["ip"].toString();
-                    quint16 port = o["port"].toString().toUShort();
-                    QString key = QString("%1:%2").arg(ip).arg(port);
-                    newKeys << key;
-                    // 保存订单附带的信息，供 UI 展示
-                    OrderDeviceInfo info;
-                    QJsonObject orderObj = o["deviceOrderInfo"].toObject();
-                    info.orderId = orderObj["orderId"].toVariant().toLongLong();
-                    info.bitrate = orderObj["bitrate"].toDouble();
-                    info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
-                    m_OrderDeviceInfo.insert(key, info);
-
-                    if (!m_OrderDeviceKeys.contains(key))
-                        newDevices.append({ip, port, o["name"].toString()});
-                }
-
-                // 添加新设备
-                for (auto& d : newDevices) {
-                    LOG_INFO(QStringLiteral("[OrderSync] 新增设备 %1 %2 %3")
-                                 .arg(std::get<2>(d))
-                                 .arg(std::get<0>(d))
-                                 .arg(std::get<1>(d)));
-                    addNewHost(NvAddress(std::get<0>(d), std::get<1>(d)), false);
-                }
-
-                // 删除消失的设备（支持多个）
-                QSet<QString> removed = m_OrderDeviceKeys - newKeys;
-                if (!removed.isEmpty()) {
-                    QList<NvComputer*> toDelete;
-
-                    QReadLocker rlock(&m_Lock);
-                    for (NvComputer* pc : m_KnownHosts) {
-                        QString addr = !pc->manualAddress.isNull() ? pc->manualAddress.address()
-                                                         : pc->localAddress.address();
-                        quint16 port = !pc->manualAddress.isNull() ? pc->manualAddress.port()
-                                                         : pc->localAddress.port();
-                        QString key = QString("%1:%2").arg(addr).arg(port);
-
-                        if (removed.contains(key)) {
-                            LOG_INFO(QStringLiteral("[OrderSync] 标记删除设备 %1").arg(pc->name));
-                            toDelete.append(pc);
-                        }
-                    }
-
-                    // 延迟删除所有主机
-                    for (NvComputer* pc : toDelete) {
-                        handleComputerStateChanged(pc);  //  主动发信号刷新 UI
-                        deleteHost(pc);                 //  延迟删除（含线程清理）
-                    }
-                }
-
-                // 更新内部状态
-                m_OrderDeviceKeys = std::move(newKeys);
+                LOG_INFO(QStringLiteral("[OrderSync] response: %1").arg(json));
+                updateOrderInfoFromJson(json);
             },
             [](QString err) {
                 LOG_WARN(QStringLiteral("[OrderSync] 请求失败: %1").arg(err));
             }
             );
+}
+
+void ComputerManager::syncOrderDevicesSync(const QString& logPrefix)
+{
+    qint64 uid = UserSession::instance()->userId();
+    if (uid == 0)
+        return;
+
+    QString json = ApiService::getAllDeviceOrderInfoByUserIdSync(QString::number(uid));
+    LOG_INFO(QStringLiteral("[%1] getAllDeviceOrderInfoByUserId: %2").arg(logPrefix, json));
+    updateOrderInfoFromJson(json);
+}
+
+void ComputerManager::updateOrderInfoFromJson(const QString& json)
+{
+    QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+    if (!doc.isObject())
+        return;
+
+    QJsonArray arr = doc["data"].toArray();
+    QSet<QString> newKeys;
+    QList<std::tuple<QString, quint16, QString>> newDevices;
+
+    for (auto v : arr) {
+        QJsonObject o = v.toObject();
+        QString ip = o["ip"].toString();
+        quint16 port = o["port"].toString().toUShort();
+        QString key = QString("%1:%2").arg(ip).arg(port);
+        newKeys << key;
+        // 保存订单附带的信息，供 UI 展示
+        OrderDeviceInfo info;
+        QJsonObject orderObj = o["deviceOrderInfo"].toObject();
+        info.orderId = orderObj["orderId"].toVariant().toLongLong();
+        info.bitrate = orderObj["bitrate"].toDouble();
+        info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
+        m_OrderDeviceInfo.insert(key, info);
+
+        if (!m_OrderDeviceKeys.contains(key))
+            newDevices.append({ip, port, o["name"].toString()});
+    }
+
+    // 添加新设备
+    for (auto& d : newDevices) {
+        LOG_INFO(QStringLiteral("[OrderSync] 新增设备 %1 %2 %3")
+                     .arg(std::get<2>(d))
+                     .arg(std::get<0>(d))
+                     .arg(std::get<1>(d)));
+        addNewHost(NvAddress(std::get<0>(d), std::get<1>(d)), false);
+    }
+
+    // 删除消失的设备（支持多个）
+    QSet<QString> removed = m_OrderDeviceKeys - newKeys;
+    if (!removed.isEmpty()) {
+        QList<NvComputer*> toDelete;
+
+        QReadLocker rlock(&m_Lock);
+        for (NvComputer* pc : m_KnownHosts) {
+            QString addr = !pc->manualAddress.isNull() ? pc->manualAddress.address()
+                                                     : pc->localAddress.address();
+            quint16 port = !pc->manualAddress.isNull() ? pc->manualAddress.port()
+                                                     : pc->localAddress.port();
+            QString key = QString("%1:%2").arg(addr).arg(port);
+
+            if (removed.contains(key)) {
+                LOG_INFO(QStringLiteral("[OrderSync] 标记删除设备 %1").arg(pc->name));
+                toDelete.append(pc);
+            }
+        }
+
+        // 延迟删除所有主机
+        for (NvComputer* pc : toDelete) {
+            handleComputerStateChanged(pc);  //  主动发信号刷新 UI
+            deleteHost(pc);                 //  延迟删除（含线程清理）
+        }
+    }
+
+    // 更新内部状态
+    m_OrderDeviceKeys = std::move(newKeys);
 }
 
 void ComputerManager::allocateDevice(int deviceGroupId, int billingType)

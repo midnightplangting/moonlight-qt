@@ -12,10 +12,11 @@ void ApiService::sendPin(const PinRequest& req,
 {
     OkHttpUtils::builder()
         ->url("device/sendPin")
+        ->addParam("orderId", QString::number(req.orderId))
         ->addParam("localIP", req.localIP)
         ->addParam("port", req.port)
         ->addParam("name", req.name)
-        ->addParam("pin", req.pin)
+        ->addParam("pinStr", req.pinStr)
         ->post(true)
         ->async([
             onSuccess
@@ -94,6 +95,15 @@ void ApiService::getAllDeviceOrderInfoByUserId(const QString& userId,
         ->addParam("userId", userId)
         ->post(false)
         ->async(onSuccess, onFailure);
+}
+
+QString ApiService::getAllDeviceOrderInfoByUserIdSync(const QString& userId)
+{
+    return OkHttpUtils::builder()
+        ->url("user/getAllDeviceOrderInfoByUserId")
+        ->addParam("userId", userId)
+        ->post(false)
+        ->sync();
 }
 
 void ApiService::allocateDevice(const QString& userId, const QString& deviceGroupId, const QString& billingType,

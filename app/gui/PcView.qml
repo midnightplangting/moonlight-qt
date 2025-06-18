@@ -346,17 +346,16 @@ CenteredGridView {
         }
         onClicked: {
                 if (model.online) {
-                    if (!model.serverSupported) {
-                        errorDialog.text = qsTr("当前 GeForce Experience 版本不受支持。请更新 Moonlight。")
+                    var result = computerModel.handlePcClicked(index)
+                    if (result.error !== undefined) {
+                        errorDialog.text = result.error
                         errorDialog.open()
-                    } else if (model.paired) {
+                    } else if (result.open) {
                         var component = Qt.createComponent("AppView.qml")
                         var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name})
                         stackView.push(appView)
-                    } else {
-                        var pin = computerModel.generatePinString()
-                        computerModel.pairComputer(index, pin)
-                        pairDialog.pin = pin
+                    } else if (result.pin !== undefined) {
+                        pairDialog.pin = result.pin
                         pairDialog.open()
                     }
                 } else {

@@ -45,6 +45,9 @@ public:
 
     Q_INVOKABLE void renameComputer(int computerIndex, QString name);
 
+    // Handle PC card click. Return a map with keys: error, pin, open
+    Q_INVOKABLE QVariantMap handlePcClicked(int computerIndex);
+
     Q_INVOKABLE void checkoutComputer(int computerIndex);
 
     Q_INVOKABLE Session* createSessionForCurrentGame(int computerIndex);
