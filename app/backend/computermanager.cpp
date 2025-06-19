@@ -590,6 +590,36 @@ bool ComputerManager::isOrderDevice(NvComputer* computer)
     return m_OrderDeviceInfo.contains(key);
 }
 
+void ComputerManager::clearOrderDevices()
+{
+    QList<NvComputer*> toDelete;
+    {
+        QReadLocker lock(&m_Lock);
+        QReadLocker orderLock(&m_OrderLock);
+        for (NvComputer* pc : m_KnownHosts) {
+            QString addr = !pc->manualAddress.isNull() ? pc->manualAddress.address()
+                                                     : pc->localAddress.address();
+            quint16 port = !pc->manualAddress.isNull() ? pc->manualAddress.port()
+                                                     : pc->localAddress.port();
+            QString key = QString("%1:%2").arg(addr).arg(port);
+            if (m_OrderDeviceInfo.contains(key)) {
+                toDelete.append(pc);
+            }
+        }
+    }
+
+    for (NvComputer* pc : toDelete) {
+        handleComputerStateChanged(pc);
+        deleteHost(pc);
+    }
+
+    {
+        QWriteLocker orderLock(&m_OrderLock);
+        m_OrderDeviceInfo.clear();
+        m_OrderDeviceKeys.clear();
+    }
+}
+
 void ComputerManager::clientSideAttributeUpdated(NvComputer* computer)
 {
     // Notify the UI of the state change
@@ -1063,7 +1093,10 @@ QString ComputerManager::generatePinString()
 void ComputerManager::syncOrderDevices()
 {
     qint64 uid = UserSession::instance()->userId();
-    if (uid == 0) return;
+    if (uid == 0) {
+        clearOrderDevices();
+        return;
+    }
 
     LOG_DEBUG("----------------------------------------");
     LOG_DEBUG(QStringLiteral("[ComputerManager::syncOrderDevices] uid=%1").arg(uid));
@@ -1082,8 +1115,10 @@ void ComputerManager::syncOrderDevices()
 void ComputerManager::syncOrderDevicesSync(const QString& logPrefix)
 {
     qint64 uid = UserSession::instance()->userId();
-    if (uid == 0)
+    if (uid == 0) {
+        clearOrderDevices();
         return;
+    }
 
     LOG_DEBUG("----------------------------------------");
     LOG_DEBUG(QStringLiteral("[ComputerManager::syncOrderDevicesSync] uid=%1").arg(uid));

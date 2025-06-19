@@ -284,6 +284,9 @@ public:
 
     bool isOrderDevice(NvComputer* computer);
 
+    // Remove all devices synchronized from the cloud
+    Q_INVOKABLE void clearOrderDevices();
+
     void clientSideAttributeUpdated(NvComputer* computer);
 
 signals:

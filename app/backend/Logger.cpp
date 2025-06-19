@@ -1,7 +1,7 @@
 #include "Logger.h"
 #include <QDebug>
 
-LogLevel Logger::s_level = LogLevel::Debug;
+LogLevel Logger::s_level = LogLevel::Info;
 bool Logger::s_enabled = true;
 
 void Logger::setLevel(LogLevel level)

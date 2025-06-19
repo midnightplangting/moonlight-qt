@@ -63,6 +63,7 @@ void DeviceGroupModel::refresh()
                 for (const auto& val : array) {
                     QJsonObject obj = val.toObject();
                     DeviceGroup group;
+                    group.groupId = obj["deviceGroupId"].toInt();
                     group.name = obj["name"].toString();
                     group.timingPrice = obj["timingPrice"].toInt();
                     group.deviceCount = obj["deviceCount"].toInt();
