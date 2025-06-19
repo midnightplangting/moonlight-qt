@@ -64,7 +64,9 @@ Item {
     {
         // Avoid the push transition animation
         var component = Qt.createComponent("QuitSegue.qml")
-        stackView.replace(stackView.currentItem, component.createObject(stackView, {"appName": appName}), StackView.Immediate)
+        StackView.view.replace(StackView.view.currentItem,
+                               component.createObject(StackView.view, {"appName": appName}),
+                               StackView.Immediate)
 
         // Show the Qt window again to show quit segue
         window.visible = true
@@ -93,7 +95,7 @@ Item {
             }
         } else {
             // Exit this view
-            stackView.pop()
+            StackView.view.pop()
 
             // Show the Qt window again after streaming
             window.visible = true
