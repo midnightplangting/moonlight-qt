@@ -11,6 +11,10 @@ import SdlGamepadKeyNavigation 1.0
 
 CenteredGridView {
     property ComputerModel computerModel : createModel()
+    // Track the PC that is currently pairing so we can
+    // automatically open its app list when pairing completes
+    property int pendingPairIndex: -1
+    property string pendingPairName: ""
 
     id: pcGrid
     focus: true
@@ -25,6 +29,8 @@ CenteredGridView {
         // We do this here instead of onActivated to avoid losing the user's
         // selection when backing out of a different page of the app.
         currentIndex = -1
+        // Synchronize devices once when the page is first loaded
+        ComputerManager.syncOrderDevices()
     }
 
     // Note: Any initialization done here that is critical for streaming must
@@ -62,7 +68,8 @@ CenteredGridView {
 
     function pairingComplete(error)
     {
-        // Close the PIN dialog
+        // Close the PIN dialog and stop showing the spinner
+        pairDialog.showSpinner = false
         pairDialog.close()
 
         // Display a failed dialog if we got an error
@@ -70,6 +77,12 @@ CenteredGridView {
             errorDialog.text = error
             errorDialog.helpText = ""
             errorDialog.open()
+        } else if (pendingPairIndex !== -1) {
+            var component = Qt.createComponent("AppView.qml")
+            var appView = component.createObject(stackView, {"computerIndex": pendingPairIndex, "objectName": pendingPairName})
+            stackView.push(appView)
+            pendingPairIndex = -1
+            pendingPairName = ""
         }
     }
 
@@ -354,8 +367,11 @@ CenteredGridView {
                         var component = Qt.createComponent("AppView.qml")
                         var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name})
                         stackView.push(appView)
-                    } else if (result.pin !== undefined) {
-                        pairDialog.pin = result.pin
+                    } else {
+                        pendingPairIndex = index
+                        pendingPairName = model.name
+                        pairDialog.pin = result.pin !== undefined ? result.pin : ""
+                        pairDialog.showSpinner = true
                         pairDialog.open()
                     }
                 } else {
@@ -388,9 +404,11 @@ CenteredGridView {
         closePolicy: Popup.CloseOnEscape
 
         // don't allow edits to the rest of the window while open
-        property string pin : "0000"
-        text:qsTr("Please enter %1 on your host PC. This dialog will close when pairing is completed.").arg(pin)+"\n\n"+
-             qsTr("If your host PC is running Sunshine, navigate to the Sunshine web UI to enter the PIN.")
+        property string pin : ""
+        text: pin !== "" ?
+                 qsTr("Please enter %1 on your host PC. This dialog will close when pairing is completed.").arg(pin) + "\n\n" +
+                 qsTr("If your host PC is running Sunshine, navigate to the Sunshine web UI to enter the PIN.") :
+                 qsTr("Pairing with your PC. This dialog will close when pairing is completed.")
         standardButtons: Dialog.Cancel
         onRejected: {
             // FIXME: We should interrupt pairing here
