@@ -114,11 +114,13 @@ QString OkHttpUtils::sync() {
 
     if (reply->error() != QNetworkReply::NoError) {
         QString error = reply->errorString();
+        LOG_INFO(QStringLiteral("[OkHttpUtils] Error: %1").arg(error));
         reply->deleteLater();
         return "请求失败：" + error;
     }
 
     QString result = reply->readAll();
+    LOG_INFO(QStringLiteral("[OkHttpUtils] Response: %1").arg(result));
     reply->deleteLater();
     return result;
 }
@@ -171,9 +173,12 @@ void OkHttpUtils::async(std::function<void(QString)> onSuccess, std::function<vo
 
     connect(reply, &QNetworkReply::finished, this, [reply, onSuccess, onFailure]() {
         if (reply->error() != QNetworkReply::NoError) {
-            onFailure(reply->errorString());
+            QString err = reply->errorString();
+            LOG_INFO(QStringLiteral("[OkHttpUtils] Error: %1").arg(err));
+            onFailure(err);
         } else {
             QString result = reply->readAll();
+            LOG_INFO(QStringLiteral("[OkHttpUtils] Response: %1").arg(result));
             onSuccess(result);
         }
         reply->deleteLater();
