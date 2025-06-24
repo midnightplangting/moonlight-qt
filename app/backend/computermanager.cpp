@@ -1214,7 +1214,7 @@ void ComputerManager::allocateDevice(int deviceGroupId, int billingType)
         return;
     }
 
-    QString reqId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    QString reqId = QString::fromLatin1(QUuid::createUuid().toRfc4122().toHex());
 
     LOG_DEBUG("----------------------------------------");
     LOG_DEBUG(QStringLiteral("[ComputerManager::allocateDevice] uid=%1 group=%2 billing=%3 reqId=%4")
