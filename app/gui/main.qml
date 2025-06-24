@@ -192,6 +192,11 @@ ApplicationWindow {
 
         // Poll for gamepad input only when the window is in focus
         SdlGamepadKeyNavigation.notifyWindowFocus(visible && active)
+
+        if (visible) {
+            // Ensure the toolbar is restored when returning from streaming
+            toolBar.visible = true
+        }
     }
 
     onActiveChanged: {
