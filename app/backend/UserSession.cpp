@@ -62,8 +62,8 @@ void UserSession::setUserId(qint64 id) {
     }
 }
 
-void UserSession::setBalance(int balance) {
-    if (m_balance != balance) {
+void UserSession::setBalance(double balance) {
+    if (!qFuzzyCompare(m_balance, balance)) {
         m_balance = balance;
         emit balanceChanged();
     }

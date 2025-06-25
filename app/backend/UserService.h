@@ -33,7 +33,7 @@ signals:
     void updateUserInfoSuccess(QString msg);
     void updateUserInfoFailure(QString errorMsg);
 
-    void userInfoSuccess(int balance);
+    void userInfoSuccess(double balance);
     void userInfoFailure(QString errorMsg);
     void noticeSuccess(QString notice);
     void noticeFailure(QString errorMsg);

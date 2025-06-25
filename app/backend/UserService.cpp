@@ -111,7 +111,7 @@ void UserService::getUserInfoById()
                     int code = obj.value("code").toInt();
                     if (code == 200) {
                         QJsonObject userData = obj.value("data").toObject();
-                        int balance = userData.value("balance").toInt();
+                        double balance = userData.value("balance").toDouble();
                         UserSession::instance()->setBalance(balance);
                         emit userInfoSuccess(balance);
                     } else {
