@@ -131,3 +131,15 @@ void ApiService::closeOrder(const QString& orderId,
         ->post(false)
         ->async(onSuccess, onFailure);
 }
+
+void ApiService::updateUserInfo(const QJsonObject& params,
+                                std::function<void(QString)> onSuccess,
+                                std::function<void(QString)> onFailure)
+{
+    OkHttpUtils* builder = OkHttpUtils::builder();
+    builder->url("user/updateUserInfo");
+    for (auto it = params.begin(); it != params.end(); ++it) {
+        builder->addParam(it.key(), it.value().toString());
+    }
+    builder->post(true)->async(onSuccess, onFailure);
+}

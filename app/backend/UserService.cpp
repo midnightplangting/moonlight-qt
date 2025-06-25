@@ -67,3 +67,29 @@ void UserService::registerUser(const QString& username, const QString& password,
             }
             );
 }
+
+void UserService::updateUserInfo(const QString& field, const QString& value)
+{
+    QJsonObject obj;
+    obj.insert("userId", QString::number(UserSession::instance()->userId()));
+    obj.insert(field, value);
+
+    ApiService::updateUserInfo(obj,
+            [=](QString data) {
+                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+                if (!doc.isNull() && doc.isObject()) {
+                    QJsonObject res = doc.object();
+                    int code = res.value("code").toInt();
+                    if (code == 200) {
+                        emit updateUserInfoSuccess(res.value("message").toString());
+                    } else {
+                        emit updateUserInfoFailure(res.value("message").toString());
+                    }
+                } else {
+                    emit updateUserInfoFailure("响应格式错误");
+                }
+            },
+            [=](QString err) {
+                emit updateUserInfoFailure("网络错误: " + err);
+            });
+}

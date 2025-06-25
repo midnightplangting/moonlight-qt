@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QString>
 #include <functional>
+#include <QJsonObject>
 
 namespace ApiService {
 
@@ -47,6 +48,10 @@ void allocateDevice(const QString& userId, const QString& deviceGroupId, const Q
 void closeOrder(const QString& orderId,
                 std::function<void(QString)> onSuccess,
                 std::function<void(QString)> onFailure);
+
+void updateUserInfo(const QJsonObject& params,
+                    std::function<void(QString)> onSuccess,
+                    std::function<void(QString)> onFailure);
 
 }
 

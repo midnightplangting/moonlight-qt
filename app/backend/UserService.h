@@ -13,6 +13,7 @@ public:
 
     Q_INVOKABLE void login(const QString& username, const QString& password);
     Q_INVOKABLE void registerUser(const QString& username, const QString& password, const QString& confirmPwd);
+    Q_INVOKABLE void updateUserInfo(const QString& field, const QString& value);
 
 signals:
     void loginSuccess(QString token);      // 简化处理，成功信号（你也可以改成 user 对象）
@@ -20,6 +21,9 @@ signals:
 
     void registerSuccess(QString msg);
     void registerFailure(QString errorMsg);
+
+    void updateUserInfoSuccess(QString msg);
+    void updateUserInfoFailure(QString errorMsg);
 };
 
 #endif // USERSERVICE_H

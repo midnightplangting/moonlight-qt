@@ -3,12 +3,32 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import UserSession 1.0
 import ComputerManager 1.0
+import UserService 1.0
 
 Item {
     id: overlayRoot
     anchors.fill: parent
     visible: true
     z: 999
+
+    property string pendingField: ""
+
+    UserService {
+        id: userService
+        onUpdateUserInfoSuccess: {
+            console.log("update success", msg)
+            if (pendingField === "username") {
+                UserSession.username = usernameField.text
+                UserSession.saveToSettings()
+            }
+            pendingField = ""
+            selectedIndex = -1
+        }
+        onUpdateUserInfoFailure: {
+            console.warn("update failed", errorMsg)
+            pendingField = ""
+        }
+    }
 
     signal requestClose()
 
@@ -127,10 +147,8 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
-                                UserSession.username = usernameField.text
-                                UserSession.saveToSettings()
-                                console.log("用户名修改为：", usernameField.text)
-                                selectedIndex = -1
+                                pendingField = "username"
+                                userService.updateUserInfo("username", usernameField.text)
                             }
                         }
                     }
@@ -152,8 +170,8 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
-                                console.log("手机号修改为：", phoneField.text)
-                                selectedIndex = -1
+                                pendingField = "phone"
+                                userService.updateUserInfo("phone", phoneField.text)
                             }
                         }
                     }
@@ -175,8 +193,8 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
-                                console.log("邮箱修改为：", emailField.text)
-                                selectedIndex = -1
+                                pendingField = "email"
+                                userService.updateUserInfo("email", emailField.text)
                             }
                         }
                     }
@@ -204,8 +222,8 @@ Item {
                                     console.warn("两次密码不一致")
                                     return
                                 }
-                                console.log("密码修改成功")
-                                selectedIndex = -1
+                                pendingField = "password"
+                                userService.updateUserInfo("password", newPasswordField.text)
                             }
                         }
                     }
