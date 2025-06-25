@@ -24,6 +24,12 @@ ApplicationWindow {
     width: 1280
     height: 800
     property color appBackgroundColor: "black"
+
+    UserService {
+        id: userService
+        onUserInfoSuccess: UserSession.balance = balance
+        onNoticeSuccess: UserSession.notice = notice
+    }
     // This function runs prior to creation of the initial StackView item
     function doEarlyInit() {
         // Override the background color to Material 2 colors for Qt 6.5+
@@ -77,6 +83,8 @@ ApplicationWindow {
             unmappedGamepadDialog.unmappedGamepads = SystemProperties.unmappedGamepads
             unmappedGamepadDialog.open()
         }
+
+        userService.getLatestNotice()
     }
   
     // It would be better to use TextMetrics here, but it always lays out
@@ -121,7 +129,13 @@ ApplicationWindow {
             if (currentItem) {
                 currentItem.forceActiveFocus()
             }
+
+            // Refresh marquee notice whenever switching screens
+            userService.getLatestNotice()
         }
+
+        onDepthChanged: if (depth > 1 && UserSession.userId !== 0)
+                            userService.getUserInfoById()
 
         Keys.onEscapePressed: {
             if (depth > 1) {
@@ -299,7 +313,7 @@ ApplicationWindow {
                 // 公示文本
                 Text {
                     id: marqueeText
-                    text: "📢 公示：请及时更新至最新版本以获得最佳体验。"
+                    text: UserSession.notice.length > 0 ? UserSession.notice : "📢 公示：请及时更新至最新版本以获得最佳体验。"
                     font.pointSize: 12
                     color: "white"
                     anchors.verticalCenter: parent.verticalCenter
@@ -345,7 +359,7 @@ ApplicationWindow {
             Label {
                 id: versionLabel
                 visible: stackView.depth > 1
-                text: "我的金币：9999"
+                text: qsTr("我的金币：") + UserSession.balance
                 font.pointSize: 12
                 horizontalAlignment: Qt.AlignRight
                 verticalAlignment: Qt.AlignVCenter

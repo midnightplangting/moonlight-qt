@@ -68,6 +68,7 @@ void UserService::registerUser(const QString& username, const QString& password,
             );
 }
 
+
 void UserService::updateUserInfo(const QString& field, const QString& value)
 {
     QJsonObject obj;
@@ -92,4 +93,62 @@ void UserService::updateUserInfo(const QString& field, const QString& value)
             [=](QString err) {
                 emit updateUserInfoFailure("网络错误: " + err);
             });
+}
+
+void UserService::getUserInfoById()
+{
+    qint64 uid = UserSession::instance()->userId();
+    if (uid == 0) {
+        emit userInfoFailure(QStringLiteral("用户未登录"));
+        return;
+    }
+
+    ApiService::getUserInfoById(QString::number(uid),
+            [=](QString data) {
+                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+                if (!doc.isNull() && doc.isObject()) {
+                    QJsonObject obj = doc.object();
+                    int code = obj.value("code").toInt();
+                    if (code == 200) {
+                        QJsonObject userData = obj.value("data").toObject();
+                        int balance = userData.value("balance").toInt();
+                        UserSession::instance()->setBalance(balance);
+                        emit userInfoSuccess(balance);
+                    } else {
+                        emit userInfoFailure(obj.value("message").toString());
+                    }
+                } else {
+                    emit userInfoFailure("响应格式错误");
+                }
+            },
+            [=](QString err) {
+                emit userInfoFailure("网络错误: " + err);
+            }
+            );
+}
+
+void UserService::getLatestNotice()
+{
+    ApiService::getLatestNotice(
+            [=](QString data) {
+                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+                if (!doc.isNull() && doc.isObject()) {
+                    QJsonObject obj = doc.object();
+                    int code = obj.value("code").toInt();
+                    if (code == 200) {
+                        QString notice = obj.value("data").toString();
+                        UserSession::instance()->setNotice(notice);
+                        emit noticeSuccess(notice);
+                    } else {
+                        emit noticeFailure(obj.value("message").toString());
+                    }
+                } else {
+                    emit noticeFailure("响应格式错误");
+                }
+            },
+            [=](QString err) {
+                emit noticeFailure("网络错误: " + err);
+            }
+            );
+
 }

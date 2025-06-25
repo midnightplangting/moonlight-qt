@@ -132,6 +132,7 @@ void ApiService::closeOrder(const QString& orderId,
         ->async(onSuccess, onFailure);
 }
 
+
 void ApiService::updateUserInfo(const QJsonObject& params,
                                 std::function<void(QString)> onSuccess,
                                 std::function<void(QString)> onFailure)
@@ -150,6 +151,27 @@ void ApiService::getOrderDetailList(const QString& userId,
     OkHttpUtils::builder()
         ->url("order/getOrderDetailList")
         ->addParam("userId", userId)
+        ->get()
+        ->async(onSuccess, onFailure);
+}
+
+void ApiService::getUserInfoById(const QString& userId,
+                                 std::function<void(QString)> onSuccess,
+                                 std::function<void(QString)> onFailure)
+{
+    // userId is sent as a parameter in a POST request
+    OkHttpUtils::builder()
+        ->url("user/getUserInfoById")
+        ->addParam("userId", userId)
+        ->post(false)
+        ->async(onSuccess, onFailure);
+}
+
+void ApiService::getLatestNotice(std::function<void(QString)> onSuccess,
+                                 std::function<void(QString)> onFailure)
+{
+    OkHttpUtils::builder()
+        ->url("notice/getLatestNotice")
         ->get()
         ->async(onSuccess, onFailure);
 

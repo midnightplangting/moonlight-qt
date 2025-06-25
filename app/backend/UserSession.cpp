@@ -61,3 +61,17 @@ void UserSession::setUserId(qint64 id) {
         emit userIdChanged();
     }
 }
+
+void UserSession::setBalance(int balance) {
+    if (m_balance != balance) {
+        m_balance = balance;
+        emit balanceChanged();
+    }
+}
+
+void UserSession::setNotice(const QString& notice) {
+    if (m_notice != notice) {
+        m_notice = notice;
+        emit noticeChanged();
+    }
+}
