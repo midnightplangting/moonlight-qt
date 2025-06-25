@@ -143,3 +143,14 @@ void ApiService::updateUserInfo(const QJsonObject& params,
     }
     builder->post(true)->async(onSuccess, onFailure);
 }
+void ApiService::getOrderDetailList(const QString& userId,
+                                    std::function<void(QString)> onSuccess,
+                                    std::function<void(QString)> onFailure)
+{
+    OkHttpUtils::builder()
+        ->url("order/getOrderDetailList")
+        ->addParam("userId", userId)
+        ->get()
+        ->async(onSuccess, onFailure);
+
+}

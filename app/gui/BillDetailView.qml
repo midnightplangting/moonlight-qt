@@ -1,15 +1,42 @@
 import QtQuick 2.9
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
+import ComputerManager 1.0
 
 Item {
     id: billDetailPage
 
+    Component.onCompleted: {
+        ComputerManager.getOrderDetailList()
+    }
+
+    Connections {
+        target: ComputerManager
+        onGetOrderDetailListFinished: function(success, data) {
+            if (!success) {
+                console.warn("getOrderDetailList failed: " + data)
+                return
+            }
+            var obj = JSON.parse(data)
+            if (obj.code === 200 && obj.data && obj.data.ordersList) {
+                billModel.clear()
+                for (var i = 0; i < obj.data.ordersList.length; i++) {
+                    var o = obj.data.ordersList[i]
+                    billModel.append({
+                        deviceName: o.deviceName,
+                        billingType: o.billingType,
+                        coins: o.coins,
+                        serviceStartTime: o.serviceStartTime,
+                        serviceEndTime: o.serviceEndTime,
+                        status: o.status
+                    })
+                }
+            }
+        }
+    }
+
     ListModel {
         id: billModel
-        ListElement { orderId: "A1001"; startTime: "2024-05-01 12:00"; endTime: "2024-05-01 14:00"; deviceId: "RTX-001"; cost: 20 }
-        ListElement { orderId: "A1002"; startTime: "2024-05-02 15:30"; endTime: "2024-05-02 18:00"; deviceId: "RTX-002"; cost: 35 }
-        ListElement { orderId: "A1003"; startTime: "2024-05-03 10:00"; endTime: "2024-05-03 12:00"; deviceId: "RTX-003"; cost: 25 }
     }
 
     Flickable {
@@ -49,7 +76,7 @@ Item {
                         onExited:  { hovered = false; card.scale = 1.0 }
                         onPressed: card.scale = 0.95
                         onReleased: card.scale = 1.02
-                        onClicked: console.log("点击订单：", orderId)
+                        onClicked: console.log("点击订单：", deviceName)
                     }
 
                     Column {
@@ -57,11 +84,10 @@ Item {
                         anchors.margins: 16
                         spacing: 6
 
-                        Text { text: "订单 ID：" + orderId; font.pixelSize: 16; color: "white" }
-                        Text { text: "开始时间：" + startTime; font.pixelSize: 14; color: "#CCCCCC" }
-                        Text { text: "关闭时间：" + endTime; font.pixelSize: 14; color: "#CCCCCC" }
-                        Text { text: "机器号：" + deviceId; font.pixelSize: 14; color: "#CCCCCC" }
-                        Text { text: "扣费：" + cost + " 金币"; font.pixelSize: 14; color: "#FFA500" }
+                        Text { text: "机器号：" + deviceName; font.pixelSize: 16; color: "white" }
+                        Text { text: "开始时间：" + serviceStartTime; font.pixelSize: 14; color: "#CCCCCC" }
+                        Text { text: "结束时间：" + serviceEndTime; font.pixelSize: 14; color: "#CCCCCC" }
+                        Text { text: "扣费：" + coins + " 金币"; font.pixelSize: 14; color: "#FFA500" }
                     }
                 }
             }

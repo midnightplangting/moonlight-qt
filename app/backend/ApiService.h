@@ -49,9 +49,14 @@ void closeOrder(const QString& orderId,
                 std::function<void(QString)> onSuccess,
                 std::function<void(QString)> onFailure);
 
+
 void updateUserInfo(const QJsonObject& params,
                     std::function<void(QString)> onSuccess,
                     std::function<void(QString)> onFailure);
+
+void getOrderDetailList(const QString& userId,
+                        std::function<void(QString)> onSuccess,
+                        std::function<void(QString)> onFailure);
 
 }
 

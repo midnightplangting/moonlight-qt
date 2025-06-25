@@ -1306,5 +1306,22 @@ void ComputerManager::closeOrder(NvComputer* computer)
             });
 }
 
+void ComputerManager::getOrderDetailList()
+{
+    qint64 uid = UserSession::instance()->userId();
+    if (uid == 0) {
+        emit getOrderDetailListFinished(false, QStringLiteral("Invalid user"));
+        return;
+    }
+
+    ApiService::getOrderDetailList(QString::number(uid),
+            [this](QString json) {
+                emit getOrderDetailListFinished(true, json);
+            },
+            [this](QString err) {
+                emit getOrderDetailListFinished(false, err);
+            });
+}
+
 
 #include "computermanager.moc"

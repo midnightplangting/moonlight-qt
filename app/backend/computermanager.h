@@ -300,6 +300,7 @@ signals:
 
     void allocateDeviceFinished(bool success, QString message);
     void closeOrderFinished(bool success, QString message);
+    void getOrderDetailListFinished(bool success, QString data);
 
     void hostRemoved(NvComputer* computer);
 
@@ -307,6 +308,7 @@ public slots:
     Q_INVOKABLE void syncOrderDevices();
     void syncOrderDevicesSync(const QString& logPrefix);
     Q_INVOKABLE void allocateDevice(int deviceGroupId, int billingType);
+    Q_INVOKABLE void getOrderDetailList();
     void closeOrder(NvComputer* computer);
 
 private slots:
