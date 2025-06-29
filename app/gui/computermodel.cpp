@@ -93,6 +93,12 @@ QVariant ComputerModel::data(const QModelIndex& index, int role) const
         return computer->orderStartedAt.isValid() ? QVariant(computer->orderStartedAt.toMSecsSinceEpoch()) : QVariant();
     case BitrateRole:
         return computer->orderBitrate;
+    case OrderStatusRole:
+        return computer->orderStatus;
+    case BillingTypeRole:
+        return computer->orderBillingType;
+    case OrderIdRole:
+        return computer->orderId;
     default:
         return QVariant();
     }
@@ -123,6 +129,9 @@ QHash<int, QByteArray> ComputerModel::roleNames() const
     names[DetailsRole] = "details";
     names[StartedAtRole] = "startedAt";
     names[BitrateRole] = "bitrate";
+    names[OrderStatusRole] = "status";
+    names[BillingTypeRole] = "billingType";
+    names[OrderIdRole] = "orderId";
 
     return names;
 }
@@ -201,6 +210,23 @@ QVariantMap ComputerModel::handlePcClicked(int computerIndex)
     NvComputer* computer = m_Computers[computerIndex];
     {
         QReadLocker lock(&computer->lock);
+        if (computer->orderStatus != 0) {
+            switch (computer->orderStatus) {
+            case 1:
+                result["error"] = tr("订单已结束");
+                break;
+            case 3:
+                result["error"] = tr("金币不足");
+                break;
+            case 4:
+                result["error"] = tr("包机到期");
+                break;
+            default:
+                result["error"] = tr("订单状态异常");
+                break;
+            }
+            return result;
+        }
         if (computer->state != NvComputer::CS_ONLINE || computer->activeAddress.isNull()) {
             result["error"] = tr("PC is offline");
             return result;

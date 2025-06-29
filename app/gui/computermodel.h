@@ -18,7 +18,10 @@ class ComputerModel : public QAbstractListModel
         ServerSupportedRole,
         DetailsRole,
         StartedAtRole,
-        BitrateRole
+        BitrateRole,
+        OrderStatusRole,
+        BillingTypeRole,
+        OrderIdRole
     };
 
 public:

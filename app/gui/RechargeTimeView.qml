@@ -148,7 +148,10 @@ Page {
                                         loginPromptDialog.open()
                                     } else {
                                         confirmStartDialog.groupId = groupIdValue
+                                        // 根据选择的计费方式映射 billingType
+                                        // 0: 手动 1: 计时 2: 包天 3: 包周 4: 包月 5: 自动发现 6: 优惠券
                                         confirmStartDialog.billingType = currentTab === 0 ? 1 : (packageMode===0 ? 2 : (packageMode===1 ? 3 : 4))
+                                        console.log("[RechargeTimeView] billingType=", confirmStartDialog.billingType)
                                         confirmStartDialog.open()
                                     }
                                 }

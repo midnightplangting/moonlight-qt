@@ -27,6 +27,9 @@ struct OrderDeviceInfo {
     qint64 orderId = 0;
     double bitrate = 0.0;
     QDateTime startedAt;
+    int deviceGroupId = 0;   // 设备组 ID
+    int status = 0;           // 订单状态
+    int billingType = 0;      // 计费类型
 };
 
 class ComputerManager;
@@ -277,6 +280,9 @@ public:
 
     QVector<NvComputer*> getComputers();
 
+    // Check order status and emit signal if abnormal
+    Q_INVOKABLE void checkOrderStatus(NvComputer* computer);
+
     // computer is deleted inside this call
     void deleteHost(NvComputer* computer);
 
@@ -301,6 +307,8 @@ signals:
     void allocateDeviceFinished(bool success, QString message);
     void closeOrderFinished(bool success, QString message);
     void getOrderDetailListFinished(bool success, QString data);
+
+    void orderStatusException(int status);
 
     void hostRemoved(NvComputer* computer);
 
@@ -347,4 +355,5 @@ private:
     bool m_NeedsDelayedFlush;
     QHash<QString, OrderDeviceInfo> m_OrderDeviceInfo; // key: "ip:port" -> info
     QSet<QString> m_OrderDeviceKeys;               // 上一轮订单 key: "ip:port"
+    QTimer m_OrderTimer;                           // 定时同步订单状态
 };

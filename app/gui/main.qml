@@ -14,6 +14,7 @@ import UserService 1.0
 
 ApplicationWindow {
     property bool pollingActive: false
+    property bool streamingActive: false
 
     // Set by SettingsView to force the back operation to pop all
     // pages except the initial view. This is required when doing
@@ -28,7 +29,7 @@ ApplicationWindow {
     UserService {
         id: userService
         onUserInfoSuccess: UserSession.balance = balance
-        onNoticeSuccess: UserSession.notice = notice
+        onNoticeSuccess: function(notice) { UserSession.notice = notice }
     }
     // This function runs prior to creation of the initial StackView item
     function doEarlyInit() {
@@ -188,7 +189,7 @@ ApplicationWindow {
         if (!visible) {
             inactivityTimer.stop()
 
-            if (pollingActive) {
+            if (pollingActive && !streamingActive) {
                 ComputerManager.stopPollingAsync()
                 pollingActive = false
             }
@@ -225,9 +226,9 @@ ApplicationWindow {
             }
         }
         else {
-            // Start the inactivity timer to stop polling
-            // if focus does not return within a few minutes.
-            inactivityTimer.restart()
+            // Start the inactivity timer only when not streaming
+            if (!streamingActive)
+                inactivityTimer.restart()
         }
 
         // Poll for gamepad input only when the window is in focus
@@ -238,6 +239,8 @@ ApplicationWindow {
     //
     // Based on https://stackoverflow.com/questions/13923794/how-to-do-a-is-a-typeof-or-instanceof-in-qml
     function qmltypeof(obj, className) { // QtObject, string -> bool
+        if (obj === null || obj === undefined)
+            return false;
         // className plus "(" is the class instance without modification
         // className plus "_QML" is the class instance with user-defined properties
         var str = obj.toString();

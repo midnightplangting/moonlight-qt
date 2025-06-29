@@ -38,6 +38,7 @@ Item {
         hintText.visible = false
 
         // Hide the window now that streaming has begun
+        window.streamingActive = true
         window.visible = false
     }
 
@@ -82,6 +83,8 @@ Item {
 
         // Re-enable GUI gamepad usage now
         SdlGamepadKeyNavigation.enable()
+
+        window.streamingActive = false
 
         if (quitAfter) {
             if (streamSegueErrorDialog.text) {

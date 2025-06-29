@@ -147,6 +147,7 @@ private:
 
             // Sync order info periodically
             m_Manager->syncOrderDevicesSync(QStringLiteral("%1 thread").arg(m_Computer->name));
+            m_Manager->checkOrderStatus(m_Computer);
 
             // Wait a bit to poll again, but do it in 100 ms chunks
             // so we can be interrupted reasonably quickly.
@@ -198,6 +199,10 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
     // Start the delayed flush thread to handle saveHosts() calls
     m_DelayedFlushThread = new DelayedFlushThread(this);
     m_DelayedFlushThread->start();
+
+    // 定时同步订单状态，确保串流过程中也能获取最新状态
+    m_OrderTimer.setInterval(3000);
+    connect(&m_OrderTimer, &QTimer::timeout, this, &ComputerManager::syncOrderDevices);
 
     // To quit in a timely manner, we must block additional requests
     // after we receive the aboutToQuit() signal. This is necessary
@@ -398,6 +403,9 @@ void ComputerManager::startPolling()
         i.next();
         startPollingComputer(i.value());
     }
+
+    if (!m_OrderTimer.isActive())
+        m_OrderTimer.start();
 }
 
 // Must hold m_Lock for write
@@ -491,6 +499,10 @@ void ComputerManager::handleComputerStateChanged(NvComputer* computer)
                 computer->orderStartedAt = info.startedAt;
             if (computer->orderBitrate == 0.0)
                 computer->orderBitrate = info.bitrate;
+            if (computer->orderId == 0)
+                computer->orderId = info.orderId;
+            computer->orderStatus = info.status;
+            computer->orderBillingType = info.billingType;
         }
     }
     emit computerStateChanged(computer);
@@ -502,6 +514,41 @@ void ComputerManager::handleComputerStateChanged(NvComputer* computer)
 
     // Save updates to this host
     saveHost(computer);
+}
+
+void ComputerManager::checkOrderStatus(NvComputer* computer)
+{
+    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
+                                               : computer->localAddress.address();
+    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
+                                                    : computer->localAddress.port();
+    QString key = QString("%1:%2").arg(addr).arg(port);
+
+    int status = 0;
+    qint64 orderId = 0;
+    {
+        QReadLocker rlock(&m_OrderLock);
+        if (m_OrderDeviceInfo.contains(key))
+        {
+            const OrderDeviceInfo info = m_OrderDeviceInfo.value(key);
+            status = info.status;
+            orderId = info.orderId;
+        }
+    }
+
+    {
+        QWriteLocker wlock(&computer->lock);
+        computer->orderStatus = status;
+        if (computer->orderId == 0)
+            computer->orderId = orderId;
+    }
+
+    if (status == 3 || status == 4) {
+        quitRunningApp(computer);
+        emit orderStatusException(status);
+    }
+
+    emit computerStateChanged(computer);
 }
 
 QVector<NvComputer*> ComputerManager::getComputers()
@@ -802,6 +849,9 @@ void ComputerManager::stopPollingAsync()
     if (--m_PollingRef > 0) {
         return;
     }
+
+    if (m_OrderTimer.isActive())
+        m_OrderTimer.stop();
 
     // Delete machines that haven't been resolved yet
     while (!m_PendingResolution.isEmpty()) {
@@ -1161,6 +1211,9 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             info.orderId = orderObj["orderId"].toVariant().toLongLong();
             info.bitrate = orderObj["bitrate"].toDouble();
             info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
+            info.deviceGroupId = orderObj["deviceGroupId"].toInt();
+            info.status = orderObj["status"].toInt();
+            info.billingType = orderObj["billingType"].toInt();
             m_OrderDeviceInfo.insert(key, info);
 
             if (!m_OrderDeviceKeys.contains(key))

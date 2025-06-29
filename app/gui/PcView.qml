@@ -8,6 +8,7 @@ import ComputerManager 1.0
 import StreamingPreferences 1.0
 import SystemProperties 1.0
 import SdlGamepadKeyNavigation 1.0
+import "."
 
 CenteredGridView {
     property ComputerModel computerModel : createModel()
@@ -148,6 +149,9 @@ CenteredGridView {
         property string name: model && model.name !== undefined ? model.name : ""
         property real startedAt: model && model.startedAt !== undefined ? model.startedAt : 0
         property real bitrate: model && model.bitrate !== undefined ? model.bitrate : 0
+        property int status: model && model.status !== undefined ? model.status : 0
+        property int billingType: model && model.billingType !== undefined ? model.billingType : 0
+        property int orderId: model && model.orderId !== undefined ? model.orderId : 0
         property string usageTimeText: startedAt > 0 ? Math.floor((Date.now() - startedAt)/60000).toString() : "--"
         Timer {
             id: usageTimer
@@ -278,7 +282,7 @@ CenteredGridView {
 
                 Text {
                     anchors.centerIn: parent
-                    text: qsTr("结账下机")
+                    text: (billingType >= 2 && billingType <= 4) ? qsTr("续费") : qsTr("结账下机")
                     font.pixelSize: 20
                     color: "#007AFF"
                 }
@@ -288,7 +292,12 @@ CenteredGridView {
                     onPressed:  actionBtn.scale = actionBtn.pressedScale
                     onReleased: actionBtn.scale = actionBtn.normalScale
                     onClicked: {
-                        computerModel.checkoutComputer(index)
+                        if (billingType >= 2 && billingType <= 4) {
+                            renewDialog.orderId = orderId
+                            renewDialog.open()
+                        } else {
+                            computerModel.checkoutComputer(index)
+                        }
                     }
                 }
             }
@@ -513,6 +522,8 @@ CenteredGridView {
         imageSrc: "qrc:/res/baseline-help_outline-24px.svg"
         standardButtons: Dialog.Ok
     }
+
+    RenewDialog { id: renewDialog }
 
     ScrollBar.vertical: ScrollBar {}
 }
