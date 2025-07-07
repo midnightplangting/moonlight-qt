@@ -13,7 +13,7 @@ GridView {
                                         (availableWidth % cellWidth) / 2 : minMargin
 
     function updateMargins() {
-        leftMargin = horizontalMargin
+        leftMargin = horizontalMargin + 20
         rightMargin = horizontalMargin
 
         if (hasBrokenMargins) {

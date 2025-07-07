@@ -22,7 +22,7 @@ CenteredGridView {
     activeFocusOnTab: true
     topMargin: 20
     bottomMargin: 5
-    cellWidth: 420; cellHeight: 150;
+    cellWidth: 410; cellHeight: 150;
     objectName: qsTr("Computers")
 
     Component.onCompleted: {
@@ -136,7 +136,7 @@ CenteredGridView {
     model: computerModel
 
     delegate: Rectangle {
-        width: 400; height: 130
+        width: 380; height: 130
         // anchors.centerIn: parent
         radius: 16
         color: "#1C1C1E"
@@ -213,13 +213,6 @@ CenteredGridView {
             anchors.fill: parent
             anchors.margins: 12
             spacing: 16
-
-            Image {
-                source: "qrc:/res/desktop_windows-48px.svg"
-                width: 50; height: 50
-                fillMode: Image.PreserveAspectFit
-                anchors.verticalCenter: parent.verticalCenter
-            }
 
             Column {
                 anchors.verticalCenter: parent.verticalCenter
