@@ -290,6 +290,9 @@ public:
 
     bool isOrderDevice(NvComputer* computer);
 
+    // Get device group ID for an order
+    Q_INVOKABLE int getDeviceGroupIdByOrderId(qint64 orderId);
+
     // Remove all devices synchronized from the cloud
     Q_INVOKABLE void clearOrderDevices();
 

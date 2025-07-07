@@ -169,11 +169,30 @@ Page {
         width: flick.width - 400; height:48; radius:24; color:"#1C1C1E"
         Row{anchors.fill:parent;anchors.margins:12;spacing:8
             Image{source:"qrc:/res/ic_add_to_queue_white_48px.svg";width:24;height:24}
-            TextField{placeholderText:qsTr("手动添加电脑                                                                                                                                                                        ");
-                font.pixelSize:14;color:"#DDDDDD";background:Rectangle{color:"transparent"}
-                onAccepted:{console.log("Add PC:", text); text=""}
+            TextField{
+                id: manualAddField
+                placeholderText: qsTr("手动添加电脑    ")
+                font.pixelSize:14
+                color:"#DDDDDD"
+                background: Rectangle{ color:"transparent" }
+                function doAdd() {
+                    if (text.length > 0) {
+                        ComputerManager.addNewHostManually(text.trim())
+                        text = ""
+                    }
+                }
+                onAccepted: doAdd()
+                Keys.onReturnPressed: doAdd()
+                Keys.onEnterPressed: doAdd()
             }
         }
+    }
+
+    NavigableMessageDialog {
+        id: addPcResultDialog
+        property bool success: false
+        standardButtons: Dialog.Ok | Dialog.Help
+        onAccepted: if (success) navigateTo("qrc:/gui/PcView.qml", "PcView")
     }
 
     NavigableMessageDialog {
@@ -213,6 +232,21 @@ Page {
 
     Connections {
         target: ComputerManager
+        onComputerAddCompleted: function(success, detectedPortBlocking) {
+            addPcResultDialog.success = success
+            if (success) {
+                addPcResultDialog.text = qsTr("电脑添加成功")
+                addPcResultDialog.helpText = ""
+            } else {
+                addPcResultDialog.text = qsTr("Unable to connect to the specified PC.")
+                if (detectedPortBlocking) {
+                    addPcResultDialog.text += "\n\n" + qsTr("This PC's Internet connection is blocking Moonlight. Streaming over the Internet may not work while connected to this network.")
+                } else {
+                    addPcResultDialog.helpText = qsTr("Click the Help button for possible solutions.")
+                }
+            }
+            addPcResultDialog.open()
+        }
         onAllocateDeviceFinished: function(success, msg) {
             allocatingDialog.close()
             if (success) {

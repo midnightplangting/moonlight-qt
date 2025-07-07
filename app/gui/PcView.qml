@@ -287,6 +287,7 @@ CenteredGridView {
                     onClicked: {
                         if (billingType >= 2 && billingType <= 4) {
                             renewDialog.orderId = orderId
+                            renewDialog.deviceGroupId = ComputerManager.getDeviceGroupIdByOrderId(orderId)
                             renewDialog.open()
                         } else {
                             computerModel.checkoutComputer(index)
@@ -361,6 +362,10 @@ CenteredGridView {
         }
         onClicked: {
                 if (model.online) {
+                    if (bitrate > 0) {
+                        StreamingPreferences.bitrateKbps = bitrate * 1000
+                        StreamingPreferences.autoAdjustBitrate = false
+                    }
                     var result = computerModel.handlePcClicked(index)
                     if (result.error !== undefined) {
                         errorDialog.text = result.error

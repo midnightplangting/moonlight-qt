@@ -1376,5 +1376,15 @@ void ComputerManager::getOrderDetailList()
             });
 }
 
+int ComputerManager::getDeviceGroupIdByOrderId(qint64 orderId)
+{
+    QReadLocker rlock(&m_OrderLock);
+    for (auto it = m_OrderDeviceInfo.constBegin(); it != m_OrderDeviceInfo.constEnd(); ++it) {
+        if (it.value().orderId == orderId)
+            return it.value().deviceGroupId;
+    }
+    return 0;
+}
+
 
 #include "computermanager.moc"
