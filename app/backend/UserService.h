@@ -20,6 +20,7 @@ public:
     // like other service calls such as getAllDeviceOrderInfoByUserId.
     Q_INVOKABLE void getUserInfoById();
     Q_INVOKABLE void getLatestNotice();
+    Q_INVOKABLE void exchangeCoupon(const QString& discountCode);
 
 
 signals:
@@ -37,6 +38,9 @@ signals:
     void userInfoFailure(QString errorMsg);
     void noticeSuccess(QString notice);
     void noticeFailure(QString errorMsg);
+
+    void exchangeCouponSuccess(QString message);
+    void exchangeCouponFailure(QString errorMsg);
 
 };
 

@@ -176,3 +176,17 @@ void ApiService::getLatestNotice(std::function<void(QString)> onSuccess,
         ->async(onSuccess, onFailure);
 
 }
+
+void ApiService::exchangeCoupon(const QString& userId, const QString& discountCode,
+                                const QString& requestId,
+                                std::function<void(QString)> onSuccess,
+                                std::function<void(QString)> onFailure)
+{
+    OkHttpUtils::builder()
+        ->url("coupon/exchangeCoupon")
+        ->addParam("userId", userId)
+        ->addParam("discountCode", discountCode)
+        ->addParam("requestId", requestId)
+        ->post(false)
+        ->async(onSuccess, onFailure);
+}

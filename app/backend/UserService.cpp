@@ -4,6 +4,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QDebug>
+#include <QUuid>
 
 UserService::UserService(QObject* parent)
     : QObject(parent) {}
@@ -151,4 +152,35 @@ void UserService::getLatestNotice()
             }
             );
 
+}
+
+void UserService::exchangeCoupon(const QString& discountCode)
+{
+    qint64 uid = UserSession::instance()->userId();
+    if (uid == 0) {
+        emit exchangeCouponFailure(QStringLiteral("用户未登录"));
+        return;
+    }
+
+    QString reqId = QString::fromLatin1(QUuid::createUuid().toRfc4122().toHex());
+
+    ApiService::exchangeCoupon(QString::number(uid), discountCode, reqId,
+            [=](QString data) {
+                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+                if (!doc.isNull() && doc.isObject()) {
+                    QJsonObject obj = doc.object();
+                    int code = obj.value("code").toInt();
+                    QString msg = obj.value("message").toString();
+                    if (code == 200) {
+                        emit exchangeCouponSuccess(msg);
+                    } else {
+                        emit exchangeCouponFailure(msg);
+                    }
+                } else {
+                    emit exchangeCouponFailure(QStringLiteral("响应格式错误"));
+                }
+            },
+            [=](QString err) {
+                emit exchangeCouponFailure(QStringLiteral("网络错误: ") + err);
+            });
 }

@@ -4,12 +4,25 @@ import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls.Material 2.15
 import UserSession 1.0
+import UserService 1.0
 
 Item {
     id: root
     width: parent ? parent.width : 1280
     height: parent ? parent.height : 800
     property bool isLoggedIn: UserSession.token !== ""
+
+    UserService {
+        id: userService
+        onExchangeCouponSuccess: {
+            couponMessageDialog.text = message
+            couponMessageDialog.open()
+        }
+        onExchangeCouponFailure: {
+            couponMessageDialog.text = errorMsg
+            couponMessageDialog.open()
+        }
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -107,6 +120,8 @@ Item {
                                         console.debug("点击菜单", modelData)
                                         if (modelData === qsTr("账单明细")) {
                                             stackView.push("qrc:/gui/BillDetailView.qml")
+                                        } else if (modelData === qsTr("激活体验码")) {
+                                            couponInputDialog.open()
                                         }
                                     }
                                 }
@@ -247,5 +262,34 @@ Item {
         contentItem: ModifyUserView {
             onRequestClose: profileOverlay.close()
         }
+    }
+
+    NavigableDialog {
+        id: couponInputDialog
+        standardButtons: Dialog.Ok
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        onAccepted: {
+            if (couponField.text.length > 0)
+                userService.exchangeCoupon(couponField.text)
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 10
+            Label {
+                text: qsTr("请输入体验码")
+                Layout.alignment: Qt.AlignHCenter
+            }
+            TextField {
+                id: couponField
+                Layout.fillWidth: true
+                placeholderText: qsTr("体验码")
+            }
+        }
+    }
+
+    NavigableMessageDialog {
+        id: couponMessageDialog
+        standardButtons: Dialog.Ok
     }
 }

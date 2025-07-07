@@ -66,6 +66,12 @@ void getUserInfoById(const QString& userId,
 void getLatestNotice(std::function<void(QString)> onSuccess,
                      std::function<void(QString)> onFailure);
 
+void exchangeCoupon(const QString& userId,
+                    const QString& discountCode,
+                    const QString& requestId,
+                    std::function<void(QString)> onSuccess,
+                    std::function<void(QString)> onFailure);
+
 
 }
 
