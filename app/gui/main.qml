@@ -304,36 +304,64 @@ ApplicationWindow {
             }
 
             // 跑马灯容器
-            Rectangle {
-                id: marqueeContainer
-                width: 300      // 可根据需要调整宽度
+            Item {
+                id: marqueeWrapper
+                width: 300
                 height: 30
-                radius: 4
-                color: "#444444"
-                clip: true
                 Layout.alignment: Qt.AlignVCenter
+                clip: true
 
-                // 公示文本
-                Text {
-                    id: marqueeText
-                    text: UserSession.notice.length > 0 ? UserSession.notice : "📢 公示：请及时更新至最新版本以获得最佳体验。"
-                    font.pointSize: 12
-                    color: "white"
+                Row {
+                    spacing: 6
                     anchors.verticalCenter: parent.verticalCenter
-                    x: marqueeContainer.width
 
-                    // 当文本滚出容器左侧后，从右侧重新开始
-                    SequentialAnimation on x {
-                        loops: Animation.Infinite
-                        NumberAnimation {
-                            from: marqueeContainer.width
-                            to: -marqueeText.width
-                            duration: 10000 // 调整为更慢或更快
-                            easing.type: Easing.Linear
+                    // 左侧 icon + 公示文字
+                    Row {
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Image {
+                            source: "qrc:/res/notice.svg" // 或用 Emoji 图标
+                            width: 16
+                            height: 16
+                        }
+
+                        Label {
+                            text: qsTr("公示：")
+                            font.pointSize: 12
+                            color: "white"
+                        }
+                    }
+
+                    // 右侧滚动文本
+                    Item {
+                        id: marqueeClip
+                        width: parent.width - 90 // 根据左侧内容宽度调整
+                        height: parent.height
+                        clip: true
+
+                        Text {
+                            id: marqueeText
+                            text: UserSession.notice.length > 0 ? UserSession.notice : qsTr("请及时更新至最新版本以获得最佳体验。")
+                            font.pointSize: 12
+                            color: "white"
+                            y: (marqueeClip.height - height) / 2
+                            x: marqueeClip.width
+
+                            SequentialAnimation on x {
+                                loops: Animation.Infinite
+                                NumberAnimation {
+                                    from: marqueeClip.width
+                                    to: -marqueeText.width
+                                    duration: 10000
+                                    easing.type: Easing.Linear
+                                }
+                            }
                         }
                     }
                 }
             }
+
 
 
             // This label will appear when the window gets too small and
@@ -354,7 +382,7 @@ ApplicationWindow {
 
             Image {
                 source: "qrc:/res/coin.svg"
-                visible: stackView.depth > 1
+                visible: true
                 width: 20
                 height: 20
             }
@@ -443,7 +471,7 @@ ApplicationWindow {
             NavigableToolButton {
                 id: rechargeButton
 
-                iconSource: "qrc:/res/coin.svg" // ⚠️ 替换为你的金币图标资源路径
+                iconSource: "qrc:/res/coin.svg"
 
                 ToolTip.text: qsTr("充值")
                 ToolTip.visible: hovered

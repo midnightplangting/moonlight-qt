@@ -1160,6 +1160,23 @@ void ComputerManager::syncOrderDevices()
                 LOG_WARN(QStringLiteral("[syncOrderDevices] 请求失败: %1").arg(err));
             }
             );
+
+    ApiService::getUserInfoById(QString::number(uid),
+            [](QString data) {
+                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+                if (!doc.isNull() && doc.isObject()) {
+                    QJsonObject obj = doc.object();
+                    if (obj.value("code").toInt() == 200) {
+                        QJsonObject userData = obj.value("data").toObject();
+                        double balance = userData.value("balance").toDouble();
+                        UserSession::instance()->setBalance(balance);
+                    }
+                }
+            },
+            [](QString err) {
+                LOG_WARN(QStringLiteral("[getUserInfoById] 请求失败: %1").arg(err));
+            }
+            );
 }
 
 void ComputerManager::syncOrderDevicesSync(const QString& logPrefix)
