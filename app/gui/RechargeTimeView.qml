@@ -156,6 +156,7 @@ Page {
                                 id: startBtn
                                 text: qsTr("开机");width:60; height:36; font.pixelSize:16
                                 anchors.horizontalCenter:parent.horizontalCenter
+                                transform: Translate { y: -8 }
 
                                 // 缩放效果
                                 scale: 1
