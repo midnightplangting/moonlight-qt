@@ -158,31 +158,33 @@ public:
     {
         qDebug() << "===============start parse data!========================";
 
-        // 调用接口
-        QString result = ApiService::getDeviceGroupListSync();
+        ApiService::getDeviceGroupList([
+            this
+        ](QString result) {
+            qDebug() << "response:" << result;
 
-        qDebug() << "response:" << result;
-
-        // 解析 JSON
-        QJsonDocument doc = QJsonDocument::fromJson(result.toUtf8());
-        if (!doc.isNull() && doc.isObject()) {
-            QJsonObject rootObj = doc.object();
-            int code = rootObj.value("code").toInt();
-            if (code == 200) {
-                QJsonArray dataArray = rootObj.value("data").toArray();
-                for (const QJsonValue& item : dataArray) {
-                    QJsonObject obj = item.toObject();
-                    int id = obj.value("deviceGroupId").toInt();
-                    QString name = obj.value("name").toString();
-                    int deviceCount = obj.value("deviceCount").toInt();
-                    qDebug() << "ID:" << id << "name:" << name << "device num:" << deviceCount;
+            QJsonDocument doc = QJsonDocument::fromJson(result.toUtf8());
+            if (!doc.isNull() && doc.isObject()) {
+                QJsonObject rootObj = doc.object();
+                int code = rootObj.value("code").toInt();
+                if (code == 200) {
+                    QJsonArray dataArray = rootObj.value("data").toArray();
+                    for (const QJsonValue& item : dataArray) {
+                        QJsonObject obj = item.toObject();
+                        int id = obj.value("deviceGroupId").toInt();
+                        QString name = obj.value("name").toString();
+                        int deviceCount = obj.value("deviceCount").toInt();
+                        qDebug() << "ID:" << id << "name:" << name << "device num:" << deviceCount;
+                    }
+                } else {
+                    qDebug() << "server error code:" << code;
                 }
             } else {
-                qDebug() << "server error code:" << code;
+                qDebug() << "data is not avilible JSON";
             }
-        } else {
-            qDebug() << "data is not avilible JSON";
-        }
+        }, [](QString err) {
+            qDebug() << "Failed to fetch device group list:" << err;
+        });
     }
 
 
