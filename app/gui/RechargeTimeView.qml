@@ -129,10 +129,15 @@ Page {
                                 Text { text: deviceCount + qsTr(" 台"); font.pixelSize:15; font.bold:true; color:"white" }
                             }
 
+                            Item {
+                                height: 2  // 减少这个高度可以“上移”按钮
+                            }
+
                             // 开机按钮
                             Button {
                                 id: startBtn
-                                text: qsTr("开机"); width:60; height:36; font.pixelSize:16; anchors.horizontalCenter:parent.horizontalCenter
+                                text: qsTr("开机");width:60; height:36; font.pixelSize:16
+                                anchors.horizontalCenter:parent.horizontalCenter
 
                                 // 缩放效果
                                 scale: 1
@@ -165,7 +170,7 @@ Page {
 
     /* 内嵌手动添加 */
     Rectangle {
-        anchors.top: flick.bottom; anchors.topMargin:24; anchors.horizontalCenter:parent.horizontalCenter
+        anchors.top: flick.bottom; anchors.topMargin: -30; anchors.horizontalCenter:parent.horizontalCenter
         width: flick.width - 400; height:48; radius:24; color:"#1C1C1E"
         Row{anchors.fill:parent;anchors.margins:12;spacing:8
             Image{source:"qrc:/res/ic_add_to_queue_white_48px.svg";width:24;height:24}

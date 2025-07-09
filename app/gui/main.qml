@@ -307,7 +307,7 @@ ApplicationWindow {
             Item {
                 id: marqueeWrapper
                 width: 300
-                height: 30
+                height: 40
                 Layout.alignment: Qt.AlignVCenter
                 clip: true
 
@@ -315,28 +315,20 @@ ApplicationWindow {
                     spacing: 6
                     anchors.verticalCenter: parent.verticalCenter
 
-                    // 左侧 icon + 公示文字
                     Row {
                         spacing: 4
                         anchors.verticalCenter: parent.verticalCenter
 
                         Image {
-                            source: "qrc:/res/notice.svg" // 或用 Emoji 图标
-                            width: 16
-                            height: 16
-                        }
-
-                        Label {
-                            text: qsTr("公示：")
-                            font.pointSize: 12
-                            color: "white"
+                            source: "qrc:/res/speaker.svg"
+                            width: 35
+                            height: 35
                         }
                     }
 
-                    // 右侧滚动文本
                     Item {
                         id: marqueeClip
-                        width: parent.width - 90 // 根据左侧内容宽度调整
+                        width: 200  // ✅ 固定宽度，避免循环依赖
                         height: parent.height
                         clip: true
 
@@ -344,6 +336,7 @@ ApplicationWindow {
                             id: marqueeText
                             text: UserSession.notice.length > 0 ? UserSession.notice : qsTr("请及时更新至最新版本以获得最佳体验。")
                             font.pointSize: 12
+                            font.bold: true
                             color: "white"
                             y: (marqueeClip.height - height) / 2
                             x: marqueeClip.width
@@ -361,8 +354,6 @@ ApplicationWindow {
                     }
                 }
             }
-
-
 
             // This label will appear when the window gets too small and
             // we need to ensure the toolbar controls don't collide
@@ -392,6 +383,7 @@ ApplicationWindow {
                 visible: true
                 text: qsTr("我的金币：") + UserSession.balance
                 font.pointSize: 12
+                font.bold: true
                 horizontalAlignment: Qt.AlignRight
                 verticalAlignment: Qt.AlignVCenter
 
