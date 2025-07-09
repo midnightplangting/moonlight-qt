@@ -120,17 +120,35 @@ Page {
                                 }
                             }
 
-                            Row { anchors.horizontalCenter:parent.horizontalCenter; spacing:4
-                                Text { text: qsTr("当前价格"); font.pixelSize:15; color:"#CCCCCC" }
-                                Text { text: currentPrice + qsTr(" 金币") + (currentTab===0?qsTr("/小时"):""); font.pixelSize:18; font.bold:true; color:"#FFA500" }
+                            Row { anchors.horizontalCenter: parent.horizontalCenter; spacing: 4
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: qsTr("当前价格")
+                                    font.pixelSize: 15
+                                    color: "#CCCCCC"
+                                }
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: currentPrice + qsTr(" 金币") + (currentTab===0 ? qsTr("/小时") : "")
+                                    font.pixelSize: 18
+                                    font.bold: true
+                                    color: "#FFA500"
+                                }
                             }
-                            Row { anchors.horizontalCenter:parent.horizontalCenter; spacing:4
-                                Text { text: qsTr("剩余设备数量"); font.pixelSize:12; color:"#CCCCCC" }
-                                Text { text: deviceCount + qsTr(" 台"); font.pixelSize:15; font.bold:true; color:"white" }
-                            }
-
-                            Item {
-                                height: 2  // 减少这个高度可以“上移”按钮
+                            Row { anchors.horizontalCenter: parent.horizontalCenter; spacing: 4
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: qsTr("剩余设备数量")
+                                    font.pixelSize: 12
+                                    color: "#CCCCCC"
+                                }
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: deviceCount + qsTr(" 台")
+                                    font.pixelSize: 15
+                                    font.bold: true
+                                    color: "white"
+                                }
                             }
 
                             // 开机按钮
@@ -176,7 +194,7 @@ Page {
             Image{source:"qrc:/res/ic_add_to_queue_white_48px.svg";width:24;height:24}
             TextField{
                 id: manualAddField
-                placeholderText: qsTr("手动添加电脑    ")
+                placeholderText: qsTr("手动添加电脑                                                                                                                                                                                     ")
                 font.pixelSize:14
                 color:"#DDDDDD"
                 background: Rectangle{ color:"transparent" }

@@ -32,6 +32,8 @@ CenteredGridView {
         currentIndex = -1
         // Synchronize devices once when the page is first loaded
         ComputerManager.syncOrderDevices()
+        // Load pricing information for renew dialog
+        gpuModel.refresh()
     }
 
     // Note: Any initialization done here that is critical for streaming must
@@ -41,6 +43,8 @@ CenteredGridView {
         // Setup signals on CM
         ComputerManager.computerAddCompleted.connect(addComplete)
         ComputerManager.syncOrderDevices()
+        // Ensure pricing data is up to date
+        gpuModel.refresh()
 
         // Highlight the first item if a gamepad is connected
         if (currentIndex == -1 && SdlGamepadKeyNavigation.getConnectedGamepads() > 0) {
@@ -209,15 +213,15 @@ CenteredGridView {
             deletePcDialog.open()
         }
 
-        Row {
+        RowLayout {
             anchors.fill: parent
             anchors.margins: 12
             spacing: 16
-
+            anchors.rightMargin: 40
             Column {
-                anchors.verticalCenter: parent.verticalCenter
                 spacing: 4
                 Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
 
                 Row {
                     spacing: 6
@@ -262,9 +266,10 @@ CenteredGridView {
             Rectangle {
                 id: actionBtn
                 width: 40; height: 28
+
                 color: "transparent"
                 radius: 4
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
 
                 property real normalScale: 1.0
                 property real pressedScale: 0.95
