@@ -86,6 +86,8 @@
         <file>res/zfb.svg</file>
         <file>res/coin.svg</file>
         <file>res/add.svg</file>
+        <file>res/UserAgreement.html</file>
+        <file>res/PrivacyAgreement.html</file>
     </qresource>
     <qresource prefix="/data">
         <file alias="gamecontrollerdb.txt">SDL_GameControllerDB/gamecontrollerdb.txt</file>

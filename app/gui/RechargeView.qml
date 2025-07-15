@@ -122,6 +122,10 @@ Item {
                                             stackView.push("qrc:/gui/BillDetailView.qml")
                                         } else if (modelData === qsTr("激活体验码")) {
                                             couponInputDialog.open()
+                                        } else if (modelData === qsTr("联系客服")) {
+                                            stackView.push("qrc:/gui/ContactCustomerView.qml")
+                                        } else if (modelData === qsTr("关于我们")) {
+                                            stackView.push("qrc:/gui/AboutUsView.qml")
                                         }
                                     }
                                 }
@@ -245,7 +249,21 @@ Item {
                         }
                     }
                 }
-                Label { text:qsTr("购买即同意《用户协议》和《隐私政策》"); color:"#ffffff";font.pixelSize:15;horizontalAlignment:Text.AlignHCenter;width:parent.width }
+                Text {
+                    textFormat: Text.RichText
+                    text: qsTr("购买即同意<a href=\"UserAgreement\">《用户协议》</a>和<a href=\"PrivacyPolicy\">《隐私政策》</a>")
+                    color: "#ffffff"
+                    font.pixelSize: 15
+                    horizontalAlignment: Text.AlignHCenter
+                    width: parent.width
+                    onLinkActivated: function(link) {
+                        if (link === "UserAgreement") {
+                            stackView.push("qrc:/gui/UserAgreementView.qml")
+                        } else if (link === "PrivacyPolicy") {
+                            stackView.push("qrc:/gui/PrivacyPolicyView.qml")
+                        }
+                    }
+                }
             }
         }
     }
