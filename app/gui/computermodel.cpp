@@ -99,6 +99,8 @@ QVariant ComputerModel::data(const QModelIndex& index, int role) const
         return computer->orderBillingType;
     case OrderIdRole:
         return computer->orderId;
+    case IsOrderDeviceRole:
+        return m_ComputerManager->isOrderDevice(computer);
     default:
         return QVariant();
     }
@@ -132,6 +134,7 @@ QHash<int, QByteArray> ComputerModel::roleNames() const
     names[OrderStatusRole] = "status";
     names[BillingTypeRole] = "billingType";
     names[OrderIdRole] = "orderId";
+    names[IsOrderDeviceRole] = "isOrderDevice";
 
     return names;
 }

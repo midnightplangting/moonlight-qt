@@ -21,7 +21,8 @@ class ComputerModel : public QAbstractListModel
         BitrateRole,
         OrderStatusRole,
         BillingTypeRole,
-        OrderIdRole
+        OrderIdRole,
+        IsOrderDeviceRole
     };
 
 public:

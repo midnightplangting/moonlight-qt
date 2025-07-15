@@ -152,6 +152,7 @@ CenteredGridView {
         property int status: model && model.status !== undefined ? model.status : 0
         property int billingType: model && model.billingType !== undefined ? model.billingType : 0
         property int orderId: model && model.orderId !== undefined ? model.orderId : 0
+        property bool isOrderDevice: model && model.isOrderDevice !== undefined ? model.isOrderDevice : false
         property string usageTimeText: startedAt > 0 ? Math.floor((Date.now() - startedAt)/60000).toString() : "--"
         Timer {
             id: usageTimer
@@ -237,7 +238,12 @@ CenteredGridView {
 
                         Text {
                             id: statusText
-                            text: model.online ? qsTr("在线") : qsTr("离线")
+                            text: isOrderDevice ?
+                                  (billingType === 1 ? qsTr("计时") :
+                                   (billingType === 2 ? qsTr("包天") :
+                                    (billingType === 3 ? qsTr("包周") :
+                                     (billingType === 4 ? qsTr("包月") : "")))) :
+                                  qsTr("自动扫描")
                             font.pixelSize: 13
                             color: "#FFFFFF"
                             anchors.centerIn: parent
@@ -262,6 +268,7 @@ CenteredGridView {
             Rectangle {
                 id: actionBtn
                 width: 40; height: 28
+                visible: isOrderDevice
 
                 color: "transparent"
                 radius: 4
