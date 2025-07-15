@@ -319,7 +319,6 @@ signals:
 
 public slots:
     Q_INVOKABLE void syncOrderDevices();
-    void syncOrderDevicesSync(const QString& logPrefix);
     Q_INVOKABLE void allocateDevice(int deviceGroupId, int billingType);
     Q_INVOKABLE void getOrderDetailList();
     void closeOrder(NvComputer* computer);

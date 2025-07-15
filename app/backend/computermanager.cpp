@@ -146,7 +146,6 @@ private:
             }
 
             // Sync order info periodically
-            m_Manager->syncOrderDevicesSync(QStringLiteral("%1 thread").arg(m_Computer->name));
             m_Manager->checkOrderStatus(m_Computer);
 
             // Wait a bit to poll again, but do it in 100 ms chunks
@@ -1177,22 +1176,6 @@ void ComputerManager::syncOrderDevices()
                 LOG_WARN(QStringLiteral("[getUserInfoById] 请求失败: %1").arg(err));
             }
             );
-}
-
-void ComputerManager::syncOrderDevicesSync(const QString& logPrefix)
-{
-    qint64 uid = UserSession::instance()->userId();
-    if (uid == 0) {
-        clearOrderDevices();
-        return;
-    }
-
-    LOG_DEBUG("----------------------------------------");
-    LOG_DEBUG(QStringLiteral("[ComputerManager::syncOrderDevicesSync] uid=%1").arg(uid));
-
-    QString json = ApiService::getAllDeviceOrderInfoByUserIdSync(QString::number(uid));
-    LOG_INFO(QStringLiteral("[%1 result] %2").arg(logPrefix, json));
-    updateOrderInfoFromJson(json);
 }
 
 void ComputerManager::updateOrderInfoFromJson(const QString& json)
