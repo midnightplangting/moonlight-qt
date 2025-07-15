@@ -245,13 +245,26 @@ Page {
         text: qsTr("请登录后使用")
         standardButtons: Dialog.Ok | Dialog.Cancel
         onAccepted: {
-            stackView.push("qrc:/gui/LoginRegisterView.qml")
+            loginOverlay.open()
         }
     }
 
     NavigableMessageDialog {
         id: allocateErrorDialog
         standardButtons: Dialog.Ok
+    }
+
+    Popup {
+        id: loginOverlay
+        modal: true
+        dim: true
+        focus: true
+        anchors.centerIn: Overlay.overlay
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        contentItem: LoginRegisterView {
+            onRequestClose: loginOverlay.close()
+        }
     }
 
     Connections {

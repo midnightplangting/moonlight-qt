@@ -12,11 +12,15 @@ Item {
     property alias confirmPassword: registerConfirmField.text
     signal requestLogin(string username, string password)
     signal requestRegister(string username, string password, string confirmPassword)
+    signal requestClose()
 
     property string registerErrorMessage: ""
     property string loginErrorMessage: ""
 
-    readonly property color cardColor: "#00000055"
+    function isPasswordValid(pwd) {
+        return pwd.length >= 8 && /[A-Za-z]/.test(pwd) && /[0-9]/.test(pwd)
+    }
+
     readonly property color borderColor: "white"
 
     UserService {
@@ -25,7 +29,7 @@ Item {
         onLoginSuccess: {
             console.log("Login success")
             loginErrorMessage = ""
-            stackView.pop()
+            requestClose()
         }
 
         onLoginFailure: (errorMsg) => {
@@ -36,7 +40,7 @@ Item {
         onRegisterSuccess: {
             console.log("Register success")
             registerErrorMessage = ""
-            stackView.pop()
+            requestClose()
         }
 
         onRegisterFailure: (errorMsg) => {
@@ -46,31 +50,21 @@ Item {
     }
 
     Rectangle {
-        anchors.centerIn: card
-        width: card.width; height: card.height
-        color: "#00000054"
-        radius: 18
-        anchors.verticalCenterOffset: 6
-        z: -1
-    }
-
-    Rectangle {
         id: card
+        width: 400
+        height: 560
+        radius: 10
+        color: "#2b2b2b"
         anchors.centerIn: parent
-        width: Math.min(parent.width * 0.85, 460)
-        height: Math.min(parent.height * 0.85, 460)
-        radius: 18
-        color: cardColor
-        border.color: "#00000055"; border.width: 1
 
-        Column {
+        ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 32
-            spacing: 24
+            anchors.margins: 20
+            spacing: 20
 
             TabBar {
                 id: tabBar
-                anchors.horizontalCenter: parent.horizontalCenter
+                Layout.alignment: Qt.AlignHCenter
                 contentWidth: card.width * 0.5
                 background: Rectangle { color: "transparent" }
 
@@ -123,19 +117,32 @@ Item {
                         visible: loginErrorMessage !== ""
                     }
 
-                    Button {
-                        text: qsTr("登录")
-                        width: parent.width; height: 42
-                        onClicked: userService.login(loginUsernameField.text, loginPasswordField.text)
-                        background: Rectangle {
-                            radius: 8
-                            color: "transparent"
-                            border.color: "white"; border.width: 1
+                    Rectangle {
+                        width: parent.width
+                        height: 40
+                        radius: 6
+                        color: "#33cc66"
+
+                        Text {
+                            text: qsTr("登录")
+                            anchors.centerIn: parent
+                            color: "white"
+                            font.pixelSize: 16
+                            font.bold: true
                         }
-                        contentItem: Label {
-                            text: parent.text; color: "white"; anchors.centerIn: parent
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                if (!isPasswordValid(loginPasswordField.text)) {
+                                    loginErrorMessage = qsTr("密码至少8位，需包含字母和数字")
+                                    return
+                                }
+                                userService.login(loginUsernameField.text, loginPasswordField.text)
+                            }
                         }
                     }
+
                 }
 
                 Column {
@@ -192,20 +199,40 @@ Item {
                         font.pixelSize: 12
                         visible: registerErrorMessage !== ""
                     }
+                    Rectangle {
+                        width: parent.width
+                        height: 40
+                        radius: 6
+                        color: "#33cc66"
 
-                    Button {
-                        text: qsTr("注册")
-                        width: parent.width; height: 42
-                        onClicked: userService.registerUser(registerUsernameField.text, registerPasswordField.text, registerConfirmField.text)
-                        background: Rectangle {
-                            radius: 8
-                            color: "transparent"
-                            border.color: "white"; border.width: 1
+                        Text {
+                            text: qsTr("注册")
+                            anchors.centerIn: parent
+                            color: "white"
+                            font.pixelSize: 16
+                            font.bold: true
                         }
-                        contentItem: Label {
-                            text: parent.text; color: "white"; anchors.centerIn: parent
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                if (registerPasswordField.text !== registerConfirmField.text) {
+                                    registerErrorMessage = qsTr("两次密码不一致")
+                                    return
+                                }
+                                if (!isPasswordValid(registerPasswordField.text)) {
+                                    registerErrorMessage = qsTr("密码至少8位，需包含字母和数字")
+                                    return
+                                }
+                                userService.registerUser(
+                                    registerUsernameField.text,
+                                    registerPasswordField.text,
+                                    registerConfirmField.text
+                                )
+                            }
                         }
                     }
+
                 }
             }
         }

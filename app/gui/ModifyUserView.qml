@@ -13,6 +13,10 @@ Item {
 
     property string pendingField: ""
 
+    function isPasswordValid(pwd) {
+        return pwd.length >= 8 && /[A-Za-z]/.test(pwd) && /[0-9]/.test(pwd)
+    }
+
     UserService {
         id: userService
         onUpdateUserInfoSuccess: {
@@ -220,6 +224,10 @@ Item {
                             onClicked: {
                                 if (newPasswordField.text !== confirmPasswordField.text) {
                                     console.warn("两次密码不一致")
+                                    return
+                                }
+                                if (!isPasswordValid(newPasswordField.text)) {
+                                    console.warn("密码至少8位，需包含字母和数字")
                                     return
                                 }
                                 pendingField = "password"

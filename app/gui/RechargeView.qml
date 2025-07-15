@@ -78,7 +78,7 @@ Item {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
                     if (isLoggedIn) profileOverlay.open()
-                    else            stackView.push("qrc:/gui/LoginRegisterView.qml")
+                    else            loginOverlay.open()
                 }
             }
 
@@ -261,6 +261,19 @@ Item {
 
         contentItem: ModifyUserView {
             onRequestClose: profileOverlay.close()
+        }
+    }
+
+    Popup {
+        id: loginOverlay
+        modal: true
+        dim: true
+        focus: true
+        anchors.centerIn: Overlay.overlay
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        contentItem: LoginRegisterView {
+            onRequestClose: loginOverlay.close()
         }
     }
 
