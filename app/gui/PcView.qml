@@ -55,10 +55,6 @@ CenteredGridView {
 
     Connections {
         target: ComputerManager
-        onComputerStateChanged: {
-            // 重新拉取设备列表，刷新 UI
-            computerModel.initialize(ComputerManager)
-        }
         onCloseOrderFinished: {
             if (!success) {
                 errorDialog.text = message
