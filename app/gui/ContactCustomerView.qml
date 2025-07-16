@@ -12,15 +12,6 @@ Page {
         spacing: 20
         width: parent.width
 
-        Label {
-            text: qsTr("联系客服")
-            font.pixelSize: 20
-            font.bold: true
-            horizontalAlignment: Text.AlignHCenter
-            width: parent.width
-            color: "#ffffff"
-        }
-
         RowLayout {
             spacing: 10
             anchors.horizontalCenter: parent.horizontalCenter
