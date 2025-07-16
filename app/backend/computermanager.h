@@ -30,13 +30,16 @@
  * 设备（此时各字段取默认值）。统一的数据结构便于后续的增删和
  * 状态更新操作。
  */
+
 struct DeviceInfo {
-    qint64 orderId = 0;       ///< 订单 ID，非租用设备为 0
-    double bitrate = 0.0;     ///< 订单码率
-    QDateTime startedAt;      ///< 租用开始时间
-    int deviceGroupId = 0;    ///< 设备组 ID
-    int status = 0;           ///< 订单状态
-    int billingType = 0;      ///< 计费类型，本地设备固定为 0
+
+    qint64 orderId = 0;       // 订单 ID，非租用设备为 0
+    double bitrate = 0.0;     // 订单码率
+    QDateTime startedAt;      // 租用开始时间
+    int deviceGroupId = 0;    // 设备组 ID
+    int status = 0;           // 订单状态
+    int billingType = 0;      // 计费类型，本地设备固定为 0
+
 };
 
 class ComputerManager;
