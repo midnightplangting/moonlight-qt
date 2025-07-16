@@ -291,7 +291,8 @@ CenteredGridView {
                                   (billingType === 1 ? qsTr("计时") :
                                    (billingType === 2 ? qsTr("包天") :
                                     (billingType === 3 ? qsTr("包周") :
-                                     (billingType === 4 ? qsTr("包月") : "")))) :
+                                     (billingType === 4 ? qsTr("包月") :
+                                       (billingType === 7 ? qsTr("包时") :""))))) :
                                   qsTr("自动扫描")
                             font.pixelSize: 13
                             color: "#FFFFFF"

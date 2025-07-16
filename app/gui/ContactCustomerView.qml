@@ -8,6 +8,7 @@ Page {
 
     ColumnLayout {
         anchors.centerIn: parent
+        anchors.margins: 20
         spacing: 20
         width: parent.width
 
