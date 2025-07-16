@@ -82,12 +82,15 @@
         <file>res/logos.svg</file>
         <file>res/profile picture.svg</file>
         <file>res/speaker.svg</file>
-        <file>res/wx.svg</file>
-        <file>res/zfb.svg</file>
-        <file>res/coin.svg</file>
         <file>res/add.svg</file>
         <file>res/UserAgreement.html</file>
         <file>res/PrivacyAgreement.html</file>
+        <file>res/coin.svg</file>
+        <file>res/wx.svg</file>
+        <file>res/zfb.svg</file>
+        <file>res/reconnect.svg</file>
+        <file>res/user.svg</file>
+        <file>res/AlibabaPuHuiTi-3-65-Medium.ttf</file>
     </qresource>
     <qresource prefix="/data">
         <file alias="gamecontrollerdb.txt">SDL_GameControllerDB/gamecontrollerdb.txt</file>

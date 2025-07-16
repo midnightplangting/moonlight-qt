@@ -371,23 +371,27 @@ ApplicationWindow {
                 text: ""
             }
 
-            Image {
-                source: "qrc:/res/coin.svg"
-                visible: true
-                width: 20
-                height: 20
+            RowLayout {
+                spacing: 4
+                Layout.alignment: Qt.AlignVCenter
+                Label {
+                    id: versionLabel
+                    visible: true
+                    text: qsTr("我的金币：") + UserSession.balance
+                    font.pointSize: 12
+                    font.bold: true
+                    verticalAlignment: Qt.AlignVCenter
+                }
+                Image {
+                    source: "qrc:/res/coin.svg"
+                    visible: true
+                    Layout.preferredWidth: 24
+                    Layout.preferredHeight: 24
+                    fillMode: Image.PreserveAspectFit
+                }
+
             }
 
-            Label {
-                id: versionLabel
-                visible: true
-                text: qsTr("我的金币：") + UserSession.balance
-                font.pointSize: 12
-                font.bold: true
-                horizontalAlignment: Qt.AlignRight
-                verticalAlignment: Qt.AlignVCenter
-
-            }
 
             NavigableToolButton {
                 property string browserUrl: ""
@@ -463,7 +467,7 @@ ApplicationWindow {
             NavigableToolButton {
                 id: rechargeButton
 
-                iconSource: "qrc:/res/coin.svg"
+                iconSource: "qrc:/res/user.svg"
 
                 ToolTip.text: qsTr("充值")
                 ToolTip.visible: hovered
