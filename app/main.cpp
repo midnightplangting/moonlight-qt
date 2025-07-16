@@ -8,6 +8,7 @@
 #include <QNetworkProxyFactory>
 #include <QPalette>
 #include <QFont>
+#include <QFontDatabase>
 #include <QCursor>
 #include <QElapsedTimer>
 #include <QTemporaryFile>
@@ -597,6 +598,16 @@ int main(int argc, char *argv[])
 #endif
 
     QGuiApplication app(argc, argv);
+
+    // Load custom font for all UI text
+    int customFontId = QFontDatabase::addApplicationFont(":/res/AlibabaPuHuiTi-3-75-SemiBold.ttf");
+    if (customFontId != -1) {
+        const QStringList fontFamilies = QFontDatabase::applicationFontFamilies(customFontId);
+        if (!fontFamilies.isEmpty()) {
+            QFont customFont(fontFamilies.first());
+            app.setFont(customFont);
+        }
+    }
 
 #ifndef STEAM_LINK
     // Force use of the KMSDRM backend for SDL when using Qt platform plugins

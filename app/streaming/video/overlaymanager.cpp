@@ -1,12 +1,18 @@
 #include "overlaymanager.h"
 #include "path.h"
+#include <QFile>
 
 using namespace Overlay;
 
 OverlayManager::OverlayManager() :
-    m_Renderer(nullptr),
-    m_FontData(Path::readDataFile("ModeSeven.ttf"))
+    m_Renderer(nullptr)
 {
+
+    QFile fontFile(":/res/AlibabaPuHuiTi-3-75-SemiBold.ttf");
+    if (fontFile.open(QIODevice::ReadOnly)) {
+        m_FontData = fontFile.readAll();
+    }
+
     memset(m_Overlays, 0, sizeof(m_Overlays));
 
     m_Overlays[OverlayType::OverlayDebug].color = {0xD0, 0xD0, 0x00, 0xFF};
