@@ -78,7 +78,6 @@
         <file>languages/qml_ta.qm</file>
         <file>res/Computer Announcement.svg</file>
         <file>res/handle.svg</file>
-        <file>res/logo.svg</file>
         <file>res/logos.svg</file>
         <file>res/profile picture.svg</file>
         <file>res/speaker.svg</file>
@@ -90,7 +89,8 @@
         <file>res/zfb.svg</file>
         <file>res/reconnect.svg</file>
         <file>res/user.svg</file>
-        <file>res/AlibabaPuHuiTi-3-65-Medium.ttf</file>
+        <file>res/logo.svg</file>
+        <file>res/AlibabaPuHuiTi-3-75-SemiBold.ttf</file>
     </qresource>
     <qresource prefix="/data">
         <file alias="gamecontrollerdb.txt">SDL_GameControllerDB/gamecontrollerdb.txt</file>

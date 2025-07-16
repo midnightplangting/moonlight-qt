@@ -206,7 +206,7 @@ Item {
 
                             // 赠送徽章
                             Rectangle { visible: model.gift > 0; width: parent.width * 0.7; height: 20; radius: 6; anchors.horizontalCenter: parent.horizontalCenter; y: -3; color: "#FFBF00"
-                                Label { anchors.centerIn: parent; text: qsTr("赠") + model.gift + qsTr("金币"); font.pixelSize: 14; color: "#333333" }
+                                Label { anchors.centerIn: parent; text: qsTr("赠") + model.gift + qsTr("金币"); font.pixelSize: 14; font.bold: true; color: "#333333" }
                             }
                             // 主信息
                             Column { anchors.centerIn: parent; spacing: 4
