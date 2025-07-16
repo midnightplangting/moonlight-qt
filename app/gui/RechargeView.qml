@@ -146,9 +146,9 @@ Item {
                     id: bannerFrame
                     width: parent.width; height: 280; radius: 12; color: "#1C1C1E"; clip: true
                     ListModel { id: bannerModel
-                        ListElement { source: "qrc:/res/update.svg" }
-                        ListElement { source: "qrc:/res/update.svg" }
-                        ListElement { source: "qrc:/res/update.svg" }
+                        ListElement { source: "qrc:/res/logo.svg" }
+                        ListElement { source: "qrc:/res/logo.svg" }
+                        ListElement { source: "qrc:/res/logo.svg" }
                     }
                     ListView {
                         id: bannerView
