@@ -487,12 +487,11 @@ void ComputerManager::saveHost(NvComputer *computer)
 void ComputerManager::handleComputerStateChanged(NvComputer* computer)
 {
     // Apply order information if available
-    QString key = QString("%1:%2").arg(computer->activeAddress.address())
-                      .arg(computer->activeAddress.port());
+    QString key = deviceKey(computer);
     {
         QReadLocker rlock(&m_OrderLock);
-        if (m_OrderDeviceInfo.contains(key)) {
-            const OrderDeviceInfo info = m_OrderDeviceInfo.value(key);
+        if (m_DeviceInfo.contains(key)) {
+            const DeviceInfo info = m_DeviceInfo.value(key);
             QWriteLocker wlock(&computer->lock);
             if (!computer->orderStartedAt.isValid())
                 computer->orderStartedAt = info.startedAt;
@@ -517,19 +516,15 @@ void ComputerManager::handleComputerStateChanged(NvComputer* computer)
 
 void ComputerManager::checkOrderStatus(NvComputer* computer)
 {
-    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
-                                               : computer->localAddress.address();
-    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
-                                                    : computer->localAddress.port();
-    QString key = QString("%1:%2").arg(addr).arg(port);
+    QString key = deviceKey(computer);
 
     int status = 0;
     qint64 orderId = 0;
     {
         QReadLocker rlock(&m_OrderLock);
-        if (m_OrderDeviceInfo.contains(key))
+        if (m_DeviceInfo.contains(key))
         {
-            const OrderDeviceInfo info = m_OrderDeviceInfo.value(key);
+            const DeviceInfo info = m_DeviceInfo.value(key);
             status = info.status;
             orderId = info.orderId;
         }
@@ -627,13 +622,18 @@ void ComputerManager::renameHost(NvComputer* computer, QString name)
 
 bool ComputerManager::isOrderDevice(NvComputer* computer)
 {
-    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
-                                                : computer->localAddress.address();
-    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
-                                                 : computer->localAddress.port();
-    QString key = QString("%1:%2").arg(addr).arg(port);
-    QReadLocker rlock(&m_OrderLock);
-    return m_OrderDeviceInfo.contains(key);
+    QString key = deviceKey(computer);
+
+    {
+        QReadLocker rlock(&m_OrderLock);
+        if (m_DeviceInfo.contains(key)) {
+            return m_DeviceInfo.value(key).billingType != 0;
+        }
+    }
+
+    // 自动扫描的主机会走到这里，为其创建默认记录，计费类型为 0
+    registerDeviceInfo(computer);
+    return false;
 }
 
 void ComputerManager::clearOrderDevices()
@@ -643,12 +643,8 @@ void ComputerManager::clearOrderDevices()
         QReadLocker lock(&m_Lock);
         QReadLocker orderLock(&m_OrderLock);
         for (NvComputer* pc : m_KnownHosts) {
-            QString addr = !pc->manualAddress.isNull() ? pc->manualAddress.address()
-                                                     : pc->localAddress.address();
-            quint16 port = !pc->manualAddress.isNull() ? pc->manualAddress.port()
-                                                     : pc->localAddress.port();
-            QString key = QString("%1:%2").arg(addr).arg(port);
-            if (m_OrderDeviceInfo.contains(key)) {
+            QString key = deviceKey(pc);
+            if (m_DeviceInfo.contains(key) && m_DeviceInfo.value(key).billingType != 0) {
                 toDelete.append(pc);
             }
         }
@@ -661,7 +657,7 @@ void ComputerManager::clearOrderDevices()
 
     {
         QWriteLocker orderLock(&m_OrderLock);
-        m_OrderDeviceInfo.clear();
+        m_DeviceInfo.clear();
         m_OrderDeviceKeys.clear();
     }
 }
@@ -749,15 +745,15 @@ void ComputerManager::pairHost(NvComputer* computer, QString pin)
                                                     : computer->localAddress.address();
     quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
                                                      : computer->localAddress.port();
-    QString key = QString("%1:%2").arg(addr).arg(port);
+    QString key = deviceKey(addr, port);
 
     bool orderDevice = false;
     qint64 orderId = 0;
     {
         QReadLocker rlock(&m_OrderLock);
-        orderDevice = m_OrderDeviceInfo.contains(key);
+        orderDevice = m_DeviceInfo.contains(key) && m_DeviceInfo.value(key).billingType != 0;
         if (orderDevice)
-            orderId = m_OrderDeviceInfo.value(key).orderId;
+            orderId = m_DeviceInfo.value(key).orderId;
     }
 
     if (orderDevice || (computer->manualAddress.isNull() && !computer->remoteAddress.isNull())) {
@@ -1083,6 +1079,9 @@ private:
                 // Store this in our active sets
                 m_ComputerManager->m_KnownHosts[newComputer->uuid] = newComputer;
 
+                // 为自动扫描的设备创建默认记录
+                m_ComputerManager->registerDeviceInfo(newComputer);
+
                 // Start polling if enabled (write lock required)
                 m_ComputerManager->startPollingComputer(newComputer);
 
@@ -1202,11 +1201,11 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             QJsonObject o = v.toObject();
             QString ip = o["ip"].toString();
             quint16 port = o["port"].toString().toUShort();
-            QString key = QString("%1:%2").arg(ip).arg(port);
+            QString key = deviceKey(ip, port);
             newKeys << key;
 
             // 保存订单附带的信息，供 UI 展示
-            OrderDeviceInfo info;
+            DeviceInfo info;
             QJsonObject orderObj = o["deviceOrderInfo"].toObject();
             info.orderId = orderObj["orderId"].toVariant().toLongLong();
             info.bitrate = orderObj["bitrate"].toDouble();
@@ -1214,7 +1213,7 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             info.deviceGroupId = orderObj["deviceGroupId"].toInt();
             info.status = orderObj["status"].toInt();
             info.billingType = orderObj["billingType"].toInt();
-            m_OrderDeviceInfo.insert(key, info);
+            m_DeviceInfo.insert(key, info);
 
             if (!m_OrderDeviceKeys.contains(key))
                 newDevices.append({ip, port, o["name"].toString()});
@@ -1239,11 +1238,7 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
 
         QReadLocker rlock(&m_Lock);
         for (NvComputer* pc : m_KnownHosts) {
-            QString addr = !pc->manualAddress.isNull() ? pc->manualAddress.address()
-                                                     : pc->localAddress.address();
-            quint16 port = !pc->manualAddress.isNull() ? pc->manualAddress.port()
-                                                     : pc->localAddress.port();
-            QString key = QString("%1:%2").arg(addr).arg(port);
+            QString key = deviceKey(pc);
 
             if (removed.contains(key)) {
                 LOG_INFO(QStringLiteral("[OrderSync] 标记删除设备 %1").arg(pc->name));
@@ -1308,20 +1303,16 @@ void ComputerManager::allocateDevice(int deviceGroupId, int billingType)
 
 void ComputerManager::closeOrder(NvComputer* computer)
 {
-    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
-                                               : computer->localAddress.address();
-    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
-                                                    : computer->localAddress.port();
-    QString key = QString("%1:%2").arg(addr).arg(port);
+    QString key = deviceKey(computer);
 
     qint64 orderId = 0;
     {
         QReadLocker rlock(&m_OrderLock);
-        if (!m_OrderDeviceInfo.contains(key)) {
+        if (!m_DeviceInfo.contains(key) || m_DeviceInfo.value(key).billingType == 0) {
             emit closeOrderFinished(false, QStringLiteral("Order ID not found"));
             return;
         }
-        orderId = m_OrderDeviceInfo.value(key).orderId;
+        orderId = m_DeviceInfo.value(key).orderId;
     }
 
     LOG_DEBUG("----------------------------------------");
@@ -1345,7 +1336,7 @@ void ComputerManager::closeOrder(NvComputer* computer)
                 if (code == 200 && data) {
                     {
                         QWriteLocker wlock(&m_OrderLock);
-                        m_OrderDeviceInfo.remove(key);
+                        m_DeviceInfo.remove(key);
                         m_OrderDeviceKeys.remove(key);
                     }
                     deleteHost(computer);
@@ -1379,11 +1370,42 @@ void ComputerManager::getOrderDetailList()
 int ComputerManager::getDeviceGroupIdByOrderId(qint64 orderId)
 {
     QReadLocker rlock(&m_OrderLock);
-    for (auto it = m_OrderDeviceInfo.constBegin(); it != m_OrderDeviceInfo.constEnd(); ++it) {
+    for (auto it = m_DeviceInfo.constBegin(); it != m_DeviceInfo.constEnd(); ++it) {
         if (it.value().orderId == orderId)
             return it.value().deviceGroupId;
     }
     return 0;
+}
+
+QString ComputerManager::deviceKey(const QString& ip, quint16 port) const
+{
+    return QString("%1:%2").arg(ip).arg(port);
+}
+
+QString ComputerManager::deviceKey(NvComputer* computer) const
+{
+    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
+                                                   : computer->localAddress.address();
+    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
+                                                    : computer->localAddress.port();
+    return deviceKey(addr, port);
+}
+
+void ComputerManager::registerDeviceInfo(const QString& ip, quint16 port, const DeviceInfo& info)
+{
+    QString key = deviceKey(ip, port);
+    QWriteLocker wlock(&m_OrderLock);
+    if (!m_DeviceInfo.contains(key))
+        m_DeviceInfo.insert(key, info);
+}
+
+void ComputerManager::registerDeviceInfo(NvComputer* computer)
+{
+    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
+                                                   : computer->localAddress.address();
+    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
+                                                    : computer->localAddress.port();
+    registerDeviceInfo(addr, port, DeviceInfo());
 }
 
 

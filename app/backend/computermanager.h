@@ -23,13 +23,20 @@
 #include <QWaitCondition>
 #include <QDateTime>
 
-struct OrderDeviceInfo {
-    qint64 orderId = 0;
-    double bitrate = 0.0;
-    QDateTime startedAt;
-    int deviceGroupId = 0;   // 设备组 ID
-    int status = 0;           // 订单状态
-    int billingType = 0;      // 计费类型
+/**
+ * @brief 描述本地记录的主机信息
+ *
+ * 既用于保存后端同步的租用设备数据，也用于保存自动扫描到的本地
+ * 设备（此时各字段取默认值）。统一的数据结构便于后续的增删和
+ * 状态更新操作。
+ */
+struct DeviceInfo {
+    qint64 orderId = 0;       ///< 订单 ID，非租用设备为 0
+    double bitrate = 0.0;     ///< 订单码率
+    QDateTime startedAt;      ///< 租用开始时间
+    int deviceGroupId = 0;    ///< 设备组 ID
+    int status = 0;           ///< 订单状态
+    int billingType = 0;      ///< 计费类型，本地设备固定为 0
 };
 
 class ComputerManager;
@@ -336,6 +343,10 @@ private:
     void saveHost(NvComputer* computer);
 
     void updateOrderInfoFromJson(const QString& json);
+    QString deviceKey(const QString& ip, quint16 port) const;
+    QString deviceKey(NvComputer* computer) const;
+    void registerDeviceInfo(const QString& ip, quint16 port, const DeviceInfo& info = DeviceInfo());
+    void registerDeviceInfo(NvComputer* computer);
 
     QHostAddress getBestGlobalAddressV6(QVector<QHostAddress>& addresses);
 
@@ -357,7 +368,7 @@ private:
     QMutex m_DelayedFlushMutex; // Lock ordering: Must never be acquired while holding NvComputer lock
     QWaitCondition m_DelayedFlushCondition;
     bool m_NeedsDelayedFlush;
-    QHash<QString, OrderDeviceInfo> m_OrderDeviceInfo; // key: "ip:port" -> info
+    QHash<QString, DeviceInfo> m_DeviceInfo;            // key: "ip:port" -> info
     QSet<QString> m_OrderDeviceKeys;               // 上一轮订单 key: "ip:port"
     QTimer m_OrderTimer;                           // 定时同步订单状态
 };
