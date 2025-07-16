@@ -495,6 +495,8 @@ void ComputerManager::handleComputerStateChanged(NvComputer* computer)
             QWriteLocker wlock(&computer->lock);
             if (!computer->orderStartedAt.isValid())
                 computer->orderStartedAt = info.startedAt;
+            if (!computer->orderEndedAt.isValid())
+                computer->orderEndedAt = info.endedAt;
             if (computer->orderBitrate == 0.0)
                 computer->orderBitrate = info.bitrate;
             if (computer->orderId == 0)
@@ -1210,6 +1212,7 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             info.orderId = orderObj["orderId"].toVariant().toLongLong();
             info.bitrate = orderObj["bitrate"].toDouble();
             info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
+            info.endedAt = QDateTime::fromString(orderObj["endedAt"].toString(), Qt::ISODate);
             info.deviceGroupId = orderObj["deviceGroupId"].toInt();
             info.status = orderObj["status"].toInt();
             info.billingType = orderObj["billingType"].toInt();

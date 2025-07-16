@@ -91,6 +91,8 @@ QVariant ComputerModel::data(const QModelIndex& index, int role) const
     }
     case StartedAtRole:
         return computer->orderStartedAt.isValid() ? QVariant(computer->orderStartedAt.toMSecsSinceEpoch()) : QVariant();
+    case EndedAtRole:
+        return computer->orderEndedAt.isValid() ? QVariant(computer->orderEndedAt.toMSecsSinceEpoch()) : QVariant();
     case BitrateRole:
         return computer->orderBitrate;
     case OrderStatusRole:
@@ -130,6 +132,7 @@ QHash<int, QByteArray> ComputerModel::roleNames() const
     names[ServerSupportedRole] = "serverSupported";
     names[DetailsRole] = "details";
     names[StartedAtRole] = "startedAt";
+    names[EndedAtRole] = "endedAt";
     names[BitrateRole] = "bitrate";
     names[OrderStatusRole] = "status";
     names[BillingTypeRole] = "billingType";

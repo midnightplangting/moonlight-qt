@@ -32,14 +32,13 @@
  */
 
 struct DeviceInfo {
-
     qint64 orderId = 0;       // 订单 ID，非租用设备为 0
     double bitrate = 0.0;     // 订单码率
-    QDateTime startedAt;      // 租用开始时间
+    QDateTime startedAt;      // 租用结束时间
+    QDateTime endedAt;        // 租用开始时间
     int deviceGroupId = 0;    // 设备组 ID
     int status = 0;           // 订单状态
     int billingType = 0;      // 计费类型，本地设备固定为 0
-
 };
 
 class ComputerManager;

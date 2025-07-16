@@ -105,6 +105,7 @@ public:
     // Order info
     double orderBitrate = 0.0;
     QDateTime orderStartedAt;
+    QDateTime orderEndedAt;
     qint64 orderId = 0;
     int orderStatus = 0;
     int orderBillingType = 0;

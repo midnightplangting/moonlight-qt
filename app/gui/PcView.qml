@@ -148,20 +148,69 @@ CenteredGridView {
         // 使用安全默认值避免 undefined 警告
         property string name: model && model.name !== undefined ? model.name : ""
         property real startedAt: model && model.startedAt !== undefined ? model.startedAt : 0
+        property real endedAt: model && model.endedAt !== undefined ? model.endedAt : 0
         property real bitrate: model && model.bitrate !== undefined ? model.bitrate : 0
         property int status: model && model.status !== undefined ? model.status : 0
         property int billingType: model && model.billingType !== undefined ? model.billingType : 0
         property int orderId: model && model.orderId !== undefined ? model.orderId : 0
         property bool isOrderDevice: model && model.isOrderDevice !== undefined ? model.isOrderDevice : false
-        property string usageTimeText: startedAt > 0 ? Math.floor((Date.now() - startedAt)/60000).toString() : "--"
+        property string usageTimeText: {
+            if (billingType >= 2 && endedAt > 0) {
+                var remain = Math.floor((endedAt - Date.now())/60000)
+                if (remain < 0) remain = 0
+                return remain.toString()
+            }
+            return startedAt > 0 ? Math.floor((Date.now() - startedAt)/60000).toString() : "--"
+        }
         Timer {
             id: usageTimer
             interval: 60000
             repeat: true
-            running: startedAt > 0
-            onTriggered: usageTimeText = startedAt > 0 ? Math.floor((Date.now() - startedAt)/60000).toString() : "--"
+            running: startedAt > 0 || (billingType >= 2 && endedAt > 0)
+            onTriggered: {
+                if (billingType >= 2 && endedAt > 0) {
+                    var remain = Math.floor((endedAt - Date.now())/60000)
+                    if (remain < 0) remain = 0
+                    usageTimeText = remain.toString()
+                } else {
+                    usageTimeText = startedAt > 0 ? Math.floor((Date.now() - startedAt)/60000).toString() : "--"
+                }
+            }
         }
-        Component.onCompleted: if (startedAt > 0) usageTimer.start()
+        //时间进制转换
+        function formatDuration(minutes) {
+            minutes = parseInt(minutes)
+            if (isNaN(minutes) || minutes < 0)
+                return "--"
+
+            const MONTH_MINUTES = 30 * 24 * 60
+            const WEEK_MINUTES = 7 * 24 * 60
+            const DAY_MINUTES = 24 * 60
+            const HOUR_MINUTES = 60
+
+            const months = Math.floor(minutes / MONTH_MINUTES)
+            minutes %= MONTH_MINUTES
+
+            const weeks = Math.floor(minutes / WEEK_MINUTES)
+            minutes %= WEEK_MINUTES
+
+            const days = Math.floor(minutes / DAY_MINUTES)
+            minutes %= DAY_MINUTES
+
+            const hours = Math.floor(minutes / HOUR_MINUTES)
+            minutes %= HOUR_MINUTES
+
+            let result = ""
+            if (months > 0) result += months + "月"
+            if (weeks > 0) result += weeks + "周"
+            if (days > 0) result += days + "天"
+            if (hours > 0) result += hours + "小时"
+            if (minutes > 0 || result === "") result += minutes + "分钟"
+
+            return result
+        }
+
+        Component.onCompleted: if (startedAt > 0 || (billingType >= 2 && endedAt > 0)) usageTimer.start()
         property bool online: model && model.online !== undefined ? model.online : false
         property bool paired: model && model.paired !== undefined ? model.paired : false
         property bool serverSupported: model && model.serverSupported !== undefined ? model.serverSupported : false
@@ -253,10 +302,13 @@ CenteredGridView {
                 }
 
                 Text {
-                    text: qsTr("使用时长：%1 分钟").arg(usageTimeText)
+                    text: (billingType >= 2 && endedAt > 0) ?
+                          qsTr("剩余时长：%1").arg(formatDuration(usageTimeText)) :
+                          qsTr("使用时长：%1").arg(formatDuration(usageTimeText))
                     font.pixelSize: 18
                     color: "#CCCCCC"
                 }
+
 
                 Text {
                     text: qsTr("串流码率：%1 Mbps").arg(bitrate)
