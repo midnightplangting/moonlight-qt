@@ -8,7 +8,7 @@
 #include <QJsonObject>
 #include <QDebug>
 
-#define BASE_URL "https://gzydn.cn:18081/"
+#define BASE_URL "https://gzydn.cn:18080/"
 
 OkHttpUtils* OkHttpUtils::builder(QObject* parent) {
     return new OkHttpUtils(parent);
