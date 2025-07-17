@@ -258,9 +258,9 @@ Item {
                     width: parent.width
                     onLinkActivated: function(link) {
                         if (link === "UserAgreement") {
-                            stackView.push("qrc:/gui/UserAgreementView.qml")
+                            Qt.openUrlExternally("qrc:/res/UserAgreement.html")
                         } else if (link === "PrivacyPolicy") {
-                            stackView.push("qrc:/gui/PrivacyPolicyView.qml")
+                            Qt.openUrlExternally("qrc:/res/PrivacyAgreement.html")
                         }
                     }
                 }
