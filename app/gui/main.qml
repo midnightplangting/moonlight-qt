@@ -431,6 +431,20 @@ ApplicationWindow {
                 }
             }
 
+            // Button to return to PC view
+            NavigableToolButton {
+                id: pcViewButton
+                iconSource: "qrc:/res/desktop_windows-48px.svg"
+                ToolTip.text: qsTr("Computers")
+                ToolTip.visible: hovered
+                ToolTip.delay: 1000
+                ToolTip.timeout: 3000
+
+                onClicked: navigateTo("qrc:/gui/PcView.qml", "PcView")
+
+                Keys.onDownPressed: stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+            }
+
             // GPU 购买（计时/包机）视图
             NavigableToolButton {
                 id: gpuPurchaseButton
