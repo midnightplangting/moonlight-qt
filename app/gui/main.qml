@@ -382,13 +382,13 @@ ApplicationWindow {
                     font.bold: true
                     verticalAlignment: Qt.AlignVCenter
                 }
-                Image {
-                    source: "qrc:/res/coin.svg"
-                    visible: true
-                    Layout.preferredWidth: 24
-                    Layout.preferredHeight: 24
-                    fillMode: Image.PreserveAspectFit
-                }
+                // Image {
+                //     source: "qrc:/res/coin.svg"
+                //     visible: true
+                //     Layout.preferredWidth: 24
+                //     Layout.preferredHeight: 24
+                //     fillMode: Image.PreserveAspectFit
+                // }
 
             }
 

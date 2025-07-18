@@ -162,6 +162,53 @@ Session* ComputerModel::createSessionForCurrentGame(int computerIndex)
     return nullptr;
 }
 
+static int findDesktopAppIndex(NvComputer* computer)
+{
+    for (int i = 0; i < computer->appList.size(); i++) {
+        const NvApp& app = computer->appList[i];
+        QString nameLower = app.name.toLower();
+        if (nameLower.contains(QStringLiteral("desktop")) ||
+            nameLower.contains(QStringLiteral("\u684c\u9762"))) {
+            return i;
+        }
+    }
+    for (int i = 0; i < computer->appList.size(); i++) {
+        if (computer->appList[i].directLaunch) {
+            return i;
+        }
+    }
+    return computer->appList.isEmpty() ? -1 : 0;
+}
+
+Session* ComputerModel::createDesktopSession(int computerIndex)
+{
+    Q_ASSERT(computerIndex < m_Computers.count());
+
+    NvComputer* computer = m_Computers[computerIndex];
+
+    int idx = findDesktopAppIndex(computer);
+    if (idx >= 0) {
+        NvApp app = computer->appList[idx];
+        return new Session(computer, app);
+    }
+
+    return nullptr;
+}
+
+QString ComputerModel::getDesktopAppName(int computerIndex)
+{
+    Q_ASSERT(computerIndex < m_Computers.count());
+
+    NvComputer* computer = m_Computers[computerIndex];
+
+    int idx = findDesktopAppIndex(computer);
+    if (idx >= 0) {
+        return computer->appList[idx].name;
+    }
+
+    return QString();
+}
+
 void ComputerModel::deleteComputer(int computerIndex)
 {
     Q_ASSERT(computerIndex < m_Computers.count());

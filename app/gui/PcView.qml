@@ -79,9 +79,7 @@ CenteredGridView {
             errorDialog.helpText = ""
             errorDialog.open()
         } else if (pendingPairIndex !== -1) {
-            var component = Qt.createComponent("AppView.qml")
-            var appView = component.createObject(stackView, {"computerIndex": pendingPairIndex, "objectName": pendingPairName})
-            stackView.push(appView)
+            launchDesktopStream(pendingPairIndex)
             pendingPairIndex = -1
             pendingPairName = ""
         }
@@ -110,6 +108,19 @@ CenteredGridView {
         model.pairingCompleted.connect(pairingComplete)
         model.connectionTestCompleted.connect(testConnectionDialog.connectionTestComplete)
         return model
+    }
+
+    function launchDesktopStream(pcIndex) {
+        var session = computerModel.createDesktopSession(pcIndex)
+        var name = computerModel.getDesktopAppName(pcIndex)
+        if (session === null || !name) {
+            errorDialog.text = qsTr("Unable to start desktop stream")
+            errorDialog.open()
+            return
+        }
+        var component = Qt.createComponent("StreamSegue.qml")
+        var segue = component.createObject(stackView, {"appName": name, "session": session})
+        stackView.push(segue)
     }
 
     Row {
@@ -370,12 +381,8 @@ CenteredGridView {
                 }
                 NavigableMenuItem {
                     parentMenu: pcContextMenu
-                    text: qsTr("View All Apps")
-                    onTriggered: {
-                        var component = Qt.createComponent("AppView.qml")
-                        var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name, "showHiddenGames": true})
-                        stackView.push(appView)
-                    }
+                    text: qsTr("Start Streaming")
+                    onTriggered: launchDesktopStream(index)
                     visible: model.online && model.paired
                 }
                 NavigableMenuItem {
@@ -432,9 +439,7 @@ CenteredGridView {
                         errorDialog.text = result.error
                         errorDialog.open()
                     } else if (result.open) {
-                        var component = Qt.createComponent("AppView.qml")
-                        var appView = component.createObject(stackView, {"computerIndex": index, "objectName": model.name})
-                        stackView.push(appView)
+                        launchDesktopStream(index)
                     } else {
                         pendingPairIndex = index
                         pendingPairName = model.name

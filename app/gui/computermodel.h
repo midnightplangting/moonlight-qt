@@ -56,6 +56,8 @@ public:
     Q_INVOKABLE void checkoutComputer(int computerIndex);
 
     Q_INVOKABLE Session* createSessionForCurrentGame(int computerIndex);
+    Q_INVOKABLE Session* createDesktopSession(int computerIndex);
+    Q_INVOKABLE QString getDesktopAppName(int computerIndex);
 
 signals:
     void pairingCompleted(QVariant error);
