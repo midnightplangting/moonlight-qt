@@ -136,7 +136,7 @@ Item {
                         Layout.fillWidth: true; height: 260; radius: 12; color: "#1C1C1E"
                         Label {
                             anchors.centerIn: parent
-                            text: qsTr("图片链接"); color: "#0ebb76"; font.pixelSize: 20
+                            text: qsTr("充值功能敬请期待..."); color: "#0ebb76"; font.pixelSize: 20
                         }
                     }
                 }
