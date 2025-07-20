@@ -274,7 +274,10 @@ Item {
         modal: true
         dim: true
         focus: true
-        anchors.centerIn: Overlay.overlay
+        // Overlay.overlay isn't available on older Qt versions
+        parent: ApplicationWindow.contentItem
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2)
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
 
@@ -288,7 +291,10 @@ Item {
         modal: true
         dim: true
         focus: true
-        anchors.centerIn: Overlay.overlay
+        // Overlay.overlay isn't available on older Qt versions
+        parent: ApplicationWindow.contentItem
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2)
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
         contentItem: LoginRegisterView {

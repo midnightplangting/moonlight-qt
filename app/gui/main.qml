@@ -35,8 +35,12 @@ ApplicationWindow {
 
     UserService {
         id: userService
-        onUserInfoSuccess: UserSession.balance = balance
-        onNoticeSuccess: function(notice) { UserSession.notice = notice }
+        function onUserInfoSuccess(balance) {
+            UserSession.balance = balance
+        }
+        function onNoticeSuccess(notice) {
+            UserSession.notice = notice
+        }
     }
     // This function runs prior to creation of the initial StackView item
     function doEarlyInit() {
@@ -105,10 +109,6 @@ ApplicationWindow {
         text: ToolTip.toolTip.text
     }
 
-    // This configures the maximum width of the singleton attached QML ToolTip. If left unconstrained,
-    // it will never insert a line break and just extend on forever.
-    ToolTip.toolTip.contentWidth: Math.min(tooltipTextLayoutHelper.width, 400)
-
     function goBack() {
         if (clearOnBack) {
             // Pop all items except the first one
@@ -124,6 +124,9 @@ ApplicationWindow {
         id: stackView
         anchors.fill: parent
         focus: true
+
+        // Constrain the maximum width of the singleton attached QML ToolTip
+        ToolTip.toolTip.contentWidth: Math.min(tooltipTextLayoutHelper.width, 400)
 
         Component.onCompleted: {
             // Perform our early initialization before constructing
