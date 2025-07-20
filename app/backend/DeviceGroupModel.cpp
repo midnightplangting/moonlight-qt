@@ -1,8 +1,10 @@
 #include "DeviceGroupModel.h"
 #include "ApiService.h"
+#include "Logger.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QVariantMap>
 #include <QDebug>
 
 DeviceGroupModel::DeviceGroupModel(QObject* parent)
@@ -73,6 +75,13 @@ void DeviceGroupModel::refresh()
                     for (const auto& price : charter) {
                         group.charterPrices.append(price.toInt());
                     }
+                    LOG_INFO(QStringLiteral("[DeviceGroup] id=%1 name=%2 timing=%3 charter=[%4,%5,%6]")
+                                 .arg(group.groupId)
+                                 .arg(group.name)
+                                 .arg(group.timingPrice)
+                                 .arg(group.charterPrices.value(0))
+                                 .arg(group.charterPrices.value(1))
+                                 .arg(group.charterPrices.value(2)));
                     parsed.append(group);
                 }
             }
@@ -83,4 +92,19 @@ void DeviceGroupModel::refresh()
         ](QString err) {
             qWarning() << "Failed to fetch device group list:" << err;
         });
+}
+
+QVariantMap DeviceGroupModel::getGroup(int groupId) const
+{
+    QVariantMap map;
+    for (const auto& g : m_data) {
+        if (g.groupId == groupId) {
+            map.insert("hourly", g.timingPrice);
+            map.insert("day", g.charterPrices.value(0));
+            map.insert("week", g.charterPrices.value(1));
+            map.insert("month", g.charterPrices.value(2));
+            return map;
+        }
+    }
+    return map;
 }

@@ -41,6 +41,8 @@ public:
 
     Q_INVOKABLE void refresh();
 
+    Q_INVOKABLE QVariantMap getGroup(int groupId) const;
+
 private:
     QVector<DeviceGroup> m_data;
 };

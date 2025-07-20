@@ -49,6 +49,12 @@ void closeOrder(const QString& orderId,
                 std::function<void(QString)> onSuccess,
                 std::function<void(QString)> onFailure);
 
+void rechargeOrder(const QString& orderId,
+                   const QString& num,
+                   const QString& billingType,
+                   std::function<void(QString)> onSuccess,
+                   std::function<void(QString)> onFailure);
+
 
 
 void updateUserInfo(const QJsonObject& params,

@@ -132,6 +132,21 @@ void ApiService::closeOrder(const QString& orderId,
         ->async(onSuccess, onFailure);
 }
 
+void ApiService::rechargeOrder(const QString& orderId,
+                               const QString& num,
+                               const QString& billingType,
+                               std::function<void(QString)> onSuccess,
+                               std::function<void(QString)> onFailure)
+{
+    OkHttpUtils::builder()
+        ->url("device/reChargeOrder")
+        ->addParam("orderId", orderId)
+        ->addParam("num", num)
+        ->addParam("billingType", billingType)
+        ->post(false)
+        ->async(onSuccess, onFailure);
+}
+
 
 void ApiService::updateUserInfo(const QJsonObject& params,
                                 std::function<void(QString)> onSuccess,

@@ -1386,11 +1386,38 @@ void ComputerManager::getOrderDetailList()
 
 void ComputerManager::rechargeOrder(qint64 orderId, int num, int billingType)
 {
-    Q_UNUSED(orderId);
-    Q_UNUSED(num);
-    Q_UNUSED(billingType);
-    LOG_WARN(QStringLiteral("rechargeOrder is not implemented"));
-    emit rechargeOrderFinished(false, QStringLiteral("Not implemented"));
+    LOG_DEBUG("----------------------------------------");
+    LOG_DEBUG(QStringLiteral("[ComputerManager::rechargeOrder] orderId=%1 num=%2 billing=%3")
+                      .arg(orderId)
+                      .arg(num)
+                      .arg(billingType));
+
+    ApiService::rechargeOrder(QString::number(orderId),
+                              QString::number(num),
+                              QString::number(billingType),
+            [this](QString json) {
+                QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+                if (!doc.isObject()) {
+                    emit rechargeOrderFinished(false, QStringLiteral("Invalid response"));
+                    return;
+                }
+                QJsonObject obj = doc.object();
+                int code = obj.value("code").toInt();
+                QString msg = obj.value("message").toString();
+                bool data = obj.value("data").toBool();
+                LOG_INFO(QStringLiteral("[rechargeOrder result] code=%1 msg=%2 data=%3")
+                             .arg(code)
+                             .arg(msg)
+                             .arg(data));
+                if (code == 200 && data) {
+                    emit rechargeOrderFinished(true, msg);
+                } else {
+                    emit rechargeOrderFinished(false, msg.isEmpty() ? QString::number(code) : msg);
+                }
+            },
+            [this](QString err) {
+                emit rechargeOrderFinished(false, err);
+            });
 }
 
 int ComputerManager::getDeviceGroupIdByOrderId(qint64 orderId)
