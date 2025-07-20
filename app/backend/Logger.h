@@ -4,6 +4,9 @@
 
 #include <QString>
 
+class NvComputer;
+struct DeviceInfo;
+
 enum class LogLevel {
     Error = 0,
     Warning,
@@ -17,6 +20,8 @@ public:
     static void setLevel(LogLevel level);
     static void enable(bool enable);
     static void log(LogLevel level, const QString& msg);
+    static void logComputer(const NvComputer* computer,
+                            const DeviceInfo* info = nullptr);
 private:
     static LogLevel s_level;
     static bool s_enabled;

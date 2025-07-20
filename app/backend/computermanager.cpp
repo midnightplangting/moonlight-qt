@@ -664,6 +664,19 @@ void ComputerManager::clearOrderDevices()
     }
 }
 
+void ComputerManager::dumpStoredComputers()
+{
+    QReadLocker lock(&m_Lock);
+    QReadLocker orderLock(&m_OrderLock);
+
+    LOG_INFO(QStringLiteral("[dumpStoredComputers] count=%1").arg(m_KnownHosts.size()));
+    for (NvComputer* pc : m_KnownHosts) {
+        QString key = deviceKey(pc);
+        const DeviceInfo* info = m_DeviceInfo.contains(key) ? &m_DeviceInfo[key] : nullptr;
+        Logger::logComputer(pc, info);
+    }
+}
+
 void ComputerManager::clientSideAttributeUpdated(NvComputer* computer)
 {
     // Notify the UI of the state change
@@ -1368,6 +1381,15 @@ void ComputerManager::getOrderDetailList()
             [this](QString err) {
                 emit getOrderDetailListFinished(false, err);
             });
+}
+
+void ComputerManager::rechargeOrder(qint64 orderId, int num, int billingType)
+{
+    Q_UNUSED(orderId);
+    Q_UNUSED(num);
+    Q_UNUSED(billingType);
+    LOG_WARN(QStringLiteral("rechargeOrder is not implemented"));
+    emit rechargeOrderFinished(false, QStringLiteral("Not implemented"));
 }
 
 int ComputerManager::getDeviceGroupIdByOrderId(qint64 orderId)

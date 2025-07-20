@@ -299,6 +299,8 @@ public slots:
     Q_INVOKABLE void getOrderDetailList();
     void closeOrder(NvComputer* computer);
 
+    Q_INVOKABLE void dumpStoredComputers();
+
 private slots:
     void handleAboutToQuit();
 

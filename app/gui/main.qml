@@ -440,7 +440,10 @@ ApplicationWindow {
                 ToolTip.delay: 1000
                 ToolTip.timeout: 3000
 
-                onClicked: navigateTo("qrc:/gui/PcView.qml", "PcView")
+                onClicked: {
+                    ComputerManager.dumpStoredComputers()
+                    navigateTo("qrc:/gui/PcView.qml", "PcView")
+                }
 
                 Keys.onDownPressed: stackView.currentItem.forceActiveFocus(Qt.TabFocus)
             }
