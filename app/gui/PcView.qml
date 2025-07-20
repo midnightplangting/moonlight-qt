@@ -347,7 +347,7 @@ CenteredGridView {
 
                 Text {
                     anchors.centerIn: parent
-                    text: (billingType >= 2 && billingType <= 4) ? qsTr("续费") : qsTr("结账下机")
+                    text: (billingType >= 2 && billingType <= 4 || billingType === 7) ? qsTr("续费") : qsTr("结账下机")
                     font.pixelSize: 20
                     color: "#007AFF"
                 }
@@ -357,7 +357,7 @@ CenteredGridView {
                     onPressed:  actionBtn.scale = actionBtn.pressedScale
                     onReleased: actionBtn.scale = actionBtn.normalScale
                     onClicked: {
-                        if (billingType >= 2 && billingType <= 4) {
+                        if (billingType >= 2 && billingType <= 4 || billingType === 7) {
                             renewDialog.orderId = orderId
                             renewDialog.deviceGroupId = ComputerManager.getDeviceGroupIdByOrderId(orderId)
                             renewDialog.open()
