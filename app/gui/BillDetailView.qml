@@ -74,7 +74,7 @@ Item {
 
     Connections {
         target: ComputerManager
-        onGetOrderDetailListFinished: function(success, data) {
+        function onGetOrderDetailListFinished(success, data) {
             if (!success) {
                 console.warn("getOrderDetailList failed: " + data)
                 return

@@ -56,7 +56,9 @@ NavigableDialog {
 
     Connections {
         target: gpuModel
-        onModelReset: updatePrices()
+        function onModelReset() {
+            updatePrices()
+        }
     }
 
     ColumnLayout {
@@ -136,7 +138,7 @@ NavigableDialog {
 
     Connections {
         target: ComputerManager
-        onRechargeOrderFinished: function(success, msg) {
+        function onRechargeOrderFinished(success, msg) {
             loadingDialog.close()
             resultDialog.text = msg
             resultDialog.open()

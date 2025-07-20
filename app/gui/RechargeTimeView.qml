@@ -259,7 +259,10 @@ Page {
         modal: true
         dim: true
         focus: true
-        anchors.centerIn: Overlay.overlay
+        // Overlay.overlay isn't available on older Qt versions
+        parent: ApplicationWindow.contentItem
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2)
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
         contentItem: LoginRegisterView {
@@ -269,7 +272,7 @@ Page {
 
     Connections {
         target: ComputerManager
-        onComputerAddCompleted: function(success, detectedPortBlocking) {
+        function onComputerAddCompleted(success, detectedPortBlocking) {
             addPcResultDialog.success = success
             if (success) {
                 addPcResultDialog.text = qsTr("电脑添加成功")
@@ -284,7 +287,7 @@ Page {
             }
             addPcResultDialog.open()
         }
-        onAllocateDeviceFinished: function(success, msg) {
+        function onAllocateDeviceFinished(success, msg) {
             allocatingDialog.close()
             if (success) {
                 navigateTo("qrc:/gui/PcView.qml", "PcView")

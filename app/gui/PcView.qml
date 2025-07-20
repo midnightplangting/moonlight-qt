@@ -55,11 +55,11 @@ CenteredGridView {
 
     Connections {
         target: ComputerManager
-        onCloseOrderFinished: {
+        function onCloseOrderFinished(success, message) {
             closeOrderResultDialog.text = message
             closeOrderResultDialog.open()
         }
-        onRestartSunshineFinished: function(success, msg) {
+        function onRestartSunshineFinished(success, msg) {
             restartLoading.close()
             restartResult.text = msg
             restartResult.open()
