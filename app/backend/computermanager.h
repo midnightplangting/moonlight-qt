@@ -36,7 +36,7 @@ struct DeviceInfo {
     double bitrate = 0.0;     // 订单码率
     QDateTime startedAt;      // 租用结束时间
     QDateTime endedAt;        // 租用开始时间
-    int deviceGroupId = 0;    // 设备组 ID
+    int deviceGroupId = 0;    // 套餐 ID(devicePriceId)
     int status = 0;           // 订单状态
     int billingType = 0;      // 计费类型，本地设备固定为 0
 };

@@ -1226,7 +1226,8 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             info.bitrate = orderObj["bitrate"].toDouble();
             info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
             info.endedAt = QDateTime::fromString(orderObj["endedAt"].toString(), Qt::ISODate);
-            info.deviceGroupId = orderObj["deviceGroupId"].toInt();
+            // \u4fdd\u5b58 devicePriceId
+            info.deviceGroupId = orderObj["devicePriceId"].toInt();
             info.status = orderObj["status"].toInt();
             info.billingType = orderObj["billingType"].toInt();
             m_DeviceInfo.insert(key, info);

@@ -435,7 +435,7 @@ ApplicationWindow {
             NavigableToolButton {
                 id: pcViewButton
                 iconSource: "qrc:/res/desktop_windows-48px.svg"
-                ToolTip.text: qsTr("Computers")
+                ToolTip.text: qsTr("主页")
                 ToolTip.visible: hovered
                 ToolTip.delay: 1000
                 ToolTip.timeout: 3000
