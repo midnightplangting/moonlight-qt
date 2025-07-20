@@ -56,10 +56,8 @@ CenteredGridView {
     Connections {
         target: ComputerManager
         onCloseOrderFinished: {
-            if (!success) {
-                errorDialog.text = message
-                errorDialog.open()
-            }
+            closeOrderResultDialog.text = message
+            closeOrderResultDialog.open()
         }
     }
 
@@ -362,7 +360,8 @@ CenteredGridView {
                             renewDialog.deviceGroupId = ComputerManager.getDeviceGroupIdByOrderId(orderId)
                             renewDialog.open()
                         } else {
-                            computerModel.checkoutComputer(index)
+                            checkoutConfirmDialog.pcIndex = index
+                            checkoutConfirmDialog.open()
                         }
                     }
                 }
@@ -510,6 +509,21 @@ CenteredGridView {
         onAccepted: {
             computerModel.deleteComputer(pcIndex)
         }
+    }
+
+    NavigableMessageDialog {
+        id: checkoutConfirmDialog
+        text: qsTr("确认结账下机吗？")
+        property int pcIndex: -1
+        standardButtons: Dialog.Yes | Dialog.No
+        onAccepted: {
+            computerModel.checkoutComputer(pcIndex)
+        }
+    }
+
+    NavigableMessageDialog {
+        id: closeOrderResultDialog
+        standardButtons: Dialog.Ok
     }
 
     NavigableMessageDialog {
