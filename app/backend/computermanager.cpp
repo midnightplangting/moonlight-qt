@@ -200,7 +200,7 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
     m_DelayedFlushThread->start();
 
     // 定时同步订单状态，确保串流过程中也能获取最新状态
-    m_OrderTimer.setInterval(30000);
+    m_OrderTimer.setInterval(300000);
     connect(&m_OrderTimer, &QTimer::timeout, this, &ComputerManager::syncOrderDevices);
 
     // To quit in a timely manner, we must block additional requests

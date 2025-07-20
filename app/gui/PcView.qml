@@ -430,8 +430,18 @@ CenteredGridView {
         }
         onClicked: {
                 if (model.online) {
-                    if (bitrate > 0) {
-                        StreamingPreferences.bitrateKbps = bitrate * 1000
+                    if (isOrderDevice && bitrate > 0) {
+                        var userKbps = StreamingPreferences.bitrateKbps
+                        var limitKbps = bitrate * 1000
+                        if (userKbps > limitKbps) {
+                            console.log("[PcView] user bitrate", userKbps,
+                                        "exceeds limit", limitKbps,
+                                        "-> use limit")
+                            StreamingPreferences.bitrateKbps = limitKbps
+                        } else {
+                            console.log("[PcView] use user bitrate", userKbps)
+                            StreamingPreferences.bitrateKbps = userKbps
+                        }
                         StreamingPreferences.autoAdjustBitrate = false
                     }
                     var result = computerModel.handlePcClicked(index)
