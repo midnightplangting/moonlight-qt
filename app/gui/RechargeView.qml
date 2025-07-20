@@ -68,7 +68,7 @@ Item {
                     }
                     Label {
                         text: isLoggedIn ? qsTr("点击查看或修改资料") : qsTr("点击登录/注册")
-                        font.pixelSize: 12; color: "#ffffff"
+                        font.pixelSize: 16; color: "#ffffff"
                     }
                 }
             }
@@ -84,14 +84,14 @@ Item {
 
         }
 
-        // ---------- 2. 主体布局：左右面板 ----------
+        // 主体布局：左右面板
         RowLayout {
             id: mainContent
             Layout.alignment: Qt.AlignHCenter
             spacing: 80
             Layout.fillWidth: true
 
-            // ===== 左侧面板 =====
+            // 左侧面板
             Column {
                 id: leftPanel
                 width: 560
@@ -221,7 +221,8 @@ Item {
                 RowLayout { spacing:20
                     Column { id:paySection; spacing:10; property int selectedPay:0; Layout.alignment:Qt.AlignVCenter
                         Label { text: qsTr("支付方式"); color:"white"; font.pixelSize:16; font.bold: true}
-                        Repeater { model:[{icon:"qrc:/res/wx.svg",text:qsTr("微信付款")},{icon:"qrc:/res/zfb.svg",text:qsTr("支付宝付款")}]
+                        Repeater {
+                            model:[{icon:"qrc:/res/wx.svg",text:qsTr("微信付款")},{icon:"qrc:/res/zfb.svg",text:qsTr("支付宝付款")}]
                             delegate: Rectangle { width:200;height:48;radius:12;color:"#444444"
                                 RowLayout { anchors.fill:parent;anchors.margins:8;spacing:10
                                     Image { source:modelData.icon; fillMode:Image.PreserveAspectFit;Layout.preferredWidth:24;Layout.preferredHeight:24 }

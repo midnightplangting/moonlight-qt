@@ -12,7 +12,14 @@ import SdlGamepadKeyNavigation 1.0
 import UserSession 1.0
 import UserService 1.0
 
+
+
 ApplicationWindow {
+    FontLoader {
+        id: appFont
+        source: "qrc:/res/AlibabaPuHuiTi-3-75-SemiBold.ttf"
+    }
+    font.family: appFont.name
     property bool pollingActive: false
     property bool streamingActive: false
 
@@ -87,7 +94,7 @@ ApplicationWindow {
 
         userService.getLatestNotice()
     }
-  
+
     // It would be better to use TextMetrics here, but it always lays out
     // the text slightly more compactly than real Text does in ToolTip,
     // causing unexpected line breaks to be inserted
@@ -323,12 +330,16 @@ ApplicationWindow {
                             source: "qrc:/res/speaker.svg"
                             width: 35
                             height: 35
+                            sourceSize.width: width * Screen.devicePixelRatio
+                            sourceSize.height: height * Screen.devicePixelRatio
+                            smooth: true
+                            antialiasing: true
                         }
                     }
 
                     Item {
                         id: marqueeClip
-                        width: 200  // ✅ 固定宽度，避免循环依赖
+                        width: 200  //  固定宽度，避免循环依赖
                         height: parent.height
                         clip: true
 
@@ -375,21 +386,13 @@ ApplicationWindow {
                 spacing: 4
                 Layout.alignment: Qt.AlignVCenter
                 Label {
-                    id: versionLabel
-                    visible: true
-                    text: qsTr("我的金币：") + UserSession.balance
+                    textFormat: Text.RichText
+                    text: qsTr("我的金币：") + "<font color='#FFBF00'>" + UserSession.balance + "</font>"
+                    font.family: Qt.application.font.family
                     font.pointSize: 12
                     font.bold: true
                     verticalAlignment: Qt.AlignVCenter
                 }
-                // Image {
-                //     source: "qrc:/res/coin.svg"
-                //     visible: true
-                //     Layout.preferredWidth: 24
-                //     Layout.preferredHeight: 24
-                //     fillMode: Image.PreserveAspectFit
-                // }
-
             }
 
 
@@ -451,13 +454,13 @@ ApplicationWindow {
             // GPU 购买（计时/包机）视图
             NavigableToolButton {
                 id: gpuPurchaseButton
-                iconSource: "qrc:/res/add.svg"   // ⚠️ 换成你的图标
+                iconSource: "qrc:/res/add.svg"
                 ToolTip.text: qsTr("购买时长 / 包机")
                 ToolTip.visible: hovered
                 ToolTip.delay: 1000
                 ToolTip.timeout: 3000
 
-                onClicked: navigateTo("qrc:/gui/RechargeTimeView.qml",  // ⚠️ 路径要跟新文件一致
+                onClicked: navigateTo("qrc:/gui/RechargeTimeView.qml",
                                       "RechargeTimeView")
                 Keys.onDownPressed: stackView.currentItem.forceActiveFocus(Qt.TabFocus)
             }
@@ -486,7 +489,7 @@ ApplicationWindow {
 
                 iconSource: "qrc:/res/user.svg"
 
-                ToolTip.text: qsTr("充值")
+                ToolTip.text: qsTr("用户中心")
                 ToolTip.visible: hovered
                 ToolTip.delay: 1000
                 ToolTip.timeout: 3000

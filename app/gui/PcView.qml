@@ -60,9 +60,11 @@ CenteredGridView {
             closeOrderResultDialog.open()
         }
         onRestartSunshineFinished: function(success, msg) {
+            restartLoading.close()
             restartResult.text = msg
             restartResult.open()
         }
+
     }
 
     StackView.onDeactivating: {
@@ -393,6 +395,10 @@ CenteredGridView {
                 anchors.centerIn: parent
                 source: "qrc:/res/reconnect.svg"
                 width: 20; height: 20
+                sourceSize.width: width * Screen.devicePixelRatio
+                sourceSize.height: height * Screen.devicePixelRatio
+                smooth: true
+                antialiasing: true
             }
 
             MouseArea {
@@ -650,11 +656,21 @@ CenteredGridView {
     }
 
     NavigableMessageDialog {
+        id: restartLoading
+        modal: true
+        text: qsTr("正在重启 Sunshine，请稍候…")
+        standardButtons: Dialog.NoButton
+        closePolicy: Popup.NoAutoClose
+        showSpinner: true
+    }
+
+    NavigableMessageDialog {
         id: restartConfirm
         property int orderId: 0
-        text: qsTr("确认重启服务？")
+        text: qsTr("修复连接，将会重启Sunshine？")
         standardButtons: Dialog.Yes | Dialog.No
         onAccepted: {
+            restartLoading.open()
             ComputerManager.restartSunshine(orderId)
         }
     }

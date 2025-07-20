@@ -13,10 +13,10 @@ NavigableDialog {
     property real timingPrice: 0
     property real unitPrice: 0
     property real totalPrice: 0
-    property int unitIndex: 0 // 0=天 1=周 2=月 3=包时
+    property int unitIndex: 0 // 0=小时 1=天 2=周 3=月
     property int quantity: 1
 
-    title: qsTr("请选择续费方式")
+    title: ""
     standardButtons: Dialog.Cancel | Dialog.Ok
 
     function updatePrices() {
@@ -36,10 +36,10 @@ NavigableDialog {
 
     function recalcTotal() {
         switch (unitIndex) {
-        case 0: unitPrice = dayPrice; break
-        case 1: unitPrice = weekPrice; break
-        case 2: unitPrice = monthPrice; break
-        case 3: unitPrice = timingPrice; break
+        case 0: unitPrice = timingPrice; break
+        case 1: unitPrice = dayPrice; break
+        case 2: unitPrice = weekPrice; break
+        case 3: unitPrice = monthPrice; break
         }
         totalPrice = unitPrice * quantity
         console.log("[RenewDialog] price", unitPrice, "qty", quantity, "total", totalPrice)
@@ -62,27 +62,38 @@ NavigableDialog {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 12
-        spacing: 12
+        spacing: 16
 
         Label {
-            text: qsTr("共计%1金币").arg(totalPrice)
+            text: qsTr("请选择续费方式")
+            font.pointSize: 14
+            font.bold: true
             Layout.alignment: Qt.AlignHCenter
         }
 
+        Label {
+            textFormat: Text.RichText
+            text: qsTr("共计 ") + "<font color='#FFBF00' style='font-size:16pt; font-weight:bold;'>" + totalPrice + "</font>" + qsTr(" 金币")
+            font.pointSize: 12
+            horizontalAlignment: Text.AlignHCenter
+            Layout.alignment: Qt.AlignHCenter
+        }
+
+        // 单选按钮：小时、天、周、月
         RowLayout {
             Layout.alignment: Qt.AlignHCenter
-            spacing: 8
+            spacing: 20
             Repeater {
-                model: [qsTr("包天"), qsTr("包周"), qsTr("包月"), qsTr("包时")]
-                delegate: Button {
+                model: [qsTr("小时"), qsTr("天"), qsTr("周"), qsTr("月")]
+                delegate: RadioButton {
                     text: modelData
-                    checkable: true
                     checked: index === unitIndex
                     onClicked: unitIndex = index
                 }
             }
         }
 
+        // 数量选择
         RowLayout {
             Layout.alignment: Qt.AlignHCenter
             spacing: 8
@@ -91,7 +102,10 @@ NavigableDialog {
                 enabled: quantity > 1
                 onClicked: quantity--
             }
-            Label { text: quantity }
+            Label {
+                text: quantity
+                font.pointSize: 12
+            }
             Button {
                 text: "+"
                 onClicked: quantity++
@@ -100,7 +114,7 @@ NavigableDialog {
     }
 
     onAccepted: {
-        var typeMap = [2,3,4,7]
+        var typeMap = [7, 2, 3, 4]  // 与 unitIndex 映射顺序一致：小时、天、周、月
         console.log("[RenewDialog] recharge", orderId, quantity, typeMap[unitIndex])
         loadingDialog.open()
         ComputerManager.rechargeOrder(orderId, quantity, typeMap[unitIndex])
