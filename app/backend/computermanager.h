@@ -162,41 +162,6 @@ class ComputerPollingEntry
 {
 
 public:
-    ComputerPollingEntry()
-        : m_ActiveThread(nullptr)
-    {
-        qDebug() << "===============start parse data!========================";
-
-        ApiService::getDeviceGroupList([
-            this
-        ](QString result) {
-            qDebug() << "response:" << result;
-
-            QJsonDocument doc = QJsonDocument::fromJson(result.toUtf8());
-            if (!doc.isNull() && doc.isObject()) {
-                QJsonObject rootObj = doc.object();
-                int code = rootObj.value("code").toInt();
-                if (code == 200) {
-                    QJsonArray dataArray = rootObj.value("data").toArray();
-                    for (const QJsonValue& item : dataArray) {
-                        QJsonObject obj = item.toObject();
-                        int id = obj.value("deviceGroupId").toInt();
-                        QString name = obj.value("name").toString();
-                        int deviceCount = obj.value("deviceCount").toInt();
-                        qDebug() << "ID:" << id << "name:" << name << "device num:" << deviceCount;
-                    }
-                } else {
-                    qDebug() << "server error code:" << code;
-                }
-            } else {
-                qDebug() << "data is not avilible JSON";
-            }
-        }, [](QString err) {
-            qDebug() << "Failed to fetch device group list:" << err;
-        });
-    }
-
-
     virtual ~ComputerPollingEntry()
     {
         interrupt();
@@ -321,6 +286,7 @@ signals:
     void allocateDeviceFinished(bool success, QString message);
     void closeOrderFinished(bool success, QString message);
     void getOrderDetailListFinished(bool success, QString data);
+    void rechargeOrderFinished(bool success, QString message);
 
     void orderStatusException(int status);
 
@@ -329,6 +295,7 @@ signals:
 public slots:
     Q_INVOKABLE void syncOrderDevices();
     Q_INVOKABLE void allocateDevice(int deviceGroupId, int billingType);
+    Q_INVOKABLE void rechargeOrder(qint64 orderId, int num, int billingType);
     Q_INVOKABLE void getOrderDetailList();
     void closeOrder(NvComputer* computer);
 
