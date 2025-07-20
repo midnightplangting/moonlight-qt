@@ -22,7 +22,7 @@ CenteredGridView {
     activeFocusOnTab: true
     topMargin: 20
     bottomMargin: 5
-    cellWidth: 410; cellHeight: 150;
+    cellWidth: 420; cellHeight: 130;
     objectName: qsTr("Computers")
 
     Component.onCompleted: {
@@ -58,6 +58,10 @@ CenteredGridView {
         onCloseOrderFinished: {
             closeOrderResultDialog.text = message
             closeOrderResultDialog.open()
+        }
+        onRestartSunshineFinished: function(success, msg) {
+            restartResult.text = msg
+            restartResult.open()
         }
     }
 
@@ -145,11 +149,11 @@ CenteredGridView {
     model: computerModel
 
     delegate: Rectangle {
-        width: 380; height: 130
+        width: 330; height: 110
         // anchors.centerIn: parent
         radius: 16
         color: "#1C1C1E"
-        clip: true
+        clip: false
 
         property alias pcContextMenu: pcContextMenuLoader.item
         property int index: model.index
@@ -271,6 +275,7 @@ CenteredGridView {
         RowLayout {
             anchors.fill: parent
             anchors.margins: 12
+            anchors.leftMargin: 25
             spacing: 16
             anchors.rightMargin: 40
             Column {
@@ -282,7 +287,7 @@ CenteredGridView {
                     spacing: 6
                     Text {
                         text: model.name
-                        font.pixelSize: 22
+                        font.pixelSize: 16
                         font.bold: true
                         color: "#FFFFFF"
                     }
@@ -303,7 +308,7 @@ CenteredGridView {
                                      (billingType === 4 ? qsTr("包月") :
                                        (billingType === 7 ? qsTr("包时") :""))))) :
                                   qsTr("自动扫描")
-                            font.pixelSize: 13
+                            font.pixelSize: 14
                             color: "#FFFFFF"
                             anchors.centerIn: parent
                             font.bold: true
@@ -315,14 +320,14 @@ CenteredGridView {
                     text: (billingType >= 2 && endedAt > 0) ?
                           qsTr("剩余时长：%1").arg(formatDuration(usageTimeText)) :
                           qsTr("使用时长：%1").arg(formatDuration(usageTimeText))
-                    font.pixelSize: 18
+                    font.pixelSize: 14
                     color: "#CCCCCC"
                 }
 
 
                 Text {
                     text: qsTr("串流码率：%1 Mbps").arg(bitrate)
-                    font.pixelSize: 18
+                    font.pixelSize: 14
                     color: "#CCCCCC"
                 }
             }
@@ -346,7 +351,7 @@ CenteredGridView {
                 Text {
                     anchors.centerIn: parent
                     text: (billingType >= 2 && billingType <= 4 || billingType === 7) ? qsTr("续费") : qsTr("结账下机")
-                    font.pixelSize: 20
+                    font.pixelSize: 18
                     color: "#007AFF"
                 }
 
@@ -364,6 +369,39 @@ CenteredGridView {
                             checkoutConfirmDialog.open()
                         }
                     }
+                }
+            }
+        }
+
+        Rectangle {
+            id: restartBtn
+            x: parent.width + 5
+            width: 50; height: 110
+            radius: 16
+            color: "#1C1C1E"
+            anchors.verticalCenter: parent.verticalCenter
+            visible: isOrderDevice
+
+            property real normalScale: 1.0
+            property real pressedScale: 0.95
+            scale: normalScale
+            Behavior on scale {
+                NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+            }
+
+            Image {
+                anchors.centerIn: parent
+                source: "qrc:/res/reconnect.svg"
+                width: 20; height: 20
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onPressed: restartBtn.scale = restartBtn.pressedScale
+                onReleased: restartBtn.scale = restartBtn.normalScale
+                onClicked: {
+                    restartConfirm.orderId = orderId
+                    restartConfirm.open()
                 }
             }
         }
@@ -608,6 +646,21 @@ CenteredGridView {
         property string pcDetails : "";
         text: showPcDetailsDialog.pcDetails
         imageSrc: "qrc:/res/baseline-help_outline-24px.svg"
+        standardButtons: Dialog.Ok
+    }
+
+    NavigableMessageDialog {
+        id: restartConfirm
+        property int orderId: 0
+        text: qsTr("确认重启服务？")
+        standardButtons: Dialog.Yes | Dialog.No
+        onAccepted: {
+            ComputerManager.restartSunshine(orderId)
+        }
+    }
+
+    NavigableMessageDialog {
+        id: restartResult
         standardButtons: Dialog.Ok
     }
 

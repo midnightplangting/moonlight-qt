@@ -287,6 +287,7 @@ signals:
     void closeOrderFinished(bool success, QString message);
     void getOrderDetailListFinished(bool success, QString data);
     void rechargeOrderFinished(bool success, QString message);
+    void restartSunshineFinished(bool success, QString message);
 
     void orderStatusException(int status);
 
@@ -297,6 +298,7 @@ public slots:
     Q_INVOKABLE void allocateDevice(int deviceGroupId, int billingType);
     Q_INVOKABLE void rechargeOrder(qint64 orderId, int num, int billingType);
     Q_INVOKABLE void getOrderDetailList();
+    Q_INVOKABLE void restartSunshine(qint64 orderId);
     void closeOrder(NvComputer* computer);
 
     Q_INVOKABLE void dumpStoredComputers();

@@ -53,6 +53,17 @@ void ApiService::login(const QString& username, const QString& password,
         ->async(onSuccess, onFailure);
 }
 
+void ApiService::restartSunshine(const QString& orderId,
+                                 std::function<void(QString)> onSuccess,
+                                 std::function<void(QString)> onFailure)
+{
+    OkHttpUtils::builder()
+        ->url("device/reStartSunshine")
+        ->addParam("orderId", orderId)
+        ->post(false)
+        ->async(onSuccess, onFailure);
+}
+
 void ApiService::registerUser(const QString& username, const QString& password, const QString& confirmPwd,
                               std::function<void(QString)> onSuccess,
                               std::function<void(QString)> onFailure)

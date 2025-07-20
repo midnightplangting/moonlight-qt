@@ -78,6 +78,10 @@ void exchangeCoupon(const QString& userId,
                     std::function<void(QString)> onSuccess,
                     std::function<void(QString)> onFailure);
 
+void restartSunshine(const QString& orderId,
+                     std::function<void(QString)> onSuccess,
+                     std::function<void(QString)> onFailure);
+
 
 }
 

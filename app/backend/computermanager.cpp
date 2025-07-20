@@ -1420,6 +1420,38 @@ void ComputerManager::rechargeOrder(qint64 orderId, int num, int billingType)
             });
 }
 
+void ComputerManager::restartSunshine(qint64 orderId)
+{
+    LOG_DEBUG("----------------------------------------");
+    LOG_DEBUG(QStringLiteral("[ComputerManager::restartSunshine] orderId=%1")
+                      .arg(orderId));
+
+    ApiService::restartSunshine(QString::number(orderId),
+            [this](QString json) {
+                QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+                if (!doc.isObject()) {
+                    emit restartSunshineFinished(false, QStringLiteral("Invalid response"));
+                    return;
+                }
+                QJsonObject obj = doc.object();
+                int code = obj.value("code").toInt();
+                QString msg = obj.value("message").toString();
+                bool data = obj.value("data").toBool();
+                LOG_INFO(QStringLiteral("[restartSunshine result] code=%1 msg=%2 data=%3")
+                             .arg(code)
+                             .arg(msg)
+                             .arg(data));
+                if (code == 200 && data) {
+                    emit restartSunshineFinished(true, msg);
+                } else {
+                    emit restartSunshineFinished(false, msg.isEmpty() ? QString::number(code) : msg);
+                }
+            },
+            [this](QString err) {
+                emit restartSunshineFinished(false, err);
+            });
+}
+
 int ComputerManager::getDeviceGroupIdByOrderId(qint64 orderId)
 {
     QReadLocker rlock(&m_OrderLock);
