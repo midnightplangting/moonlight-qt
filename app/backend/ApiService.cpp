@@ -167,6 +167,25 @@ void ApiService::getGoldCoinPriceList(std::function<void(QString)> onSuccess,
         ->async(onSuccess, onFailure);
 }
 
+void ApiService::payPC(const QString& token,
+                       const QString& userId,
+                       const QString& goldCoinPriceId,
+                       std::function<void(QString)> onSuccess,
+                       std::function<void(QString)> onFailure)
+{
+    QString url = QStringLiteral("wx/payPC?userId=%1&goldCoinPriceId=%2")
+                       .arg(userId, goldCoinPriceId);
+    LOG_DEBUG(QStringLiteral("[ApiService::payPC] url=%1 token=%2")
+                      .arg(url)
+                      .arg(token));
+
+    OkHttpUtils::builder()
+        ->url(url)
+        ->addHeader("token", token)
+        ->post(false)
+        ->async(onSuccess, onFailure);
+}
+
 
 void ApiService::updateUserInfo(const QJsonObject& params,
                                 std::function<void(QString)> onSuccess,

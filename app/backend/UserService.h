@@ -23,6 +23,7 @@ public:
     Q_INVOKABLE void getLatestNotice();
     Q_INVOKABLE void exchangeCoupon(const QString& discountCode);
     Q_INVOKABLE void getGoldCoinPriceList();
+    Q_INVOKABLE void payPC(int goldCoinPriceId);
 
 
 signals:
@@ -46,6 +47,9 @@ signals:
 
     void goldCoinPriceListSuccess(QVariantList list);
     void goldCoinPriceListFailure(QString errorMsg);
+
+    void payPCSuccess(QString qrData);
+    void payPCFailure(QString errorMsg);
 
 };
 

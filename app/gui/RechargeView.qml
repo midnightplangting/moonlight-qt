@@ -31,6 +31,7 @@ Item {
             for (var i = 0; i < list.length; ++i) {
                 var it = list[i]
                 comboModel.append({
+                    id: it.goldCoinPriceId,
                     coins: it.numberOfGoldCoins,
                     price: it.price,
                     gift: it.numberOfGoldCoinsGifted ? it.numberOfGoldCoinsGifted : 0
@@ -40,6 +41,14 @@ Item {
         }
         onGoldCoinPriceListFailure: function(err) {
             console.log("Failed to load price list", err)
+        }
+        onPayPCSuccess: function(qr) {
+            payQrDialog.qrData = qr
+            payQrDialog.open()
+        }
+        onPayPCFailure: function(err) {
+            couponMessageDialog.text = err
+            couponMessageDialog.open()
         }
     }
 
@@ -256,7 +265,15 @@ Item {
                             onExited: payButton.scale = 1.0
                             onPressed: payButton.scale = 0.95
                             onReleased: payButton.scale = 1.05
-                            onClicked: { const combo = comboModel.get(comboGrid.selectedCombo); console.log("Pay", combo.coins, "coins by", paySection.selectedPay === 0 ? "微信" : "支付宝") }
+                            onClicked: {
+                                const combo = comboModel.get(comboGrid.selectedCombo)
+                                console.log("Pay", combo.coins, "coins by", paySection.selectedPay === 0 ? "微信" : "支付宝")
+                                if (paySection.selectedPay === 0) {
+                                    userService.payPC(combo.id)
+                                } else {
+                                    console.log("Alipay not supported yet")
+                                }
+                            }
                         }
                     }
                 }
@@ -339,5 +356,47 @@ Item {
     NavigableMessageDialog {
         id: couponMessageDialog
         standardButtons: Dialog.Ok
+    }
+
+    Popup {
+        id: payQrDialog
+        modal: true
+        dim: true
+        focus: true
+        parent: ApplicationWindow.contentItem
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2)
+        property string qrData: ""
+
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 20
+
+            Image {
+                source: payQrDialog.qrData
+                width: 200
+                height: 200
+                fillMode: Image.PreserveAspectFit
+            }
+
+            Rectangle {
+                width: 180
+                height: 40
+                radius: 20
+                color: "#FFBF00"
+                Layout.alignment: Qt.AlignHCenter  // 加这一行来居中对齐
+                Text {
+                    anchors.centerIn: parent
+                    text: qsTr("支付成功后点击此处")
+                    color: "black"
+                    font.bold: true
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: payQrDialog.close()
+                }
+            }
+        }
+
     }
 }
