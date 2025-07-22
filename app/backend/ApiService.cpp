@@ -158,6 +158,15 @@ void ApiService::rechargeOrder(const QString& orderId,
         ->async(onSuccess, onFailure);
 }
 
+void ApiService::getGoldCoinPriceList(std::function<void(QString)> onSuccess,
+                                      std::function<void(QString)> onFailure)
+{
+    OkHttpUtils::builder()
+        ->url("goldCoinPrice/getGoldCoinPriceList")
+        ->get()
+        ->async(onSuccess, onFailure);
+}
+
 
 void ApiService::updateUserInfo(const QJsonObject& params,
                                 std::function<void(QString)> onSuccess,

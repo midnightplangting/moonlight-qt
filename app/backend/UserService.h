@@ -4,6 +4,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QVariantList>
 
 class UserService : public QObject {
     Q_OBJECT
@@ -21,6 +22,7 @@ public:
     Q_INVOKABLE void getUserInfoById();
     Q_INVOKABLE void getLatestNotice();
     Q_INVOKABLE void exchangeCoupon(const QString& discountCode);
+    Q_INVOKABLE void getGoldCoinPriceList();
 
 
 signals:
@@ -41,6 +43,9 @@ signals:
 
     void exchangeCouponSuccess(QString message);
     void exchangeCouponFailure(QString errorMsg);
+
+    void goldCoinPriceListSuccess(QVariantList list);
+    void goldCoinPriceListFailure(QString errorMsg);
 
 };
 

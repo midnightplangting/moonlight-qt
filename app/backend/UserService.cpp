@@ -3,6 +3,7 @@
 #include "ApiService.h"
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QDebug>
 #include <QUuid>
 
@@ -182,5 +183,39 @@ void UserService::exchangeCoupon(const QString& discountCode)
             },
             [=](QString err) {
                 emit exchangeCouponFailure(QStringLiteral("网络错误: ") + err);
+            });
+}
+
+void UserService::getGoldCoinPriceList()
+{
+    ApiService::getGoldCoinPriceList(
+            [=](QString data) {
+                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+                if (!doc.isNull() && doc.isObject()) {
+                    QJsonObject obj = doc.object();
+                    int code = obj.value("code").toInt();
+                    if (code == 200) {
+                        QJsonArray arr = obj.value("data").toArray();
+                        QVariantList list;
+                        for (const QJsonValue& v : arr) {
+                            QJsonObject o = v.toObject();
+                            QVariantMap m;
+                            m.insert("goldCoinPriceId", o.value("goldCoinPriceId").toInt());
+                            m.insert("numberOfGoldCoins", o.value("numberOfGoldCoins").toInt());
+                            m.insert("price", o.value("price").toDouble());
+                            m.insert("isGiftGoldCoins", o.value("isGiftGoldCoins").toBool());
+                            m.insert("numberOfGoldCoinsGifted", o.value("numberOfGoldCoinsGifted").toVariant());
+                            list.append(m);
+                        }
+                        emit goldCoinPriceListSuccess(list);
+                    } else {
+                        emit goldCoinPriceListFailure(obj.value("message").toString());
+                    }
+                } else {
+                    emit goldCoinPriceListFailure(QStringLiteral("响应格式错误"));
+                }
+            },
+            [=](QString err) {
+                emit goldCoinPriceListFailure(QStringLiteral("网络错误: ") + err);
             });
 }

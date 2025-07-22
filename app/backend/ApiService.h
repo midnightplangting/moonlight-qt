@@ -55,6 +55,9 @@ void rechargeOrder(const QString& orderId,
                    std::function<void(QString)> onSuccess,
                    std::function<void(QString)> onFailure);
 
+void getGoldCoinPriceList(std::function<void(QString)> onSuccess,
+                          std::function<void(QString)> onFailure);
+
 
 
 void updateUserInfo(const QJsonObject& params,

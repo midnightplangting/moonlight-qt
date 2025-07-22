@@ -12,6 +12,10 @@ Item {
     height: parent ? parent.height : 800
     property bool isLoggedIn: UserSession.token !== ""
 
+    StackView.onActivated: {
+        userService.getGoldCoinPriceList()
+    }
+
     UserService {
         id: userService
         onExchangeCouponSuccess: {
@@ -21,6 +25,21 @@ Item {
         onExchangeCouponFailure: {
             couponMessageDialog.text = errorMsg
             couponMessageDialog.open()
+        }
+        onGoldCoinPriceListSuccess: function(list) {
+            comboModel.clear()
+            for (var i = 0; i < list.length; ++i) {
+                var it = list[i]
+                comboModel.append({
+                    coins: it.numberOfGoldCoins,
+                    price: it.price,
+                    gift: it.numberOfGoldCoinsGifted ? it.numberOfGoldCoinsGifted : 0
+                })
+            }
+            comboGrid.selectedCombo = 0
+        }
+        onGoldCoinPriceListFailure: function(err) {
+            console.log("Failed to load price list", err)
         }
     }
 
@@ -176,17 +195,8 @@ Item {
 
                 // 套餐格
                 GridLayout {
-                    id: comboGrid; columns: 3; columnSpacing: 12; rowSpacing: 12; property int selectedCombo: 1
-                    ListModel { id: comboModel
-                        ListElement { coins: 10; price: 1; gift: 0 }
-                        ListElement { coins: 100; price: 10; gift: 0 }
-                        ListElement { coins: 500; price: 50; gift: 50 }
-                        ListElement { coins: 1000; price: 100; gift: 200 }
-                        ListElement { coins: 2000; price: 200; gift: 800 }
-                        ListElement { coins: 5000; price: 500; gift: 3000 }
-                        ListElement { coins: 10000; price: 1000; gift: 8000 }
-                        ListElement { coins: 20000; price: 2000; gift: 20000 }
-                    }
+                    id: comboGrid; columns: 3; columnSpacing: 12; rowSpacing: 12; property int selectedCombo: 0
+                    ListModel { id: comboModel }
                     Repeater { model: comboModel
                         Rectangle {
                             id: comboCard
