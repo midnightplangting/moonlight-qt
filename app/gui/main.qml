@@ -5,7 +5,6 @@ import QtQuick.Window 2.2
 import QtQuick.Controls.Material 2.2
 
 import ComputerManager 1.0
-import AutoUpdateChecker 1.0
 import StreamingPreferences 1.0
 import SystemProperties 1.0
 import SdlGamepadKeyNavigation 1.0
@@ -97,6 +96,7 @@ ApplicationWindow {
         }
 
         userService.getLatestNotice()
+        userService.checkForUpdate()
     }
 
     // It would be better to use TextMetrics here, but it always lays out
@@ -553,6 +553,26 @@ ApplicationWindow {
             // StreamSegue assumes its dialog will be re-created each time we
             // start streaming, so fake it by wiping out the text each time.
             text = ""
+        }
+    }
+
+    UpdateDialog {
+        id: updateDialog
+    }
+
+    Connections {
+        target: userService
+        function onUpdateAvailable(content, url) {
+            updateDialog.message = content
+            updateDialog.packageUrl = url
+            updateDialog.open()
+        }
+        function onUpdateDownloadProgress(progress) {
+            updateDialog.progress = progress
+        }
+        function onUpdateDownloadFinished(path) {
+            updateDialog.downloadedFile = path
+            updateDialog.showInstallButton()
         }
     }
 

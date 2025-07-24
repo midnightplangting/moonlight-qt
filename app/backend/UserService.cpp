@@ -7,6 +7,12 @@
 #include <QJsonArray>
 #include <QDebug>
 #include <QUuid>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QStandardPaths>
+#include <QFile>
+#include <QProcess>
+#include <QCoreApplication>
 
 UserService::UserService(QObject* parent)
     : QObject(parent) {}
@@ -255,4 +261,58 @@ void UserService::payPC(int goldCoinPriceId)
             [=](QString err) {
                 emit payPCFailure(QStringLiteral("网络错误: ") + err);
             });
+}
+
+void UserService::checkForUpdate()
+{
+    ApiService::checkLatestVersion(
+            [=](QString data) {
+                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+                if (doc.isObject()) {
+                    QJsonObject obj = doc.object();
+                    if (obj.value("code").toInt() == 200) {
+                        QJsonObject d = obj.value("data").toObject();
+                        double latest = d.value("packageVersion").toDouble();
+                        double current = QString(VERSION_STR).toDouble();
+                        if (latest > current) {
+                            emit updateAvailable(d.value("updateContent").toString(),
+                                                d.value("packageUrl").toString());
+                        }
+                    }
+                }
+            },
+            [=](QString) {
+                // ignore errors
+            });
+}
+
+void UserService::downloadUpdate(const QString& url)
+{
+    QNetworkReply* reply = m_updateManager.get(QNetworkRequest(QUrl(url)));
+    connect(reply, &QNetworkReply::downloadProgress, this, [=](qint64 rec, qint64 total) {
+        if (total > 0) {
+            emit updateDownloadProgress(static_cast<qreal>(rec) / total);
+        }
+    });
+    connect(reply, &QNetworkReply::finished, this, [=]() {
+        reply->deleteLater();
+        if (reply->error() != QNetworkReply::NoError) {
+            return;
+        }
+        QByteArray data = reply->readAll();
+        QString path = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+                        + "/moonlight_update.exe";
+        QFile file(path);
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(data);
+            file.close();
+            emit updateDownloadFinished(path);
+        }
+    });
+}
+
+void UserService::installUpdate(const QString& filePath)
+{
+    QProcess::startDetached(filePath, QStringList());
+    QCoreApplication::exit(0);
 }

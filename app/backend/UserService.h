@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QString>
 #include <QVariantList>
+#include <QNetworkAccessManager>
 
 class UserService : public QObject {
     Q_OBJECT
@@ -24,6 +25,9 @@ public:
     Q_INVOKABLE void exchangeCoupon(const QString& discountCode);
     Q_INVOKABLE void getGoldCoinPriceList();
     Q_INVOKABLE void payPC(int goldCoinPriceId);
+    Q_INVOKABLE void checkForUpdate();
+    Q_INVOKABLE void downloadUpdate(const QString& url);
+    Q_INVOKABLE void installUpdate(const QString& filePath);
 
 
 signals:
@@ -48,9 +52,15 @@ signals:
     void goldCoinPriceListSuccess(QVariantList list);
     void goldCoinPriceListFailure(QString errorMsg);
 
+    void updateAvailable(QString content, QString url);
+    void updateDownloadProgress(qreal progress);
+    void updateDownloadFinished(QString filePath);
+
     void payPCSuccess(QString qrData);
     void payPCFailure(QString errorMsg);
 
+private:
+    QNetworkAccessManager m_updateManager;
 };
 
 #endif // USERSERVICE_H

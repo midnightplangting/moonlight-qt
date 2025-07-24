@@ -29,5 +29,6 @@
         <file>gui/ModifyUserView.qml</file>
         <file>gui/BillDetailView.qml</file>
         <file>gui/RenewDialog.qml</file>
+        <file>gui/UpdateDialog.qml</file>
     </qresource>
 </RCC>

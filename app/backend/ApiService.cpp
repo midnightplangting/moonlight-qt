@@ -3,6 +3,9 @@
 #include "Logger.h"
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
 
 using namespace ApiService;
 
@@ -243,4 +246,28 @@ void ApiService::exchangeCoupon(const QString& userId, const QString& discountCo
         ->addParam("requestId", requestId)
         ->post(false)
         ->async(onSuccess, onFailure);
+}
+
+void ApiService::checkLatestVersion(std::function<void(QString)> onSuccess,
+                                    std::function<void(QString)> onFailure)
+{
+    QNetworkRequest request(QUrl("https://gzydn.cn:18081/pc/getLastestVersion"));
+    QNetworkAccessManager* nam = new QNetworkAccessManager();
+
+    QNetworkReply* reply = nam->get(request);
+    QObject::connect(reply, &QNetworkReply::finished, [=]() {
+        nam->deleteLater();
+        if (reply->error() != QNetworkReply::NoError) {
+            QString err = reply->errorString();
+            reply->deleteLater();
+            if (onFailure)
+                onFailure(err);
+            return;
+        }
+
+        QString result = reply->readAll();
+        reply->deleteLater();
+        if (onSuccess)
+            onSuccess(result);
+    });
 }
