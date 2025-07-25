@@ -68,6 +68,7 @@ void ApiService::restartSunshine(const QString& orderId,
 }
 
 void ApiService::registerUser(const QString& username, const QString& password, const QString& confirmPwd,
+                              const QString& email, const QString& phone,
                               std::function<void(QString)> onSuccess,
                               std::function<void(QString)> onFailure)
 {
@@ -76,8 +77,8 @@ void ApiService::registerUser(const QString& username, const QString& password, 
         ->url("user/register")
         ->addParam("username", username)
         ->addParam("password", password)
-        ->addParam("email", username + "@default.com")
-        ->addParam("phone", "00000000000")
+        ->addParam("email", email)
+        ->addParam("phone", phone)
         ->addParam("role", "0")
         ->post(true)
         ->async(onSuccess, onFailure);

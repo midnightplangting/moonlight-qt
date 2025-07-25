@@ -50,13 +50,15 @@ void UserService::login(const QString& username, const QString& password) {
             );
 }
 
-void UserService::registerUser(const QString& username, const QString& password, const QString& confirmPwd) {
+void UserService::registerUser(const QString& username, const QString& password,
+                               const QString& confirmPwd, const QString& email,
+                               const QString& phone) {
     if (password != confirmPwd) {
         emit registerFailure("两次密码不一致");
         return;
     }
 
-    ApiService::registerUser(username, password, confirmPwd,
+    ApiService::registerUser(username, password, confirmPwd, email, phone,
             [=](QString data) {
                 QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
                 if (!doc.isNull() && doc.isObject()) {

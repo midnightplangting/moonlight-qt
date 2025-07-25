@@ -26,6 +26,7 @@ void login(const QString& username, const QString& password,
            std::function<void(QString)> onFailure);
 
 void registerUser(const QString& username, const QString& password, const QString& confirmPwd,
+                  const QString& email, const QString& phone,
                   std::function<void(QString)> onSuccess,
                   std::function<void(QString)> onFailure);
 

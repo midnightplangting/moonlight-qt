@@ -14,7 +14,9 @@ public:
     explicit UserService(QObject* parent = nullptr);
 
     Q_INVOKABLE void login(const QString& username, const QString& password);
-    Q_INVOKABLE void registerUser(const QString& username, const QString& password, const QString& confirmPwd);
+    Q_INVOKABLE void registerUser(const QString& username, const QString& password,
+                                 const QString& confirmPwd, const QString& email,
+                                 const QString& phone);
 
     Q_INVOKABLE void updateUserInfo(const QString& field, const QString& value);
 

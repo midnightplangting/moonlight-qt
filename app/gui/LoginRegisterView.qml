@@ -1,17 +1,21 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import UserService 1.0  // 注册的 UserService 类型
+import UserService 1.0
 
 Item {
     id: root
-    anchors.fill: parent
+    width: 400
+    height: 560
+    anchors.centerIn: parent
 
     property alias username: loginUsernameField.text
     property alias password: loginPasswordField.text
     property alias confirmPassword: registerConfirmField.text
+    property alias email: registerEmailField.text
+    property alias phone: registerPhoneField.text
     signal requestLogin(string username, string password)
-    signal requestRegister(string username, string password, string confirmPassword)
+    signal requestRegister(string username, string password, string confirmPassword, string email, string phone)
     signal requestClose()
 
     property string registerErrorMessage: ""
@@ -75,39 +79,25 @@ Item {
             StackLayout {
                 id: stack
                 currentIndex: tabBar.currentIndex
-                width: parent.width
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-                Column {
-                    spacing: 16
-                    width: parent.width
+                ColumnLayout {
+                    spacing: 8
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
                     TextField {
                         id: loginUsernameField
                         placeholderText: qsTr("用户名 / 邮箱")
-                        font.pixelSize: 16
-                        color: "white"
-                        placeholderTextColor: borderColor
-                        width: parent.width; height: 40
-                        background: Rectangle {
-                            radius: 8
-                            color: "#00000055"
-                            border.color: borderColor; border.width: 1
-                        }
+                        Layout.fillWidth: true
                     }
 
                     TextField {
                         id: loginPasswordField
                         placeholderText: qsTr("密码")
                         echoMode: TextInput.Password
-                        font.pixelSize: 16
-                        color: "white"
-                        placeholderTextColor: borderColor
-                        width: parent.width; height: 40
-                        background: Rectangle {
-                            radius: 8
-                            color: "#00000055"
-                            border.color: borderColor; border.width: 1
-                        }
+                        Layout.fillWidth: true
                     }
 
                     Label {
@@ -117,11 +107,13 @@ Item {
                         visible: loginErrorMessage !== ""
                     }
 
+                    Item { Layout.fillHeight: true }
+
                     Rectangle {
-                        width: parent.width
                         height: 40
                         radius: 6
                         color: "#33cc66"
+                        Layout.fillWidth: true
 
                         Text {
                             text: qsTr("登录")
@@ -142,55 +134,43 @@ Item {
                             }
                         }
                     }
-
                 }
 
-                Column {
-                    spacing: 16
-                    width: parent.width
+                ColumnLayout {
+                    spacing: 8
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
                     TextField {
                         id: registerUsernameField
                         placeholderText: qsTr("用户名")
-                        font.pixelSize: 16
-                        color: "white"
-                        placeholderTextColor: borderColor
-                        width: parent.width; height: 40
-                        background: Rectangle {
-                            radius: 8
-                            color: "#00000055"
-                            border.color: borderColor; border.width: 1
-                        }
+                        Layout.fillWidth: true
                     }
 
                     TextField {
                         id: registerPasswordField
                         placeholderText: qsTr("密码")
                         echoMode: TextInput.Password
-                        font.pixelSize: 16
-                        color: "white"
-                        placeholderTextColor: borderColor
-                        width: parent.width; height: 40
-                        background: Rectangle {
-                            radius: 8
-                            color: "#00000055"
-                            border.color: borderColor; border.width: 1
-                        }
+                        Layout.fillWidth: true
                     }
 
                     TextField {
                         id: registerConfirmField
                         placeholderText: qsTr("确认密码")
                         echoMode: TextInput.Password
-                        font.pixelSize: 16
-                        color: "white"
-                        placeholderTextColor: borderColor
-                        width: parent.width; height: 40
-                        background: Rectangle {
-                            radius: 8
-                            color: "#00000055"
-                            border.color: borderColor; border.width: 1
-                        }
+                        Layout.fillWidth: true
+                    }
+
+                    TextField {
+                        id: registerEmailField
+                        placeholderText: qsTr("请输入邮箱,非必填")
+                        Layout.fillWidth: true
+                    }
+
+                    TextField {
+                        id: registerPhoneField
+                        placeholderText: qsTr("请输入手机号,非必填")
+                        Layout.fillWidth: true
                     }
 
                     Label {
@@ -199,11 +179,14 @@ Item {
                         font.pixelSize: 12
                         visible: registerErrorMessage !== ""
                     }
+
+                    Item { Layout.fillHeight: true }
+
                     Rectangle {
-                        width: parent.width
                         height: 40
                         radius: 6
                         color: "#33cc66"
+                        Layout.fillWidth: true
 
                         Text {
                             text: qsTr("注册")
@@ -227,12 +210,13 @@ Item {
                                 userService.registerUser(
                                     registerUsernameField.text,
                                     registerPasswordField.text,
-                                    registerConfirmField.text
+                                    registerConfirmField.text,
+                                    registerEmailField.text,
+                                    registerPhoneField.text
                                 )
                             }
                         }
                     }
-
                 }
             }
         }

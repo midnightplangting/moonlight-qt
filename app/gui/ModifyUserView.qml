@@ -7,7 +7,9 @@ import UserService 1.0
 
 Item {
     id: overlayRoot
-    anchors.fill: parent
+    width: 400
+    height: 560
+    anchors.centerIn: parent
     visible: true
     z: 999
 
@@ -137,10 +139,12 @@ Item {
 
                 ColumnLayout {
                     anchors.fill: parent
-                    spacing: 10
+                    spacing: 6
+                    Layout.alignment: Qt.AlignTop
                     visible: selectedIndex === 0
 
                     TextField { id: usernameField; placeholderText: "新用户名"; Layout.fillWidth: true }
+                    Item { Layout.fillHeight: true }
                     Rectangle {
                         height: 40; Layout.fillWidth: true; radius: 6; color: "#33cc66"
                         Text {
@@ -160,10 +164,12 @@ Item {
 
                 ColumnLayout {
                     anchors.fill: parent
-                    spacing: 10
+                    spacing: 6
+                    Layout.alignment: Qt.AlignTop
                     visible: selectedIndex === 1
 
                     TextField { id: phoneField; placeholderText: "新手机号"; Layout.fillWidth: true }
+                    Item { Layout.fillHeight: true }
                     Rectangle {
                         height: 40; Layout.fillWidth: true; radius: 6; color: "#33cc66"
                         Text {
@@ -183,10 +189,12 @@ Item {
 
                 ColumnLayout {
                     anchors.fill: parent
-                    spacing: 10
+                    spacing: 6
+                    Layout.alignment: Qt.AlignTop
                     visible: selectedIndex === 2
 
                     TextField { id: emailField; placeholderText: "新邮箱"; Layout.fillWidth: true }
+                    Item { Layout.fillHeight: true }
                     Rectangle {
                         height: 40; Layout.fillWidth: true; radius: 6; color: "#33cc66"
                         Text {
@@ -206,12 +214,14 @@ Item {
 
                 ColumnLayout {
                     anchors.fill: parent
-                    spacing: 10
+                    spacing: 6
+                    Layout.alignment: Qt.AlignTop
                     visible: selectedIndex === 3
 
                     TextField { id: oldPasswordField; placeholderText: "原密码"; echoMode: TextInput.Password; Layout.fillWidth: true }
                     TextField { id: newPasswordField; placeholderText: "新密码"; echoMode: TextInput.Password; Layout.fillWidth: true }
                     TextField { id: confirmPasswordField; placeholderText: "确认新密码"; echoMode: TextInput.Password; Layout.fillWidth: true }
+                    Item { Layout.fillHeight: true }
                     Rectangle {
                         height: 40; Layout.fillWidth: true; radius: 6; color: "#33cc66"
                         Text {
