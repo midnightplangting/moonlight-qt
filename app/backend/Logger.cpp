@@ -5,7 +5,7 @@
 #include <QStringList>
 #include <QReadWriteLock>
 
-LogLevel Logger::s_level = LogLevel::Info;
+LogLevel Logger::s_level = LogLevel::Error;
 bool Logger::s_enabled = true;
 
 void Logger::setLevel(LogLevel level)
