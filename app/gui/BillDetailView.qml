@@ -171,7 +171,16 @@ Item {
                         Text { text: qsTr("开始时间：") + serviceStartTime; font.pixelSize: 14; color: "#CCCCCC" }
                         Text { text: qsTr("结束时间：") + serviceEndTime; font.pixelSize: 14; color: "#CCCCCC" }
                         Text { text: qsTr("使用时长：") + formatDuration(usage); font.pixelSize: 14; color: "#CCCCCC" }
-                        Text { text: qsTr("状态：") + (status === 0 && !serviceEndTime ? qsTr("进行中") : qsTr("已结束")); font.pixelSize: 14; color: "#CCCCCC" }
+                        Text {
+                            text: qsTr("状态：") +
+                                (status === 0 ? qsTr("正在进行") :
+                                 status === 1 ? qsTr("完成") :
+                                 status === 3 ? qsTr("没有金币") :
+                                 status === 4 ? qsTr("包机到期") :
+                                 qsTr("未知"))
+                            font.pixelSize: 14
+                            color: "#CCCCCC"
+                        }
                         Text { text: qsTr("扣费：") + coins + qsTr(" 金币"); font.pixelSize: 14; color: "#FFA500" }
                     }
                 }
