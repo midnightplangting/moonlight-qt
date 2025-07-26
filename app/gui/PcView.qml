@@ -22,7 +22,7 @@ CenteredGridView {
     activeFocusOnTab: true
     topMargin: 20
     bottomMargin: 5
-    cellWidth: 420; cellHeight: 130;
+    cellWidth: 410; cellHeight: 130;
     objectName: qsTr("Computers")
 
     Component.onCompleted: {
@@ -364,7 +364,7 @@ CenteredGridView {
                     onClicked: {
                         if (billingType >= 2 && billingType <= 4 || billingType === 7) {
                             renewDialog.orderId = orderId
-                            renewDialog.deviceGroupId = ComputerManager.getDeviceGroupIdByOrderId(orderId)
+                            renewDialog.deviceId = ComputerManager.getDeviceIdByOrderId(orderId)
                             renewDialog.open()
                         } else {
                             checkoutConfirmDialog.pcIndex = index

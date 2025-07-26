@@ -1226,8 +1226,9 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             info.bitrate = orderObj["bitrate"].toDouble();
             info.startedAt = QDateTime::fromString(orderObj["startedAt"].toString(), Qt::ISODate);
             info.endedAt = QDateTime::fromString(orderObj["endedAt"].toString(), Qt::ISODate);
-            // \u4fdd\u5b58 devicePriceId
+            // 记录设备组 ID(devicePriceId) 和设备 ID
             info.deviceGroupId = orderObj["devicePriceId"].toInt();
+            info.deviceId = orderObj["deviceId"].toInt();
             info.status = orderObj["status"].toInt();
             info.billingType = orderObj["billingType"].toInt();
             m_DeviceInfo.insert(key, info);
@@ -1452,12 +1453,51 @@ void ComputerManager::restartSunshine(qint64 orderId)
             });
 }
 
+void ComputerManager::getDevicePriceList(int deviceId)
+{
+    QString token = UserSession::instance()->token();
+    ApiService::getDevicePriceList(token,
+                                   QString::number(deviceId),
+            [this](QString json) {
+                QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+                if (!doc.isObject()) {
+                    emit getDevicePriceListFinished(false, {}, QStringLiteral("Invalid response"));
+                    return;
+                }
+                QJsonObject obj = doc.object();
+                int code = obj.value("code").toInt();
+                QString msg = obj.value("message").toString();
+                QVariantList list;
+                if (code == 200) {
+                    QJsonArray arr = obj.value("data").toArray();
+                    for (const QJsonValue& v : arr)
+                        list.append(v.toVariant());
+                    emit getDevicePriceListFinished(true, list, msg);
+                } else {
+                    emit getDevicePriceListFinished(false, list, msg.isEmpty() ? QString::number(code) : msg);
+                }
+            },
+            [this](QString err) {
+                emit getDevicePriceListFinished(false, {}, err);
+            });
+}
+
 int ComputerManager::getDeviceGroupIdByOrderId(qint64 orderId)
 {
     QReadLocker rlock(&m_OrderLock);
     for (auto it = m_DeviceInfo.constBegin(); it != m_DeviceInfo.constEnd(); ++it) {
         if (it.value().orderId == orderId)
             return it.value().deviceGroupId;
+    }
+    return 0;
+}
+
+int ComputerManager::getDeviceIdByOrderId(qint64 orderId)
+{
+    QReadLocker rlock(&m_OrderLock);
+    for (auto it = m_DeviceInfo.constBegin(); it != m_DeviceInfo.constEnd(); ++it) {
+        if (it.value().orderId == orderId)
+            return it.value().deviceId;
     }
     return 0;
 }

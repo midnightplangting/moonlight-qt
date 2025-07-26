@@ -6,7 +6,7 @@ import ComputerManager 1.0
 NavigableDialog {
     id: root
     property int orderId: 0
-    property int deviceGroupId: 0
+    property int deviceId: 0
     property real dayPrice: 0
     property real weekPrice: 0
     property real monthPrice: 0
@@ -19,16 +19,14 @@ NavigableDialog {
     title: ""
     standardButtons: Dialog.Cancel | Dialog.Ok
 
-    function updatePrices() {
-        var item = gpuModel.getGroup(deviceGroupId)
-        if (item && item.day !== undefined) {
-            dayPrice = item.day
-            weekPrice = item.week
-            monthPrice = item.month
-            timingPrice = item.hourly
-            console.log("[RenewDialog] pricing", deviceGroupId, dayPrice, weekPrice, monthPrice, timingPrice)
+    function updatePrices(list) {
+        if (list && list.length >= 4) {
+            timingPrice = list[0]
+            dayPrice = list[1]
+            weekPrice = list[2]
+            monthPrice = list[3]
+            console.log("[RenewDialog] pricing", list)
         } else {
-            console.log("[RenewDialog] no pricing for", deviceGroupId)
             dayPrice = 0; weekPrice = 0; monthPrice = 0; timingPrice = 0
         }
         recalcTotal()
@@ -45,20 +43,12 @@ NavigableDialog {
         console.log("[RenewDialog] price", unitPrice, "qty", quantity, "total", totalPrice)
     }
 
-    onDeviceGroupIdChanged: updatePrices()
+    onDeviceIdChanged: ComputerManager.getDevicePriceList(deviceId)
     onUnitIndexChanged: recalcTotal()
     onQuantityChanged: recalcTotal()
     onOpened: {
-        console.log("[RenewDialog] open", orderId, deviceGroupId)
-        gpuModel.refresh()
-        updatePrices()
-    }
-
-    Connections {
-        target: gpuModel
-        function onModelReset() {
-            updatePrices()
-        }
+        console.log("[RenewDialog] open", orderId, deviceId)
+        ComputerManager.getDevicePriceList(deviceId)
     }
 
     ColumnLayout {
@@ -138,6 +128,14 @@ NavigableDialog {
 
     Connections {
         target: ComputerManager
+        function onGetDevicePriceListFinished(success, list, msg) {
+            if (success) {
+                updatePrices(list)
+            } else {
+                console.log("getDevicePriceList failed", msg)
+                updatePrices([])
+            }
+        }
         function onRechargeOrderFinished(success, msg) {
             loadingDialog.close()
             resultDialog.text = msg

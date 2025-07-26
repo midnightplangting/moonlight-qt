@@ -22,6 +22,7 @@
 #include <QMutex>
 #include <QWaitCondition>
 #include <QDateTime>
+#include <QVariantList>
 
 /**
  * @brief 描述本地记录的主机信息
@@ -37,6 +38,7 @@ struct DeviceInfo {
     QDateTime startedAt;      // 租用结束时间
     QDateTime endedAt;        // 租用开始时间
     int deviceGroupId = 0;    // 套餐 ID(devicePriceId)
+    int deviceId = 0;         // 设备 ID
     int status = 0;           // 订单状态
     int billingType = 0;      // 计费类型，本地设备固定为 0
 };
@@ -268,6 +270,8 @@ public:
 
     // Get device group ID for an order
     Q_INVOKABLE int getDeviceGroupIdByOrderId(qint64 orderId);
+    // Get device ID for an order
+    Q_INVOKABLE int getDeviceIdByOrderId(qint64 orderId);
 
     // Remove all devices synchronized from the cloud
     Q_INVOKABLE void clearOrderDevices();
@@ -288,6 +292,7 @@ signals:
     void getOrderDetailListFinished(bool success, QString data);
     void rechargeOrderFinished(bool success, QString message);
     void restartSunshineFinished(bool success, QString message);
+    void getDevicePriceListFinished(bool success, QVariantList list, QString message);
 
     void orderStatusException(int status);
 
@@ -299,6 +304,7 @@ public slots:
     Q_INVOKABLE void rechargeOrder(qint64 orderId, int num, int billingType);
     Q_INVOKABLE void getOrderDetailList();
     Q_INVOKABLE void restartSunshine(qint64 orderId);
+    Q_INVOKABLE void getDevicePriceList(int deviceId);
     void closeOrder(NvComputer* computer);
 
     Q_INVOKABLE void dumpStoredComputers();

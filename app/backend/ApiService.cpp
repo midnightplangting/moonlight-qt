@@ -190,6 +190,19 @@ void ApiService::payPC(const QString& token,
         ->async(onSuccess, onFailure);
 }
 
+void ApiService::getDevicePriceList(const QString& token,
+                                    const QString& deviceId,
+                                    std::function<void(QString)> onSuccess,
+                                    std::function<void(QString)> onFailure)
+{
+    QString url = QStringLiteral("deviceGroup/getDevicePriceList?deviceId=%1").arg(deviceId);
+    OkHttpUtils::builder()
+        ->url(url)
+        ->addHeader("token", token)
+        ->get()
+        ->async(onSuccess, onFailure);
+}
+
 
 void ApiService::updateUserInfo(const QJsonObject& params,
                                 std::function<void(QString)> onSuccess,
