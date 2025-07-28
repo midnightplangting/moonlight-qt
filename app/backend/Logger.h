@@ -20,6 +20,7 @@ public:
     static void setLevel(LogLevel level);
     static void enable(bool enable);
     static void log(LogLevel level, const QString& msg);
+    static void logThread(LogLevel level, const QString& msg);
     static void logComputer(const NvComputer* computer,
                             const DeviceInfo* info = nullptr);
 private:
@@ -31,5 +32,9 @@ private:
 #define LOG_WARN(msg)  Logger::log(LogLevel::Warning, msg)
 #define LOG_INFO(msg)  Logger::log(LogLevel::Info, msg)
 #define LOG_DEBUG(msg) Logger::log(LogLevel::Debug, msg)
+#define LOG_ERROR_T(msg) Logger::logThread(LogLevel::Error, msg)
+#define LOG_WARN_T(msg)  Logger::logThread(LogLevel::Warning, msg)
+#define LOG_INFO_T(msg)  Logger::logThread(LogLevel::Info, msg)
+#define LOG_DEBUG_T(msg) Logger::logThread(LogLevel::Debug, msg)
 
 #endif // LOGGER_H

@@ -2,6 +2,7 @@
 #include "settings/streamingpreferences.h"
 #include "streaming/streamutils.h"
 #include "backend/richpresencemanager.h"
+#include "backend/Logger.h"
 
 #include <Limelight.h>
 #include "SDL_compat.h"
@@ -47,6 +48,7 @@
 #include <QtEndian>
 #include <QCoreApplication>
 #include <QThreadPool>
+#include <QElapsedTimer>
 #include <QSvgRenderer>
 #include <QPainter>
 #include <QImage>
@@ -2042,6 +2044,18 @@ void Session::execInternal()
             continue;
         }
 #endif
+
+        static QElapsedTimer evtTimer;
+        if (!evtTimer.isValid()) {
+            evtTimer.start();
+        }
+        else {
+            qint64 diff = evtTimer.restart();
+            if (diff > 500) {
+                LOG_WARN_T(QStringLiteral("[EventLoop] gap %1 ms").arg(diff));
+            }
+        }
+        LOG_DEBUG_T(QStringLiteral("[EventLoop] event type=%1").arg(event.type));
         switch (event.type) {
         case SDL_QUIT:
             SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,

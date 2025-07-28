@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QStringList>
 #include <QReadWriteLock>
+#include <QThread>
 
 LogLevel Logger::s_level = LogLevel::Info;
 bool Logger::s_enabled = true;
@@ -37,6 +38,23 @@ void Logger::log(LogLevel level, const QString& msg)
         qDebug() << "[调试]" << msg;
         break;
     }
+}
+
+void Logger::logThread(LogLevel level, const QString& msg)
+{
+    QThread* thread = QThread::currentThread();
+    QString threadName = thread->objectName();
+    quintptr threadId = reinterpret_cast<quintptr>(QThread::currentThreadId());
+
+    QString prefix;
+    if (!threadName.isEmpty()) {
+        prefix = QStringLiteral("[%1(%2)] ").arg(threadName).arg(threadId);
+    }
+    else {
+        prefix = QStringLiteral("[Thread:%1] ").arg(threadId);
+    }
+
+    Logger::log(level, prefix + msg);
 }
 
 void Logger::logComputer(const NvComputer* computer, const DeviceInfo* info)

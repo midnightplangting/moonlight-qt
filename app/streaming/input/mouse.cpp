@@ -3,9 +3,26 @@
 #include <Limelight.h>
 #include "SDL_compat.h"
 #include "streaming/streamutils.h"
+#include "backend/Logger.h"
+#include <QElapsedTimer>
 
 void SdlInputHandler::handleMouseButtonEvent(SDL_MouseButtonEvent* event)
 {
+    static QElapsedTimer timer;
+    if (!timer.isValid()) {
+        timer.start();
+    }
+    else {
+        qint64 diff = timer.restart();
+        if (diff > 500) {
+            LOG_WARN_T(QStringLiteral("[MouseButton] gap %1 ms").arg(diff));
+        }
+    }
+    LOG_DEBUG_T(QStringLiteral("[MouseButton] button=%1 state=%2 x=%3 y=%4")
+                .arg(event->button)
+                .arg(event->state)
+                .arg(event->x)
+                .arg(event->y));
     int button;
 
     if (event->which == SDL_TOUCH_MOUSEID) {
@@ -70,6 +87,21 @@ void SdlInputHandler::handleMouseButtonEvent(SDL_MouseButtonEvent* event)
 
 void SdlInputHandler::handleMouseMotionEvent(SDL_MouseMotionEvent* event)
 {
+    static QElapsedTimer timer;
+    if (!timer.isValid()) {
+        timer.start();
+    }
+    else {
+        qint64 diff = timer.restart();
+        if (diff > 500) {
+            LOG_WARN_T(QStringLiteral("[MouseMotion] gap %1 ms").arg(diff));
+        }
+    }
+    LOG_DEBUG_T(QStringLiteral("[MouseMotion] x=%1 y=%2 xrel=%3 yrel=%4")
+                .arg(event->x)
+                .arg(event->y)
+                .arg(event->xrel)
+                .arg(event->yrel));
     if (!isCaptureActive()) {
         // Not capturing
         return;
@@ -156,6 +188,17 @@ void SdlInputHandler::handleMouseMotionEvent(SDL_MouseMotionEvent* event)
 
 void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
 {
+    static QElapsedTimer timer;
+    if (!timer.isValid()) {
+        timer.start();
+    }
+    else {
+        qint64 diff = timer.restart();
+        if (diff > 500) {
+            LOG_WARN_T(QStringLiteral("[MouseWheel] gap %1 ms").arg(diff));
+        }
+    }
+    LOG_DEBUG_T(QStringLiteral("[MouseWheel] x=%1 y=%2").arg(event->x).arg(event->y));
     if (!isCaptureActive()) {
         // Not capturing
         return;
