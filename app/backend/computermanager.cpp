@@ -898,11 +898,14 @@ class PendingAddTask : public QObject, public QRunnable
     Q_OBJECT
 
 public:
-    PendingAddTask(ComputerManager* computerManager, NvAddress address, NvAddress mdnsIpv6Address, bool mdns)
+    PendingAddTask(ComputerManager* computerManager, NvAddress address,
+                   NvAddress mdnsIpv6Address, bool mdns,
+                   bool notifyOnFailure)
         : m_ComputerManager(computerManager),
           m_Address(address),
           m_MdnsIpv6Address(mdnsIpv6Address),
           m_Mdns(mdns),
+          m_NotifyOnFailure(notifyOnFailure),
           m_AboutToQuit(false)
     {
         connect(this, &PendingAddTask::computerAddCompleted,
@@ -954,8 +957,8 @@ private:
             }
             return serverInfo;
         } catch (...) {
-            if (!m_Mdns) {
-                unsigned int portTestResult;
+            if (!m_Mdns && m_NotifyOnFailure) {
+                unsigned int portTestResult = 0;
 
                 if (m_ComputerManager->m_Prefs->detectNetworkBlocking) {
                     // We failed to connect to the specified PC. Let's test to make sure this network
@@ -963,11 +966,10 @@ private:
                     portTestResult = LiTestClientConnectivity("qt.conntest.moonlight-stream.org", 443,
                                                               ML_PORT_FLAG_TCP_47984 | ML_PORT_FLAG_TCP_47989);
                 }
-                else {
-                    portTestResult = 0;
-                }
 
-                emit computerAddCompleted(false, portTestResult != 0 && portTestResult != ML_TEST_RESULT_INCONCLUSIVE);
+                emit computerAddCompleted(false,
+                                         portTestResult != 0 &&
+                                         portTestResult != ML_TEST_RESULT_INCONCLUSIVE);
             }
             return QString();
         }
@@ -1131,14 +1133,19 @@ private:
     NvAddress m_Address;
     NvAddress m_MdnsIpv6Address;
     bool m_Mdns;
+    bool m_NotifyOnFailure;
     bool m_AboutToQuit;
 };
 
-void ComputerManager::addNewHost(NvAddress address, bool mdns, NvAddress mdnsIpv6Address)
+void ComputerManager::addNewHost(NvAddress address, bool mdns,
+                                 NvAddress mdnsIpv6Address,
+                                 bool notifyOnFailure)
 {
     // Punt to a worker thread to avoid stalling the
     // UI while waiting for serverinfo query to complete
-    PendingAddTask* addTask = new PendingAddTask(this, address, mdnsIpv6Address, mdns);
+    PendingAddTask* addTask = new PendingAddTask(this, address,
+                                                 mdnsIpv6Address, mdns,
+                                                 notifyOnFailure);
     QThreadPool::globalInstance()->start(addTask);
 
 }
@@ -1257,7 +1264,8 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
                      .arg(std::get<2>(d))
                      .arg(std::get<0>(d))
                      .arg(std::get<1>(d)));
-        addNewHost(NvAddress(std::get<0>(d), std::get<1>(d)), false);
+        addNewHost(NvAddress(std::get<0>(d), std::get<1>(d)),
+                    false, NvAddress(), false);
     }
 
     // 删除消失的设备（支持多个）

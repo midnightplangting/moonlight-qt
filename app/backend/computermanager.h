@@ -248,7 +248,9 @@ public:
 
     Q_INVOKABLE void addNewHostManually(QString address);
 
-    void addNewHost(NvAddress address, bool mdns, NvAddress mdnsIpv6Address = NvAddress());
+    void addNewHost(NvAddress address, bool mdns,
+                    NvAddress mdnsIpv6Address = NvAddress(),
+                    bool notifyOnFailure = true);
 
     QString generatePinString();
 
