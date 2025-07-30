@@ -200,7 +200,7 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
     m_DelayedFlushThread->start();
 
     // 定时同步订单状态，确保串流过程中也能获取最新状态
-    m_OrderTimer.setInterval(300000);
+    m_OrderTimer.setInterval(3000);
     connect(&m_OrderTimer, &QTimer::timeout, this, &ComputerManager::syncOrderDevices);
 
     // To quit in a timely manner, we must block additional requests
@@ -1233,7 +1233,17 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             info.billingType = orderObj["billingType"].toInt();
             m_DeviceInfo.insert(key, info);
 
-            if (!m_OrderDeviceKeys.contains(key))
+            bool knownHost = false;
+            {
+                QReadLocker hostLock(&m_Lock);
+                for (NvComputer* pc : m_KnownHosts) {
+                    if (deviceKey(pc) == key) {
+                        knownHost = true;
+                        break;
+                    }
+                }
+            }
+            if (!knownHost)
                 newDevices.append({ip, port, o["name"].toString()});
         }
 
