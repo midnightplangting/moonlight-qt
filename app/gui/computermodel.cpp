@@ -185,8 +185,17 @@ Session* ComputerModel::createDesktopSession(int computerIndex)
     Q_ASSERT(computerIndex < m_Computers.count());
 
     NvComputer* computer = m_Computers[computerIndex];
-
     int idx = findDesktopAppIndex(computer);
+    if (idx < 0) {
+        bool changed = false;
+        if (m_ComputerManager->fetchAppListSync(computer, &changed)) {
+            if (changed) {
+                emit dataChanged(createIndex(computerIndex, 0), createIndex(computerIndex, 0));
+            }
+            idx = findDesktopAppIndex(computer);
+        }
+    }
+
     if (idx >= 0) {
         NvApp app = computer->appList[idx];
         return new Session(computer, app);
@@ -202,6 +211,12 @@ QString ComputerModel::getDesktopAppName(int computerIndex)
     NvComputer* computer = m_Computers[computerIndex];
 
     int idx = findDesktopAppIndex(computer);
+    if (idx < 0) {
+        if (m_ComputerManager->fetchAppListSync(computer)) {
+            idx = findDesktopAppIndex(computer);
+        }
+    }
+
     if (idx >= 0) {
         return computer->appList[idx].name;
     }

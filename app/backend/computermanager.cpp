@@ -1500,6 +1500,27 @@ void ComputerManager::getDevicePriceList(int deviceId)
             });
 }
 
+bool ComputerManager::fetchAppListSync(NvComputer* computer, bool* changed)
+{
+    NvHTTP http(computer);
+    QVector<NvApp> appList;
+
+    try {
+        appList = http.getAppList();
+        if (appList.isEmpty()) {
+            return false;
+        }
+    } catch (...) {
+        return false;
+    }
+
+    QWriteLocker lock(&computer->lock);
+    bool listChanged = computer->updateAppList(appList);
+    if (changed)
+        *changed = listChanged;
+    return true;
+}
+
 int ComputerManager::getDeviceGroupIdByOrderId(qint64 orderId)
 {
     QReadLocker rlock(&m_OrderLock);

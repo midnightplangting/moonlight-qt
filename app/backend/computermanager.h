@@ -268,6 +268,15 @@ public:
 
     void renameHost(NvComputer* computer, QString name);
 
+    /**
+     * @brief Fetch the app list for the specified computer synchronously.
+     *
+     * This is used when the user initiates streaming before the polling
+     * thread has fetched the app list. Returns true if the request succeeded
+     * and the computer's app list is non-empty.
+     */
+    bool fetchAppListSync(NvComputer* computer, bool* changed = nullptr);
+
     bool isOrderDevice(NvComputer* computer);
 
     // Get device group ID for an order
