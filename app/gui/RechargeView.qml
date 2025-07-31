@@ -269,9 +269,9 @@ Item {
                                 const combo = comboModel.get(comboGrid.selectedCombo)
                                 console.log("Pay", combo.coins, "coins by", paySection.selectedPay === 0 ? "微信" : "支付宝")
                                 if (paySection.selectedPay === 0) {
-                                    userService.payPC(combo.id)
+                                    userService.payWxPC(combo.id)
                                 } else {
-                                    console.log("Alipay not supported yet")
+                                    userService.payAliPC(combo.id)
                                 }
                             }
                         }

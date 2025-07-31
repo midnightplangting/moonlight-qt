@@ -26,7 +26,8 @@ public:
     Q_INVOKABLE void getLatestNotice();
     Q_INVOKABLE void exchangeCoupon(const QString& discountCode);
     Q_INVOKABLE void getGoldCoinPriceList();
-    Q_INVOKABLE void payPC(int goldCoinPriceId);
+    Q_INVOKABLE void payWxPC(int goldCoinPriceId);
+    Q_INVOKABLE void payAliPC(int goldCoinPriceId);
     Q_INVOKABLE void checkForUpdate();
     Q_INVOKABLE void downloadUpdate(const QString& url);
     Q_INVOKABLE void installUpdate(const QString& filePath);

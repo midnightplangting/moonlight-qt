@@ -59,11 +59,18 @@ void rechargeOrder(const QString& orderId,
 void getGoldCoinPriceList(std::function<void(QString)> onSuccess,
                           std::function<void(QString)> onFailure);
 
-void payPC(const QString& token,
-           const QString& userId,
-           const QString& goldCoinPriceId,
-           std::function<void(QString)> onSuccess,
-           std::function<void(QString)> onFailure);
+// Initiates a WeChat PC payment request
+void payWxPC(const QString& token,
+             const QString& userId,
+             const QString& goldCoinPriceId,
+             std::function<void(QString)> onSuccess,
+             std::function<void(QString)> onFailure);
+
+void payAliPC(const QString& token,
+              const QString& userId,
+              const QString& goldCoinPriceId,
+              std::function<void(QString)> onSuccess,
+              std::function<void(QString)> onFailure);
 
 void getDevicePriceList(const QString& token,
                         const QString& deviceId,
