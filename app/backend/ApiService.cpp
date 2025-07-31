@@ -285,7 +285,7 @@ void ApiService::exchangeCoupon(const QString& userId, const QString& discountCo
 void ApiService::checkLatestVersion(std::function<void(QString)> onSuccess,
                                     std::function<void(QString)> onFailure)
 {
-    QNetworkRequest request(QUrl("https://gzydn.cn:18081/pc/getLastestVersion"));
+    QNetworkRequest request(QUrl("https://gzydn.cn:18080/pc/getLastestVersion"));
     QNetworkAccessManager* nam = new QNetworkAccessManager();
 
     QNetworkReply* reply = nam->get(request);
