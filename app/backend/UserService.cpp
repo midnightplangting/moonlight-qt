@@ -229,7 +229,8 @@ void UserService::getGoldCoinPriceList()
             });
 }
 
-void UserService::payPC(int goldCoinPriceId)
+// WeChat PC payment
+void UserService::payWxPC(int goldCoinPriceId)
 {
     qint64 uid = UserSession::instance()->userId();
     QString token = UserSession::instance()->token();
@@ -238,7 +239,7 @@ void UserService::payPC(int goldCoinPriceId)
         return;
     }
 
-    ApiService::payPC(token,
+    ApiService::payWxPC(token,
                        QString::number(uid),
                        QString::number(goldCoinPriceId),
             [=](QString data) {
@@ -248,7 +249,43 @@ void UserService::payPC(int goldCoinPriceId)
                     int code = obj.value("code").toInt();
                     QString msg = obj.value("message").toString();
                     QString qr = obj.value("data").toString();
-                    LOG_INFO(QStringLiteral("[payPC result] code=%1 msg=%2")
+                    LOG_INFO(QStringLiteral("[payWxPC result] code=%1 msg=%2")
+                                 .arg(code)
+                                 .arg(msg));
+                    if (code == 200 && !qr.isEmpty()) {
+                        emit payPCSuccess(qr);
+                    } else {
+                        emit payPCFailure(msg.isEmpty() ? QString::number(code) : msg);
+                    }
+                } else {
+                    emit payPCFailure(QStringLiteral("响应格式错误"));
+                }
+            },
+            [=](QString err) {
+                emit payPCFailure(QStringLiteral("网络错误: ") + err);
+            });
+}
+
+void UserService::payAliPC(int goldCoinPriceId)
+{
+    qint64 uid = UserSession::instance()->userId();
+    QString token = UserSession::instance()->token();
+    if (uid == 0 || token.isEmpty()) {
+        emit payPCFailure(QStringLiteral("用户未登录"));
+        return;
+    }
+
+    ApiService::payAliPC(token,
+                         QString::number(uid),
+                         QString::number(goldCoinPriceId),
+            [=](QString data) {
+                QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
+                if (!doc.isNull() && doc.isObject()) {
+                    QJsonObject obj = doc.object();
+                    int code = obj.value("code").toInt();
+                    QString msg = obj.value("message").toString();
+                    QString qr = obj.value("data").toString();
+                    LOG_INFO(QStringLiteral("[payAliPC result] code=%1 msg=%2")
                                  .arg(code)
                                  .arg(msg));
                     if (code == 200 && !qr.isEmpty()) {
