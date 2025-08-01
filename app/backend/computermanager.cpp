@@ -58,7 +58,8 @@ private:
 
         // 确保回应的主机就是我们想要联系的那台
         if (m_Computer->uuid != newState.uuid) {
-            qInfo() << "Found unexpected PC" << newState.name << "looking for" << m_Computer->name;
+            LOG_WARN_T(QStringLiteral("[Polling] Found unexpected PC %1 while looking for %2")
+                       .arg(newState.name, m_Computer->name));
             return false;
         }
 
@@ -88,8 +89,13 @@ private:
 
     void run() override
     {
-        qInfo() << "[PcMonitorThread] run() started for"
-                << m_Computer->name << "@" ;
+        // 轮询线程的生命周期：
+        // 1. 在 ComputerManager::startPollingComputer() 中创建并启动。
+        // 2. stopPollingAsync() 或应用退出时通过 requestInterruption() 中断。
+        // 3. 线程循环执行以下逻辑直至被中断。
+
+        LOG_INFO_T(QStringLiteral("[PcMonitorThread] run() started for %1")
+                   .arg(m_Computer->name));
 
         // 第一次必定获取应用列表
         int pollsSinceLastAppListFetch = POLLS_PER_APPLIST_FETCH;
@@ -108,7 +114,10 @@ private:
 
                     if (tryPollComputer(address, stateChanged)) {
                         if (!wasOnline) {
-                            qInfo() << m_Computer->name << "is now online at" << m_Computer->activeAddress.toString();
+                            LOG_INFO_T(QStringLiteral("[Polling] %1 is now online at %2")
+                                       .arg(m_Computer->name,
+                                            m_Computer->activeAddress.toString()));
+                            Logger::logComputer(m_Computer);
                         }
                         online = true;
                         break;
@@ -120,9 +129,10 @@ private:
             // 注意：这里无需获取读锁，
             // 因为当前线程已经持有写锁
             if (!online && m_Computer->state != NvComputer::CS_OFFLINE) {
-                qInfo() << m_Computer->name << "is now offline";
+                LOG_INFO_T(QStringLiteral("[Polling] %1 is now offline").arg(m_Computer->name));
                 m_Computer->state = NvComputer::CS_OFFLINE;
                 stateChanged = true;
+                Logger::logComputer(m_Computer);
             }
 
             // 如果应用列表为空或距离上次获取已够久则重新获取
@@ -156,6 +166,7 @@ private:
             for (int i = 0; i < 30 && !isInterruptionRequested(); i++) {
                 QThread::msleep(100);
             }
+            Logger::logComputer(m_Computer);
             LOG_DEBUG_T(QStringLiteral("[Polling] 本轮结束"));
         }
     }
@@ -342,22 +353,22 @@ QHostAddress ComputerManager::getBestGlobalAddressV6(QVector<QHostAddress> &addr
             }
 
             if (address.isInSubnet(QHostAddress("fec0::"), 10)) {
-                qInfo() << "Ignoring site-local address:" << address;
+                LOG_INFO(QStringLiteral("Ignoring site-local address: %1").arg(address.toString()));
                 continue;
             }
 
             if (address.isInSubnet(QHostAddress("fc00::"), 7)) {
-                qInfo() << "Ignoring ULA:" << address;
+                LOG_INFO(QStringLiteral("Ignoring ULA: %1").arg(address.toString()));
                 continue;
             }
 
             if (address.isInSubnet(QHostAddress("2002::"), 16)) {
-                qInfo() << "Ignoring 6to4 address:" << address;
+                LOG_INFO(QStringLiteral("Ignoring 6to4 address: %1").arg(address.toString()));
                 continue;
             }
 
             if (address.isInSubnet(QHostAddress("2001::"), 32)) {
-                qInfo() << "Ignoring Teredo address:" << address;
+                LOG_INFO(QStringLiteral("Ignoring Teredo address: %1").arg(address.toString()));
                 continue;
             }
 
@@ -384,7 +395,7 @@ void ComputerManager::startPolling()
         m_MdnsBrowser = new QMdnsEngine::Browser(m_MdnsServer.data(), "_nvstream._tcp.local.");
         connect(m_MdnsBrowser, &QMdnsEngine::Browser::serviceAdded,
                 this, [this](const QMdnsEngine::Service& service) {
-            qInfo() << "Discovered mDNS host:" << service.hostname();
+            LOG_INFO(QStringLiteral("Discovered mDNS host: %1").arg(service.hostname()));
 
             MdnsPendingComputer* pendingComputer = new MdnsPendingComputer(m_MdnsServer, service);
             connect(pendingComputer, &MdnsPendingComputer::resolvedHost,
@@ -943,7 +954,7 @@ private:
                     qWarning() << "Retrying request in 5 seconds after ServiceUnavailableError";
                     QThread::sleep(5);
                     serverInfo = http.getServerInfo(NvHTTP::NVLL_VERBOSE);
-                    qInfo() << "Retry successful";
+                    LOG_INFO("Retry successful");
                 }
                 else {
                     // 其他错误继续抛出
@@ -973,7 +984,10 @@ private:
     {
         NvHTTP http(m_Address, 0, QSslCertificate());
 
-        qInfo() << "Processing new PC at" << m_Address.toString() << "from" << (m_Mdns ? "mDNS" : "user") << "with IPv6 address" << m_MdnsIpv6Address.toString();
+        LOG_INFO(QStringLiteral("Processing new PC at %1 from %2 with IPv6 address %3")
+                 .arg(m_Address.toString(),
+                      m_Mdns ? QStringLiteral("mDNS") : QStringLiteral("user"),
+                      m_MdnsIpv6Address.toString()));
 
         // 首先通过 HTTP 获取服务器信息，此时尚未确定证书
         QString serverInfo = fetchServerInfo(http);
@@ -1078,7 +1092,9 @@ private:
 
                 // 如果有变化则通知客户端
                 if (changed) {
-                    qInfo() << existingComputer->name << "is now at" << existingComputer->activeAddress.toString();
+                    LOG_INFO(QStringLiteral("%1 is now at %2")
+                             .arg(existingComputer->name,
+                                  existingComputer->activeAddress.toString()));
                     emit computerStateChanged(existingComputer);
                 }
             }

@@ -326,6 +326,10 @@ Item {
 
         contentItem: LoginRegisterView {
             onRequestClose: loginOverlay.close()
+            onLoginSucceeded: {
+                // 重新载入用户中心界面以刷新数据
+                stackView.replace(stackView.currentItem, "qrc:/gui/RechargeView.qml")
+            }
         }
     }
 

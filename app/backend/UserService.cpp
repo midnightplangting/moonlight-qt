@@ -306,6 +306,11 @@ void UserService::checkForUpdate()
 {
     ApiService::checkLatestVersion(
             [=](QString data) {
+                // 默认不提示更新
+                bool shouldNotify = false;
+                QString msg;
+                QString url;
+
                 QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
                 if (doc.isObject()) {
                     QJsonObject obj = doc.object();
@@ -314,14 +319,18 @@ void UserService::checkForUpdate()
                         double latest = d.value("packageVersion").toDouble();
                         double current = QString(VERSION_STR).toDouble();
                         if (latest > current) {
-                            emit updateAvailable(d.value("updateContent").toString(),
-                                                d.value("packageUrl").toString());
+                            shouldNotify = true;
+                            msg = d.value("updateContent").toString();
+                            url = d.value("packageUrl").toString();
                         }
                     }
                 }
+
+                if (shouldNotify)
+                    emit updateAvailable(msg, url);
             },
             [=](QString) {
-                // ignore errors
+                // 请求失败时不提示更新
             });
 }
 

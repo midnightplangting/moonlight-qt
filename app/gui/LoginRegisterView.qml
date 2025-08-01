@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import UserService 1.0
+import ComputerManager 1.0
 
 Item {
     id: root
@@ -17,6 +18,7 @@ Item {
     signal requestLogin(string username, string password)
     signal requestRegister(string username, string password, string confirmPassword, string email, string phone)
     signal requestClose()
+    signal loginSucceeded()
 
     property string registerErrorMessage: ""
     property string loginErrorMessage: ""
@@ -33,6 +35,10 @@ Item {
         onLoginSuccess: {
             console.log("Login success")
             loginErrorMessage = ""
+            // 登录成功后立即同步云端数据并刷新界面
+            ComputerManager.syncOrderDevices()
+            getUserInfoById()
+            loginSucceeded()
             requestClose()
         }
 
