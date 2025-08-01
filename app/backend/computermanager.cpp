@@ -56,7 +56,7 @@ private:
 
         NvComputer newState(http, serverInfo);
 
-        // Ensure the machine that responded is the one we intended to contact
+        // 确保回应的主机就是我们想要联系的那台
         if (m_Computer->uuid != newState.uuid) {
             qInfo() << "Found unexpected PC" << newState.name << "looking for" << m_Computer->name;
             return false;
@@ -91,15 +91,17 @@ private:
         qInfo() << "[PcMonitorThread] run() started for"
                 << m_Computer->name << "@" ;
 
-        // Always fetch the applist the first time
+        // 第一次必定获取应用列表
         int pollsSinceLastAppListFetch = POLLS_PER_APPLIST_FETCH;
 
         while (!isInterruptionRequested()) {
+            LOG_DEBUG_T(QStringLiteral("[Polling] 开始轮询 %1").arg(m_Computer->name));
             bool stateChanged = false;
             bool online = false;
             bool wasOnline = m_Computer->state == NvComputer::CS_ONLINE;
             for (int i = 0; i < (wasOnline ? TRIES_BEFORE_OFFLINING : 1) && !online; i++) {
                 for (auto& address : m_Computer->uniqueAddresses()) {
+                    LOG_DEBUG_T(QStringLiteral("[Polling] 尝试 %1").arg(address.toString()));
                     if (isInterruptionRequested()) {
                         return;
                     }
@@ -114,46 +116,47 @@ private:
                 }
             }
 
-            // Check if we failed after all retry attempts
-            // Note: we don't need to acquire the read lock here,
-            // because we're on the writing thread.
+            // 在所有重试后仍失败就认为离线
+            // 注意：这里无需获取读锁，
+            // 因为当前线程已经持有写锁
             if (!online && m_Computer->state != NvComputer::CS_OFFLINE) {
                 qInfo() << m_Computer->name << "is now offline";
                 m_Computer->state = NvComputer::CS_OFFLINE;
                 stateChanged = true;
             }
 
-            // Grab the applist if it's empty or it's been long enough that we need to refresh
+            // 如果应用列表为空或距离上次获取已够久则重新获取
             pollsSinceLastAppListFetch++;
             if (m_Computer->state == NvComputer::CS_ONLINE &&
                     m_Computer->pairState == NvComputer::PS_PAIRED &&
                     (m_Computer->appList.isEmpty() || pollsSinceLastAppListFetch >= POLLS_PER_APPLIST_FETCH)) {
-                // Notify prior to the app list poll since it may take a while, and we don't
-                // want to delay onlining of a machine, especially if we already have a cached list.
+                // 在获取应用列表前先通知，因为该操作可能较慢，
+                // 避免延迟主机上线（即使已有缓存列表）
                 if (stateChanged) {
                     emit computerStateChanged(m_Computer);
                     stateChanged = false;
                 }
 
                 if (updateAppList(stateChanged)) {
+                    LOG_INFO_T(QStringLiteral("[Polling] 已刷新应用列表"));
                     pollsSinceLastAppListFetch = 0;
                 }
             }
 
             if (stateChanged) {
-                // Tell anyone listening that we've changed state
+                // 通知监听者主机状态已变化
                 emit computerStateChanged(m_Computer);
             }
 
-            // Sync order info periodically
+            // 定期同步订单信息
             m_Manager->checkOrderStatus(m_Computer);
 
-            // Wait a bit to poll again, but do it in 100 ms chunks
-            // so we can be interrupted reasonably quickly.
-            // FIXME: QWaitCondition would be better.
+            // 等待后再轮询，以100毫秒为粒度便于及时中断
+            // FIXME: 使用 QWaitCondition 会更好
             for (int i = 0; i < 30 && !isInterruptionRequested(); i++) {
                 QThread::msleep(100);
             }
+            LOG_DEBUG_T(QStringLiteral("[Polling] 本轮结束"));
         }
     }
 
@@ -174,16 +177,15 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
 {
     QSettings settings;
 
-    // If there's a hosts backup copy, we must have failed to commit
-    // a previous update before exiting. Restore the backup now.
+    // 如果存在主机备份，说明上次更新未成功写入，现恢复备份
     int hosts = settings.beginReadArray(SER_HOSTS_BACKUP);
     if (hosts == 0) {
-        // If there's no host backup, read from the primary location.
+        // 如果没有备份，则从主存储读取
         settings.endArray();
         hosts = settings.beginReadArray(SER_HOSTS);
     }
 
-    // Inflate our hosts from QSettings
+    // 从 QSettings 还原主机列表
     for (int i = 0; i < hosts; i++) {
         settings.setArrayIndex(i);
         NvComputer* computer = new NvComputer(settings);
@@ -192,10 +194,10 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
     }
     settings.endArray();
 
-    // Fetch latest compatibility data asynchronously
+    // 异步获取最新兼容性数据
     m_CompatFetcher.start();
 
-    // Start the delayed flush thread to handle saveHosts() calls
+    // 启动延迟刷新线程处理 saveHosts()
     m_DelayedFlushThread = new DelayedFlushThread(this);
     m_DelayedFlushThread->start();
 
@@ -203,56 +205,54 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
     m_OrderTimer.setInterval(3000);
     connect(&m_OrderTimer, &QTimer::timeout, this, &ComputerManager::syncOrderDevices);
 
-    // To quit in a timely manner, we must block additional requests
-    // after we receive the aboutToQuit() signal. This is necessary
-    // because NvHTTP uses aboutToQuit() to abort requests in progress
-    // while quitting, however this is a one time signal - additional
-    // requests would not be aborted and block termination.
+    // 为了及时退出，收到 aboutToQuit() 信号后需阻止新的请求。
+    // 因为 NvHTTP 会在该信号时中断进行中的请求，但该信号只发一次，
+    // 后续的请求不会被终止，可能阻塞退出。
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &ComputerManager::handleAboutToQuit);
 
 }
 
 ComputerManager::~ComputerManager()
 {
-    // Stop the delayed flush thread before acquiring the lock in write mode
-    // to avoid deadlocking with a flush that needs the lock in read mode.
+    // 在获取写锁前停止延迟刷新线程，
+    // 避免与需要读锁的刷新操作发生死锁
     {
-        // Wake the delayed flush thread
+        // 唤醒延迟刷新线程
         m_DelayedFlushThread->requestInterruption();
         m_DelayedFlushCondition.wakeOne();
 
-        // Wait for it to terminate (and finish any pending flush)
+        // 等待线程结束并完成所有待刷新
         m_DelayedFlushThread->wait();
         delete m_DelayedFlushThread;
 
-        // Delayed flushes should have completed by now
+        // 此时所有延迟刷新应已完成
         Q_ASSERT(!m_NeedsDelayedFlush);
     }
 
     QWriteLocker lock(&m_Lock);
 
-    // Delete machines that haven't been resolved yet
+    // 删除尚未解析的主机
     while (!m_PendingResolution.isEmpty()) {
         MdnsPendingComputer* computer = m_PendingResolution.first();
         delete computer;
         m_PendingResolution.removeFirst();
     }
 
-    // Delete the browser to stop discovery
+    // 删除浏览器以停止发现
     delete m_MdnsBrowser;
     m_MdnsBrowser = nullptr;
 
-    // Interrupt polling
+    // 中断轮询线程
     for (ComputerPollingEntry* entry : m_PollEntries) {
         entry->interrupt();
     }
 
-    // Delete all polling entries (and associated threads)
+    // 删除所有轮询项及其关联线程
     for (ComputerPollingEntry* entry : m_PollEntries) {
         delete entry;
     }
 
-    // Destroy all NvComputer objects now that polling is halted
+    // 轮询已停止，销毁所有 NvComputer 对象
     for (NvComputer* computer : m_KnownHosts) {
         delete computer;
     }
@@ -260,7 +260,7 @@ ComputerManager::~ComputerManager()
 
 void DelayedFlushThread::run() {
     for (;;) {
-        // Wait for a delayed flush request or an interruption
+        // 等待延迟刷新请求或线程中断
         {
             QMutexLocker locker(&m_ComputerManager->m_DelayedFlushMutex);
 
@@ -268,31 +268,29 @@ void DelayedFlushThread::run() {
                 m_ComputerManager->m_DelayedFlushCondition.wait(&m_ComputerManager->m_DelayedFlushMutex);
             }
 
-            // Bail without flushing if we woke up for an interruption alone.
-            // If we have both an interruption and a flush request, do the flush.
+            // 如果仅因中断被唤醒则不刷新；若同时有刷新请求则执行刷新
             if (!m_ComputerManager->m_NeedsDelayedFlush) {
                 Q_ASSERT(QThread::currentThread()->isInterruptionRequested());
                 break;
             }
 
-            // Reset the delayed flush flag to ensure any racing saveHosts() call will set it again
+            // 重置延迟刷新标记，确保并发的 saveHosts() 能重新设置
             m_ComputerManager->m_NeedsDelayedFlush = false;
 
-            // Update the last serialized hosts map under the delayed flush mutex
+            // 在互斥锁下更新最近序列化的主机映射
             m_ComputerManager->m_LastSerializedHosts.clear();
             for (const NvComputer* computer : m_ComputerManager->m_KnownHosts) {
-                // Copy the current state of the NvComputer to allow us to check later if we need
-                // to serialize it again when attribute updates occur.
+                // 复制当前 NvComputer 状态，便于后续属性变更时判断是否需要再次序列化
                 QReadLocker computerLock(&computer->lock);
                 m_ComputerManager->m_LastSerializedHosts[computer->uuid] = *computer;
             }
         }
 
-        // Perform the flush
+        // 执行刷新操作
         {
             QSettings settings;
 
-            // First, write to the backup location
+            // 首先写入备份位置
             settings.beginWriteArray(SER_HOSTS_BACKUP);
             {
                 QReadLocker lock(&m_ComputerManager->m_Lock);
@@ -304,7 +302,7 @@ void DelayedFlushThread::run() {
             }
             settings.endArray();
 
-            // Next, write to the primary location
+            // 接着写入主位置
             settings.remove(SER_HOSTS);
             settings.beginWriteArray(SER_HOSTS);
             {
@@ -317,7 +315,7 @@ void DelayedFlushThread::run() {
             }
             settings.endArray();
 
-            // Finally, delete the backup copy
+            // 最后删除备份文件
             settings.remove(SER_HOSTS_BACKUP);
         }
     }
@@ -327,8 +325,8 @@ void ComputerManager::saveHosts()
 {
     Q_ASSERT(m_DelayedFlushThread != nullptr && m_DelayedFlushThread->isRunning());
 
-    // Punt to a worker thread because QSettings on macOS can take ages (> 500 ms)
-    // to persist our host list to disk (especially when a host has a bunch of apps).
+    // 由于 macOS 上 QSettings 写入可能非常慢（超过 500ms），
+    // 因此在工作线程中执行以避免阻塞主线程
     QMutexLocker locker(&m_DelayedFlushMutex);
     m_NeedsDelayedFlush = true;
     m_DelayedFlushCondition.wakeOne();
@@ -339,7 +337,7 @@ QHostAddress ComputerManager::getBestGlobalAddressV6(QVector<QHostAddress> &addr
     for (const QHostAddress& address : addresses) {
         if (address.protocol() == QAbstractSocket::IPv6Protocol) {
             if (address.isInSubnet(QHostAddress("fe80::"), 10)) {
-                // Link-local
+                // 链路本地地址
                 continue;
             }
 
@@ -374,12 +372,14 @@ void ComputerManager::startPolling()
 {
     QWriteLocker lock(&m_Lock);
 
+    LOG_INFO("[ComputerManager] 开始启动轮询");
+
     if (++m_PollingRef > 1) {
         return;
     }
 
     if (m_Prefs->enableMdns) {
-        // Start an MDNS query for GameStream hosts
+        // 开始对 GameStream 主机进行 mDNS 查询
         m_MdnsServer.reset(new QMdnsEngine::Server());
         m_MdnsBrowser = new QMdnsEngine::Browser(m_MdnsServer.data(), "_nvstream._tcp.local.");
         connect(m_MdnsBrowser, &QMdnsEngine::Browser::serviceAdded,
@@ -396,7 +396,7 @@ void ComputerManager::startPolling()
         qWarning() << "mDNS is disabled by user preference";
     }
 
-    // Start polling threads for each known host
+    // 为每个已知主机启动轮询线程
     QMapIterator<QString, NvComputer*> i(m_KnownHosts);
     while (i.hasNext()) {
         i.next();
@@ -407,7 +407,7 @@ void ComputerManager::startPolling()
         m_OrderTimer.start();
 }
 
-// Must hold m_Lock for write
+// 调用此函数前必须持有 m_Lock 的写锁
 void ComputerManager::startPollingComputer(NvComputer* computer)
 {
     if (m_PollingRef == 0) {
@@ -425,6 +425,7 @@ void ComputerManager::startPollingComputer(NvComputer* computer)
     }
 
     if (!pollingEntry->isActive()) {
+        LOG_INFO(QStringLiteral("[ComputerManager] 启动 %1 的轮询线程").arg(computer->name));
         PcMonitorThread* thread = new PcMonitorThread(computer, this);
         connect(thread, &PcMonitorThread::computerStateChanged,
                 this, &ComputerManager::handleComputerStateChanged);
@@ -439,13 +440,12 @@ void ComputerManager::handleMdnsServiceResolved(MdnsPendingComputer* computer,
     QHostAddress v6Global = getBestGlobalAddressV6(addresses);
     bool added = false;
 
-    // Add the host using the IPv4 address
+    // 先尝试使用 IPv4 地址添加主机
     for (const QHostAddress& address : addresses) {
         if (address.protocol() == QAbstractSocket::IPv4Protocol) {
-            // NB: We don't just call addNewHost() here with v6Global because the IPv6
-            // address may not be reachable (if the user hasn't installed the IPv6 helper yet
-            // or if this host lacks outbound IPv6 capability). We want to add IPv6 even if
-            // it's not currently reachable.
+            // 注意：此处不直接使用 v6Global 调用 addNewHost()，因为 IPv6 地址可能暂时不可达
+            // （例如用户尚未安装 IPv6 辅助组件或主机不具备外网 IPv6 能力）。
+            // 即便暂时不可达，也希望记录下 IPv6 地址。
             addNewHost(NvAddress(address, computer->port()), true, NvAddress(v6Global, computer->port()));
             added = true;
             break;
@@ -453,10 +453,10 @@ void ComputerManager::handleMdnsServiceResolved(MdnsPendingComputer* computer,
     }
 
     if (!added) {
-        // If we get here, there wasn't an IPv4 address so we'll do it v6-only
+        // 如果没有 IPv4 地址，则只使用 IPv6 地址添加
         for (const QHostAddress& address : addresses) {
             if (address.protocol() == QAbstractSocket::IPv6Protocol) {
-                // Use a link-local or site-local address for the "local address"
+                // 将链路本地或站点本地地址作为“本地地址”保存
                 if (address.isInSubnet(QHostAddress("fe80::"), 10) ||
                         address.isInSubnet(QHostAddress("fec0::"), 10) ||
                         address.isInSubnet(QHostAddress("fc00::"), 7)) {
@@ -473,11 +473,11 @@ void ComputerManager::handleMdnsServiceResolved(MdnsPendingComputer* computer,
 
 void ComputerManager::saveHost(NvComputer *computer)
 {
-    // If no serializable properties changed, don't bother saving hosts
+    // 若无可序列化属性变更，则无需保存主机信息
     QMutexLocker lock(&m_DelayedFlushMutex);
     QReadLocker computerLock(&computer->lock);
     if (!m_LastSerializedHosts.value(computer->uuid).isEqualSerialized(*computer)) {
-        // Queue a request for a delayed flush to QSettings outside of the lock
+        // 在释放锁后发送延迟写入请求
         computerLock.unlock();
         lock.unlock();
         saveHosts();
@@ -551,7 +551,7 @@ QVector<NvComputer*> ComputerManager::getComputers()
 {
     QReadLocker lock(&m_Lock);
 
-    // Return a sorted host list
+    // 返回已排序的主机列表
     auto hosts = QVector<NvComputer*>::fromList(m_KnownHosts.values());
     std::stable_sort(hosts.begin(), hosts.end(), [](const NvComputer* host1, const NvComputer* host2) {
         return host1->name.toLower() < host2->name.toLower();
@@ -570,8 +570,8 @@ public:
     {
         ComputerPollingEntry* pollingEntry;
 
-        // Only do the minimum amount of work while holding the writer lock.
-        // We must release it before calling saveHosts().
+        // 持有写锁期间仅做最少的工作，
+        // 调用 saveHosts() 前必须先释放锁
         {
             QWriteLocker lock(&m_ComputerManager->m_Lock);
 
@@ -604,8 +604,7 @@ private:
 
 void ComputerManager::deleteHost(NvComputer* computer)
 {
-    // Punt to a worker thread to avoid stalling the
-    // UI while waiting for the polling thread to die
+    // 在工作线程中执行，以免等待轮询线程结束时阻塞 UI
     QThreadPool::globalInstance()->start(new DeferredHostDeletionTask(this, computer));
 }
 
@@ -618,7 +617,7 @@ void ComputerManager::renameHost(NvComputer* computer, QString name)
         computer->hasCustomName = true;
     }
 
-    // Notify the UI of the state change
+    // 通知 UI 状态已变更
     handleComputerStateChanged(computer);
 }
 
@@ -679,7 +678,7 @@ void ComputerManager::dumpStoredComputers()
 
 void ComputerManager::clientSideAttributeUpdated(NvComputer* computer)
 {
-    // Notify the UI of the state change
+    // 通知 UI 状态已变更
     handleComputerStateChanged(computer);
 }
 
@@ -687,8 +686,7 @@ void ComputerManager::handleAboutToQuit()
 {
     QReadLocker lock(&m_Lock);
 
-    // Interrupt polling threads immediately, so they
-    // avoid making additional requests while quitting
+    // 立即中断轮询线程，避免退出过程中继续发起请求
     for (ComputerPollingEntry* entry : m_PollEntries) {
         entry->interrupt();
     }
@@ -755,7 +753,7 @@ private:
 
 void ComputerManager::pairHost(NvComputer* computer, QString pin)
 {
-    // Auto send PIN for ordered/cloud devices
+    // 若为订单/云设备则自动发送 PIN
     QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
                                                     : computer->localAddress.address();
     quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
@@ -787,8 +785,7 @@ void ComputerManager::pairHost(NvComputer* computer, QString pin)
                             });
     }
 
-    // Punt to a worker thread to avoid stalling the
-    // UI while waiting for pairing to complete
+    // 在工作线程中执行，以免等待配对完成时阻塞 UI
     PendingPairingTask* pairing = new PendingPairingTask(this, computer, pin);
     QThreadPool::globalInstance()->start(pairing);
 }
@@ -823,7 +820,7 @@ private:
                 m_Computer->pendingQuit = false;
             }
             if (e.getStatusCode() == 599) {
-                // 599 is a special code we make a custom message for
+                // 状态码 599 需要返回自定义提示信息
                 emit quitAppFailed(tr("The running game wasn't started by this PC. "
                                       "You must quit the game on the host PC manually or use the device that originally started the game."));
             }
@@ -863,19 +860,19 @@ void ComputerManager::stopPollingAsync()
     if (m_OrderTimer.isActive())
         m_OrderTimer.stop();
 
-    // Delete machines that haven't been resolved yet
+    // 删除尚未解析完成的主机
     while (!m_PendingResolution.isEmpty()) {
         MdnsPendingComputer* computer = m_PendingResolution.first();
         computer->deleteLater();
         m_PendingResolution.removeFirst();
     }
 
-    // Delete the browser and server to stop discovery and refresh polling
+    // 删除浏览器和服务器以停止发现并刷新轮询
     delete m_MdnsBrowser;
     m_MdnsBrowser = nullptr;
     m_MdnsServer.reset();
 
-    // Interrupt all threads, but don't wait for them to terminate
+    // 中断所有线程，但不等待其结束
     for (ComputerPollingEntry* entry : m_PollEntries) {
         entry->interrupt();
     }
@@ -885,7 +882,7 @@ void ComputerManager::addNewHostManually(QString address)
 {
     QUrl url = QUrl::fromUserInput("moonlight://" + address);
     if (url.isValid() && !url.host().isEmpty() && url.scheme() == "moonlight") {
-        // If there wasn't a port specified, use the default
+        // 如果未指定端口，则使用默认端口
         addNewHost(NvAddress(url.host(), url.port(DEFAULT_HTTP_PORT)), false);
     }
     else {
@@ -931,16 +928,14 @@ private:
     {
         QString serverInfo;
 
-        // Do nothing if we're quitting
+        // 若正在退出则直接返回
         if (m_AboutToQuit) {
             return QString();
         }
 
         try {
-            // There's a race condition between GameStream servers reporting presence over
-            // mDNS and the HTTPS server being ready to respond to our queries. To work
-            // around this issue, we will issue the request again after a few seconds if
-            // we see a ServiceUnavailableError error.
+            // GameStream 通过 mDNS 报告在线状态与 HTTPS 服务就绪之间存在竞争条件，
+            // 因此若收到 ServiceUnavailableError，则等待数秒后重试请求
             try {
                 serverInfo = http.getServerInfo(NvHTTP::NVLL_VERBOSE);
             } catch (const QtNetworkReplyException& e) {
@@ -951,7 +946,7 @@ private:
                     qInfo() << "Retry successful";
                 }
                 else {
-                    // Rethrow other errors
+                    // 其他错误继续抛出
                     throw e;
                 }
             }
@@ -961,8 +956,7 @@ private:
                 unsigned int portTestResult = 0;
 
                 if (m_ComputerManager->m_Prefs->detectNetworkBlocking) {
-                    // We failed to connect to the specified PC. Let's test to make sure this network
-                    // isn't blocking Moonlight, so we can tell the user about it.
+                    // 无法连接指定 PC，测试网络是否阻止 Moonlight，以便提示用户
                     portTestResult = LiTestClientConnectivity("qt.conntest.moonlight-stream.org", 443,
                                                               ML_PORT_FLAG_TCP_47984 | ML_PORT_FLAG_TCP_47989);
                 }
@@ -981,10 +975,10 @@ private:
 
         qInfo() << "Processing new PC at" << m_Address.toString() << "from" << (m_Mdns ? "mDNS" : "user") << "with IPv6 address" << m_MdnsIpv6Address.toString();
 
-        // Perform initial serverinfo fetch over HTTP since we don't know which cert to use
+        // 首先通过 HTTP 获取服务器信息，此时尚未确定证书
         QString serverInfo = fetchServerInfo(http);
         if (serverInfo.isEmpty() && !m_MdnsIpv6Address.isNull()) {
-            // Retry using the global IPv6 address if the IPv4 or link-local IPv6 address fails
+            // 如果 IPv4 或链路本地 IPv6 地址失败，则尝试使用全局 IPv6 地址重试
             http.setAddress(m_MdnsIpv6Address);
             serverInfo = fetchServerInfo(http);
         }
@@ -992,10 +986,10 @@ private:
             return;
         }
 
-        // Create initial newComputer using HTTP serverinfo with no pinned cert
+        // 使用 HTTP 获取的服务器信息创建初始的 newComputer，不使用固定证书
         NvComputer* newComputer = new NvComputer(http, serverInfo);
 
-        // Check if we have a record of this host UUID to pull the pinned cert
+        // 检查是否已有该主机 UUID 的记录以便获取固定证书
         NvComputer* existingComputer;
         {
             QReadLocker lock(&m_ComputerManager->m_Lock);
@@ -1005,7 +999,7 @@ private:
             }
         }
 
-        // Fetch serverinfo again over HTTPS with the pinned cert
+        // 使用固定证书再通过 HTTPS 获取服务器信息
         if (existingComputer != nullptr) {
             Q_ASSERT(http.httpsPort() != 0);
             serverInfo = fetchServerInfo(http);
@@ -1013,21 +1007,20 @@ private:
                 return;
             }
 
-            // Update the polled computer with the HTTPS information
+            // 使用 HTTPS 获取的信息更新 newComputer
             NvComputer httpsComputer(http, serverInfo);
             newComputer->update(httpsComputer);
         }
 
-        // Update addresses depending on the context
+        // 根据不同情况更新地址信息
         if (m_Mdns) {
-            // Only update local address if we actually reached the PC via this address.
-            // If we reached it via the IPv6 address after the local address failed,
-            // don't store the non-working local address.
+            // 仅在实际通过该地址访问成功时更新本地地址；
+            // 若最终通过 IPv6 地址访问，则不保存不可用的本地地址
             if (http.address() == m_Address) {
                 newComputer->localAddress = m_Address;
             }
 
-            // Get the WAN IP address using STUN if we're on mDNS over IPv4
+            // 如果是通过 IPv4 的 mDNS，使用 STUN 获取公网地址
             if (QHostAddress(newComputer->localAddress.address()).protocol() == QAbstractSocket::IPv4Protocol) {
                 quint32 addr;
                 int err = LiFindExternalAddressIP4("stun.moonlight-stream.org", 3478, &addr);
@@ -1055,58 +1048,55 @@ private:
                 hostAddress.isInSubnet(QHostAddress("192.168.0.0"), 16);
 
         {
-            // Check if this PC already exists using opportunistic read lock
+            // 使用读锁检查该 PC 是否已存在
             m_ComputerManager->m_Lock.lockForRead();
             NvComputer* existingComputer = m_ComputerManager->m_KnownHosts.value(newComputer->uuid);
 
-            // If it doesn't already exist, convert to a write lock in preparation for updating.
-            //
-            // NB: ComputerManager's lock protects the host map itself, not the elements inside.
-            // Those are protected by their individual locks. Since we only mutate the map itself
-            // when the PC doesn't exist, we need the lock in write-mode for that case only.
+            // 若不存在则转为写锁以便更新。
+            // 注意：ComputerManager 的锁仅保护主机列表本身，
+            // 其中的元素由各自锁保护。因此仅在新增 PC 时需要写锁。
             if (existingComputer == nullptr) {
                 m_ComputerManager->m_Lock.unlock();
                 m_ComputerManager->m_Lock.lockForWrite();
 
-                // Since we had to unlock to lock for write, someone could have raced and added
-                // this PC before us. We have to check again whether it already exists.
+                // 解锁后再获取写锁期间可能有其他线程添加了该主机，因此需要再次检查
                 existingComputer = m_ComputerManager->m_KnownHosts.value(newComputer->uuid);
             }
 
             if (existingComputer != nullptr) {
-                // Fold it into the existing PC
+                // 将数据合并到已存在的主机中
                 bool changed = existingComputer->update(*newComputer);
                 delete newComputer;
 
-                // Drop the lock before notifying
+                // 通知之前先释放锁
                 m_ComputerManager->m_Lock.unlock();
 
-                // For non-mDNS clients, let them know it succeeded
+                // 若不是通过 mDNS 添加，通知调用方成功
                 if (!m_Mdns) {
                     emit computerAddCompleted(true, false);
                 }
 
-                // Tell our client if something changed
+                // 如果有变化则通知客户端
                 if (changed) {
                     qInfo() << existingComputer->name << "is now at" << existingComputer->activeAddress.toString();
                     emit computerStateChanged(existingComputer);
                 }
             }
             else {
-                // Store this in our active sets
+                // 将其加入活动主机列表
                 m_ComputerManager->m_KnownHosts[newComputer->uuid] = newComputer;
 
                 // 为自动扫描的设备创建默认记录
                 m_ComputerManager->registerDeviceInfo(newComputer);
 
-                // Start polling if enabled (write lock required)
+                // 如果已启用则启动该主机的轮询（需要写锁）
                 m_ComputerManager->startPollingComputer(newComputer);
 
-                // Drop the lock before notifying
+                // 通知前先释放锁
                 m_ComputerManager->m_Lock.unlock();
 
-                // If this wasn't added via mDNS but it is a RFC 1918 IPv4 address and not a VPN,
-                // go ahead and do the STUN request now to populate an external address.
+                // 如果不是通过 mDNS 添加且属于 RFC1918 IPv4 地址且非 VPN，
+                // 立即执行 STUN 请求以获取外网地址
                 if (!m_Mdns && addressIsSiteLocalV4 && newComputer->getActiveAddressReachability() != NvComputer::RI_VPN) {
                     quint32 addr;
                     int err = LiFindExternalAddressIP4("stun.moonlight-stream.org", 3478, &addr);
@@ -1118,12 +1108,12 @@ private:
                     }
                 }
 
-                // For non-mDNS clients, let them know it succeeded
+                // 若不是通过 mDNS 添加，通知调用方成功
                 if (!m_Mdns) {
                     emit computerAddCompleted(true, false);
                 }
 
-                // Tell our client about this new PC
+                // 通知客户端发现了新的主机
                 emit computerStateChanged(newComputer);
             }
         }
@@ -1141,8 +1131,7 @@ void ComputerManager::addNewHost(NvAddress address, bool mdns,
                                  NvAddress mdnsIpv6Address,
                                  bool notifyOnFailure)
 {
-    // Punt to a worker thread to avoid stalling the
-    // UI while waiting for serverinfo query to complete
+    // 在工作线程中执行，避免等待服务器信息查询时阻塞 UI
     PendingAddTask* addTask = new PendingAddTask(this, address,
                                                  mdnsIpv6Address, mdns,
                                                  notifyOnFailure);
@@ -1150,7 +1139,7 @@ void ComputerManager::addNewHost(NvAddress address, bool mdns,
 
 }
 
-// TODO: Use QRandomGenerator when we drop Qt 5.9 support
+// TODO: 等不再兼容 Qt 5.9 时改用 QRandomGenerator
 QString ComputerManager::generatePinString()
 {
     std::uniform_int_distribution<int> dist(0, 9999);
