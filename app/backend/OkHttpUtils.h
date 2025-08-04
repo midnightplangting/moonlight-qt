@@ -9,8 +9,6 @@
 #include <QUrlQuery>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QSemaphore>
-#include <QTimer>
 #include <QMap>
 
 class OkHttpUtils : public QObject
