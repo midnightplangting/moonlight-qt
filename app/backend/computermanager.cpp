@@ -769,7 +769,7 @@ void ComputerManager::pairHost(NvComputer* computer, QString pin)
                                                     : computer->localAddress.address();
     quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
                                                      : computer->localAddress.port();
-    QString key = deviceKey(addr, port);
+    QString key = deviceKey(computer);
 
     bool orderDevice = false;
     qint64 orderId = 0;
@@ -1228,7 +1228,8 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             QJsonObject o = v.toObject();
             QString ip = o["ip"].toString();
             quint16 port = o["port"].toString().toUShort();
-            QString key = deviceKey(ip, port);
+            QString name = o["name"].toString();
+            QString key = deviceKey(name);
             newKeys << key;
 
             // 保存订单附带的信息，供 UI 展示
@@ -1256,7 +1257,7 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
                 }
             }
             if (!knownHost)
-                newDevices.append({ip, port, o["name"].toString()});
+                newDevices.append({ip, port, name});
         }
 
         removed = m_OrderDeviceKeys - newKeys;
@@ -1546,23 +1547,19 @@ int ComputerManager::getDeviceIdByOrderId(qint64 orderId)
     return 0;
 }
 
-QString ComputerManager::deviceKey(const QString& ip, quint16 port) const
+QString ComputerManager::deviceKey(const QString& name) const
 {
-    return QString("%1:%2").arg(ip).arg(port);
+    return name;
 }
 
 QString ComputerManager::deviceKey(NvComputer* computer) const
 {
-    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
-                                                   : computer->localAddress.address();
-    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
-                                                    : computer->localAddress.port();
-    return deviceKey(addr, port);
+    return computer->name;
 }
 
-void ComputerManager::registerDeviceInfo(const QString& ip, quint16 port, const DeviceInfo& info)
+void ComputerManager::registerDeviceInfo(const QString& name, const DeviceInfo& info)
 {
-    QString key = deviceKey(ip, port);
+    QString key = deviceKey(name);
     QWriteLocker wlock(&m_OrderLock);
     if (!m_DeviceInfo.contains(key))
         m_DeviceInfo.insert(key, info);
@@ -1570,11 +1567,7 @@ void ComputerManager::registerDeviceInfo(const QString& ip, quint16 port, const 
 
 void ComputerManager::registerDeviceInfo(NvComputer* computer)
 {
-    QString addr = !computer->manualAddress.isNull() ? computer->manualAddress.address()
-                                                   : computer->localAddress.address();
-    quint16 port = !computer->manualAddress.isNull() ? computer->manualAddress.port()
-                                                    : computer->localAddress.port();
-    registerDeviceInfo(addr, port, DeviceInfo());
+    registerDeviceInfo(computer->name, DeviceInfo());
 }
 
 

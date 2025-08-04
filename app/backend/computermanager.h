@@ -333,9 +333,9 @@ private:
     void saveHost(NvComputer* computer);
 
     void updateOrderInfoFromJson(const QString& json);
-    QString deviceKey(const QString& ip, quint16 port) const;
+    QString deviceKey(const QString& name) const;
     QString deviceKey(NvComputer* computer) const;
-    void registerDeviceInfo(const QString& ip, quint16 port, const DeviceInfo& info = DeviceInfo());
+    void registerDeviceInfo(const QString& name, const DeviceInfo& info = DeviceInfo());
     void registerDeviceInfo(NvComputer* computer);
 
     QHostAddress getBestGlobalAddressV6(QVector<QHostAddress>& addresses);
