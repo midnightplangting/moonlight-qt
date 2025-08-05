@@ -4,8 +4,8 @@
 UserSession::UserSession(QObject* parent) : QObject(parent) {}
 
 UserSession* UserSession::instance() {
-    static UserSession* _instance = new UserSession();
-    return _instance;
+    static UserSession instance;
+    return &instance;
 }
 
 QString UserSession::username() const { return m_username; }
