@@ -140,7 +140,7 @@ CenteredGridView {
         Label {
             height: searchSpinner.height
             elide: Label.ElideRight
-            text: StreamingPreferences.enableMdns ? qsTr("Searching for compatible hosts on your local network...")
+            text: StreamingPreferences.enableMdns ? qsTr("点击右上角加号购买机器")
                                                   : qsTr("Automatic PC discovery is disabled. Add your PC manually.")
             font.pointSize: 20
             verticalAlignment: Text.AlignVCenter

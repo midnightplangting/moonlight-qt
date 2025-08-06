@@ -241,9 +241,9 @@
         <translation>已停用自動搜尋電腦功能，需要手動新增。</translation>
     </message>
     <message>
-        <location filename="../gui/PcView.qml" line="98"/>
-        <source>Searching for compatible hosts on your local network...</source>
-        <translation>正在您的區域網路中搜尋相容的主機…</translation>
+        <location filename="../gui/PcView.qml" line="143"/>
+        <source>点击右上角加号购买机器</source>
+        <translation>點擊右上角加號購買機器</translation>
     </message>
     <message>
         <location filename="../gui/PcView.qml" line="183"/>

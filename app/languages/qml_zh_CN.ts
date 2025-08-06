@@ -236,9 +236,9 @@
         <translation>单击帮助按钮以获取可能的解决方案。</translation>
     </message>
     <message>
-        <location filename="../gui/PcView.qml" line="98"/>
-        <source>Searching for compatible hosts on your local network...</source>
-        <translation>在你的本地网络中搜索兼容的主机...</translation>
+        <location filename="../gui/PcView.qml" line="143"/>
+        <source>点击右上角加号购买机器</source>
+        <translation>点击右上角加号购买机器</translation>
     </message>
     <message>
         <location filename="../gui/PcView.qml" line="99"/>
