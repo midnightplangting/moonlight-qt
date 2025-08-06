@@ -58,6 +58,19 @@ private:
 
         // 确保回应的主机就是我们想要联系的那台
         if (m_Computer->uuid != newState.uuid) {
+            bool nameMatches = (m_Computer->name == newState.name);
+            bool ipMatches = newState.uniqueAddresses().contains(address);
+
+            if (m_Computer->uuid.isEmpty() || (nameMatches && ipMatches)) {
+                bool uuidChanged = (m_Computer->uuid != newState.uuid);
+                {
+                    QWriteLocker lock(&m_Computer->lock);
+                    m_Computer->uuid = newState.uuid;
+                }
+                changed = m_Computer->update(newState) || uuidChanged;
+                return true;
+            }
+
             LOG_WARN_T(QStringLiteral("[Polling] Found unexpected PC %1 while looking for %2")
                        .arg(newState.name, m_Computer->name));
             return false;
