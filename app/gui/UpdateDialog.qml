@@ -5,7 +5,7 @@ import QtQuick.Layouts 1.3
 // Dialog prompting the user to download and install an update.
 NavigableDialog {
     id: root
-    width: 300
+    width: 400
 
     property string message: qsTr("有最新的软件包，请下载并安装!")
     property string packageUrl: ""
@@ -40,7 +40,7 @@ NavigableDialog {
         anchors.horizontalCenter: parent.horizontalCenter
 
         Label {
-            text: qsTr("有最新的软件包，请下载并安装!")
+            text: root.message
             wrapMode: Text.Wrap
             elide: Text.ElideNone
             horizontalAlignment: Text.AlignHCenter
