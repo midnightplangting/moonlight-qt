@@ -103,5 +103,7 @@ void Logger::logComputer(const NvComputer* computer, const DeviceInfo* info)
               << QStringLiteral("info.billingType=%1").arg(info->billingType);
     }
 
-    Logger::log(LogLevel::Info, QStringLiteral("[ComputerDump] %1").arg(items.join(' ')));
+    // Polling dumps can be very frequent, so log them at debug level
+    // to avoid spamming normal info logs.
+    Logger::log(LogLevel::Debug, QStringLiteral("[ComputerDump] %1").arg(items.join(' ')));
 }
