@@ -2052,7 +2052,7 @@ void Session::execInternal()
         else {
             qint64 diff = evtTimer.restart();
             if (diff > 500) {
-                LOG_WARN_T(QStringLiteral("[EventLoop] gap %1 ms").arg(diff));
+                LOG_DEBUG_T(QStringLiteral("[EventLoop] gap %1 ms").arg(diff));
             }
         }
         LOG_DEBUG_T(QStringLiteral("[EventLoop] event type=%1").arg(event.type));
