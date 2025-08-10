@@ -1272,7 +1272,7 @@ private:
         SDL_assert(m_Session->m_VideoDecoder == nullptr);
 
         // Finish cleanup of the connection state
-        QMetaObject::invokeMethod(m_Session, "stopMicrophone", Qt::BlockingQueuedConnection);
+        QMetaObject::invokeMethod(m_Session, &Session::stopMicrophone, Qt::BlockingQueuedConnection);
         LiStopConnection();
 
         // Perform a best-effort app quit
@@ -1690,7 +1690,7 @@ bool Session::startConnectionAsync()
 
     emit connectionStarted();
     if (m_Preferences->enableMicrophone) {
-        QMetaObject::invokeMethod(this, "startMicrophone", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, &Session::startMicrophone, Qt::QueuedConnection);
     }
     return true;
 }
