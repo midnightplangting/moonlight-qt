@@ -22,9 +22,16 @@ MicStream::MicStream(QObject *parent)
       m_seq(0),
       m_timestamp(0),
       m_ssrc(0),
-      m_port(47996)
+      m_port(48001),
+      m_pcmBytes(0),
+      m_opusBytes(0),
+      m_sentBytes(0),
+      m_sentPackets(0),
+      m_idleLoops(0)
 {
     connect(&m_sendTimer, &QTimer::timeout, this, &MicStream::sendLoop);
+    m_logTimer.setInterval(5000);
+    connect(&m_logTimer, &QTimer::timeout, this, &MicStream::logSummary);
 }
 
 MicStream::~MicStream()
@@ -78,7 +85,7 @@ bool MicStream::start(const QString &host, int negotiatedPort)
     connect(m_audioDevice, &QIODevice::readyRead, this, &MicStream::onAudio);
 
     m_host = QHostAddress(host);
-    m_port = negotiatedPort > 0 ? negotiatedPort : 47996;
+    m_port = negotiatedPort > 0 ? negotiatedPort : 48001;
     m_seq = 0;
     m_timestamp = 0;
     m_ssrc = QRandomGenerator::global()->generate();
@@ -88,12 +95,20 @@ bool MicStream::start(const QString &host, int negotiatedPort)
              .arg(m_port));
 
     m_sendTimer.start(20);
+    m_logTimer.start();
+    m_pcmBytes = 0;
+    m_opusBytes = 0;
+    m_sentBytes = 0;
+    m_sentPackets = 0;
+    m_idleLoops = 0;
     return true;
 }
 
 void MicStream::stop()
 {
     m_sendTimer.stop();
+    m_logTimer.stop();
+    logSummary();
     if (m_audioInput) {
         m_audioInput->stop();
         delete m_audioInput;
@@ -111,12 +126,6 @@ void MicStream::stop()
 
 void MicStream::onAudio()
 {
-    if (m_audioDevice) {
-        LOG_INFO(QStringLiteral("[MicStream] onAudio bytesAvailable=%1 queue=%2")
-                  .arg(m_audioDevice->bytesAvailable())
-                  .arg(m_queue.size()));
-    }
-
     while (m_audioDevice && m_audioDevice->bytesAvailable() >= PCM_FRAME_SIZE) {
         QByteArray pcm = m_audioDevice->read(PCM_FRAME_SIZE);
         if (pcm.size() < PCM_FRAME_SIZE) {
@@ -125,9 +134,7 @@ void MicStream::onAudio()
                      .arg(PCM_FRAME_SIZE));
             return;
         }
-
-        LOG_INFO(QStringLiteral("[MicStream] read pcm=%1 bytes")
-                 .arg(pcm.size()));
+        m_pcmBytes += pcm.size();
 
         unsigned char encoded[MAX_OPUS_SIZE];
         int len = opus_encode(m_encoder,
@@ -137,9 +144,7 @@ void MicStream::onAudio()
                               MAX_OPUS_SIZE);
         if (len > 0) {
             m_queue.enqueue(QByteArray(reinterpret_cast<char*>(encoded), len));
-            LOG_INFO(QStringLiteral("[MicStream] queued opus bytes=%1 totalQueued=%2")
-                      .arg(len)
-                      .arg(m_queue.size()));
+            m_opusBytes += len;
         } else {
             LOG_WARN(QStringLiteral("[MicStream] opus_encode failed len=%1")
                      .arg(len));
@@ -150,7 +155,8 @@ void MicStream::onAudio()
 void MicStream::sendLoop()
 {
     if (m_queue.isEmpty()) {
-        LOG_INFO(QStringLiteral("[MicStream] sendLoop no queued frames"));
+        m_idleLoops++;
+        return;
     }
 
     while (!m_queue.isEmpty()) {
@@ -167,11 +173,25 @@ void MicStream::sendLoop()
         memcpy(pkt.data() + 8, &ssrcle, 4);
         memcpy(pkt.data() + 12, opus.constData(), opus.size());
         m_socket.writeDatagram(pkt, m_host, m_port);
-        LOG_INFO(QStringLiteral("[MicStream] sent seq=%1 ts=%2 bytes=%3")
-                  .arg(m_seq - 1)
-                  .arg(m_timestamp)
-                  .arg(opus.size()));
+        m_sentPackets++;
+        m_sentBytes += opus.size();
         m_timestamp += PCM_FRAME_SAMPLES;
     }
+}
+
+void MicStream::logSummary()
+{
+    LOG_INFO(QStringLiteral("[MicStream] 5s summary pcm=%1B opus=%2B sent=%3/%4B idle=%5 queue=%6")
+             .arg(m_pcmBytes)
+             .arg(m_opusBytes)
+             .arg(m_sentPackets)
+             .arg(m_sentBytes)
+             .arg(m_idleLoops)
+             .arg(m_queue.size()));
+    m_pcmBytes = 0;
+    m_opusBytes = 0;
+    m_sentBytes = 0;
+    m_sentPackets = 0;
+    m_idleLoops = 0;
 }
 
