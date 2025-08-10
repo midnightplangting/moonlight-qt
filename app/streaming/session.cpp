@@ -713,6 +713,8 @@ bool Session::initialize()
         break;
     }
 
+    m_StreamConfig.enableMic = m_Preferences->enableMicrophone;
+
     LiInitializeAudioCallbacks(&m_AudioCallbacks);
     m_AudioCallbacks.init = arInit;
     m_AudioCallbacks.cleanup = arCleanup;
