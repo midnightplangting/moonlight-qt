@@ -1191,11 +1191,13 @@ void ComputerManager::syncOrderDevices()
 
     ApiService::getAllDeviceOrderInfoByUserId(QString::number(uid),
             [this](QString json) {
-                LOG_INFO(QStringLiteral("[syncOrderDevices result] %1").arg(json));
+                LOG_INFO(QStringLiteral("[syncOrderDevices result] %1")
+                         .arg(json));
                 updateOrderInfoFromJson(json);
             },
             [](QString err) {
-                LOG_WARN(QStringLiteral("[syncOrderDevices] 请求失败: %1").arg(err));
+                LOG_WARN(QStringLiteral("[syncOrderDevices] 请求失败: %1")
+                         .arg(err));
             }
             );
 
@@ -1212,7 +1214,8 @@ void ComputerManager::syncOrderDevices()
                 }
             },
             [](QString err) {
-                LOG_WARN(QStringLiteral("[getUserInfoById] 请求失败: %1").arg(err));
+                LOG_WARN(QStringLiteral("[getUserInfoById] 请求失败: %1")
+                         .arg(err));
             }
             );
 }
@@ -1224,9 +1227,10 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
 
     QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
     if (!doc.isObject()) {
-        LOG_WARN(QStringLiteral("[updateOrderInfoFromJson] 无效的 JSON: %1").arg(json));
+        LOG_WARN(QStringLiteral("[updateOrderInfoFromJson] 无效的 JSON: %1")
+                 .arg(json));
         return;
-    }
+}
 
     QJsonArray arr = doc["data"].toArray();
     QSet<QString> newKeys;

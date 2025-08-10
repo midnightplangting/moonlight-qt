@@ -98,7 +98,9 @@ Item {
             }
         } else {
             // Exit this view
-            StackView.view.pop()
+            if (StackView.view) {
+                StackView.view.pop()
+            }
 
             // Show the Qt window again after streaming
             window.visible = true

@@ -10,6 +10,7 @@
 #include "video/decoder.h"
 #include "audio/renderers/renderer.h"
 #include "video/overlaymanager.h"
+#include "micstream.h"
 
 class SupportedVideoFormatList : public QList<int>
 {
@@ -242,6 +243,9 @@ private:
     static
     void drCleanup();
 
+    void startMicrophone();
+    void stopMicrophone();
+
     static
     int drSubmitDecodeUnit(PDECODE_UNIT du);
 
@@ -280,6 +284,7 @@ private:
     IAudioRenderer* m_AudioRenderer;
     OPUS_MULTISTREAM_CONFIGURATION m_ActiveAudioConfig;
     OPUS_MULTISTREAM_CONFIGURATION m_OriginalAudioConfig;
+    MicStream* m_MicStream;
     int m_AudioSampleCount;
     Uint32 m_DropAudioEndTime;
 

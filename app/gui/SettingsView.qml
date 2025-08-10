@@ -939,6 +939,17 @@ Flickable {
                     ToolTip.visible: hovered
                     ToolTip.text: qsTr("Mutes Moonlight's audio when you Alt+Tab out of the stream or click on a different window.")
                 }
+
+                CheckBox {
+                    id: enableMicCheck
+                    width: parent.width
+                    text: qsTr("Enable microphone streaming")
+                    font.pointSize: 12
+                    checked: StreamingPreferences.enableMicrophone
+                    onCheckedChanged: {
+                        StreamingPreferences.enableMicrophone = checked
+                    }
+                }
             }
         }
 

@@ -584,6 +584,7 @@ Session::Session(NvComputer* computer, NvApp& app, StreamingPreferences *prefere
       m_PortTestResults(0),
       m_OpusDecoder(nullptr),
       m_AudioRenderer(nullptr),
+      m_MicStream(nullptr),
       m_AudioSampleCount(0),
       m_DropAudioEndTime(0)
 {
@@ -1271,6 +1272,7 @@ private:
         SDL_assert(m_Session->m_VideoDecoder == nullptr);
 
         // Finish cleanup of the connection state
+        QMetaObject::invokeMethod(m_Session, "stopMicrophone", Qt::BlockingQueuedConnection);
         LiStopConnection();
 
         // Perform a best-effort app quit
@@ -1687,6 +1689,9 @@ bool Session::startConnectionAsync()
     }
 
     emit connectionStarted();
+    if (m_Preferences->enableMicrophone) {
+        QMetaObject::invokeMethod(this, "startMicrophone", Qt::QueuedConnection);
+    }
     return true;
 }
 
@@ -2426,5 +2431,24 @@ DispatchDeferredCleanup:
     // When it is complete, it will release our s_ActiveSessionSemaphore
     // reference.
     QThreadPool::globalInstance()->start(new DeferredSessionCleanupTask(this));
+}
+
+void Session::startMicrophone()
+{
+    if (!m_MicStream) {
+        m_MicStream = new MicStream(this);
+        LOG_INFO(QStringLiteral("[Session] starting microphone"));
+        m_MicStream->start(m_Computer->activeAddress.address(), 0);
+    }
+}
+
+void Session::stopMicrophone()
+{
+    if (m_MicStream) {
+        LOG_INFO(QStringLiteral("[Session] stopping microphone"));
+        m_MicStream->stop();
+        delete m_MicStream;
+        m_MicStream = nullptr;
+    }
 }
 
