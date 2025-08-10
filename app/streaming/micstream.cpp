@@ -111,13 +111,13 @@ void MicStream::stop()
 
 void MicStream::onAudio()
 {
-    if (m_audioInput) {
+    if (m_audioDevice) {
         LOG_DEBUG(QStringLiteral("[MicStream] onAudio bytesAvailable=%1 queue=%2")
-                  .arg(m_audioInput->bytesAvailable())
+                  .arg(m_audioDevice->bytesAvailable())
                   .arg(m_queue.size()));
     }
 
-    while (m_audioInput && m_audioInput->bytesAvailable() >= PCM_FRAME_SIZE) {
+    while (m_audioDevice && m_audioDevice->bytesAvailable() >= PCM_FRAME_SIZE) {
         QByteArray pcm = m_audioDevice->read(PCM_FRAME_SIZE);
         if (pcm.size() < PCM_FRAME_SIZE) {
             LOG_WARN(QStringLiteral("[MicStream] PCM underrun read=%1 expected=%2")
@@ -126,8 +126,8 @@ void MicStream::onAudio()
             return;
         }
 
-        LOG_DEBUG(QStringLiteral("[MicStream] read pcm=%1 bytes")
-                  .arg(pcm.size()));
+        LOG_INFO(QStringLiteral("[MicStream] read pcm=%1 bytes")
+                 .arg(pcm.size()));
 
         unsigned char encoded[MAX_OPUS_SIZE];
         int len = opus_encode(m_encoder,
