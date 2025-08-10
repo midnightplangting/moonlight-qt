@@ -159,12 +159,12 @@ void MicStream::sendLoop()
         pkt.resize(12 + opus.size());
         pkt[0] = 0x00;
         pkt[1] = 0x61;
-        quint16 seqbe = qToBigEndian(m_seq++);
-        quint32 tsbe = qToBigEndian(m_timestamp);
-        quint32 ssrcbe = qToBigEndian(m_ssrc);
-        memcpy(pkt.data() + 2, &seqbe, 2);
-        memcpy(pkt.data() + 4, &tsbe, 4);
-        memcpy(pkt.data() + 8, &ssrcbe, 4);
+        quint16 seqle = qToLittleEndian(m_seq++);
+        quint32 tsle = qToLittleEndian(m_timestamp);
+        quint32 ssrcle = qToLittleEndian(m_ssrc);
+        memcpy(pkt.data() + 2, &seqle, 2);
+        memcpy(pkt.data() + 4, &tsle, 4);
+        memcpy(pkt.data() + 8, &ssrcle, 4);
         memcpy(pkt.data() + 12, opus.constData(), opus.size());
         m_socket.writeDatagram(pkt, m_host, m_port);
         LOG_INFO(QStringLiteral("[MicStream] sent seq=%1 ts=%2 bytes=%3")
