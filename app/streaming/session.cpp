@@ -2438,7 +2438,11 @@ void Session::startMicrophone()
     if (!m_MicStream) {
         m_MicStream = new MicStream(this);
         LOG_INFO(QStringLiteral("[Session] starting microphone"));
-        m_MicStream->start(m_Computer->activeAddress.address(), 0);
+        if (!m_MicStream->start(m_Computer->activeAddress.address(), 0)) {
+            LOG_WARN(QStringLiteral("[Session] microphone initialization failed"));
+            delete m_MicStream;
+            m_MicStream = nullptr;
+        }
     }
 }
 

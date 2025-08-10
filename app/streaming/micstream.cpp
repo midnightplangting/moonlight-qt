@@ -4,6 +4,10 @@
 #include <QtEndian>
 #include <QRandomGenerator>
 #include <QAudioFormat>
+#include <QAudioDevice>
+#include <QMediaDevices>
+#include <QAudio>
+#include <QList>
 #include "backend/Logger.h"
 
 static const int PCM_FRAME_SAMPLES = 960; // 20 ms at 48 kHz
@@ -44,13 +48,32 @@ bool MicStream::start(const QString &host, int negotiatedPort)
     fmt.setChannelCount(1);
     fmt.setSampleFormat(QAudioFormat::Int16);
 
-    m_audioInput = new QAudioSource(fmt, this);
+    const QList<QAudioDevice> devices = QMediaDevices::audioInputs();
+    if (devices.isEmpty()) {
+        LOG_WARN(QStringLiteral("[MicStream] No audio input devices available"));
+    } else {
+        LOG_INFO(QStringLiteral("[MicStream] Available audio input devices:"));
+        for (const QAudioDevice &dev : devices) {
+            LOG_INFO(QStringLiteral("  %1").arg(dev.description()));
+        }
+    }
+
+    QAudioDevice device = QMediaDevices::defaultAudioInput();
+    LOG_INFO(QStringLiteral("[MicStream] Using audio input device: %1")
+             .arg(device.description()));
+
+    m_audioInput = new QAudioSource(device, fmt, this);
     m_audioInput->setBufferSize(PCM_FRAME_SIZE);
     m_audioDevice = m_audioInput->start();
-    if (!m_audioDevice) {
-        LOG_WARN(QStringLiteral("[MicStream] Failed to start audio device"));
+    if (!m_audioDevice || m_audioInput->error() != QAudio::NoError) {
+        LOG_WARN(QStringLiteral("[MicStream] Failed to start audio device error=%1")
+                 .arg(m_audioInput->error()));
+        delete m_audioInput;
+        m_audioInput = nullptr;
         return false;
     }
+
+    LOG_INFO(QStringLiteral("[MicStream] Audio device initialized successfully"));
 
     connect(m_audioDevice, &QIODevice::readyRead, this, &MicStream::onAudio);
 
