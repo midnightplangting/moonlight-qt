@@ -112,7 +112,7 @@ void MicStream::stop()
 void MicStream::onAudio()
 {
     if (m_audioDevice) {
-        LOG_DEBUG(QStringLiteral("[MicStream] onAudio bytesAvailable=%1 queue=%2")
+        LOG_INFO(QStringLiteral("[MicStream] onAudio bytesAvailable=%1 queue=%2")
                   .arg(m_audioDevice->bytesAvailable())
                   .arg(m_queue.size()));
     }
@@ -137,7 +137,7 @@ void MicStream::onAudio()
                               MAX_OPUS_SIZE);
         if (len > 0) {
             m_queue.enqueue(QByteArray(reinterpret_cast<char*>(encoded), len));
-            LOG_DEBUG(QStringLiteral("[MicStream] queued opus bytes=%1 totalQueued=%2")
+            LOG_INFO(QStringLiteral("[MicStream] queued opus bytes=%1 totalQueued=%2")
                       .arg(len)
                       .arg(m_queue.size()));
         } else {
@@ -150,7 +150,7 @@ void MicStream::onAudio()
 void MicStream::sendLoop()
 {
     if (m_queue.isEmpty()) {
-        LOG_DEBUG(QStringLiteral("[MicStream] sendLoop no queued frames"));
+        LOG_INFO(QStringLiteral("[MicStream] sendLoop no queued frames"));
     }
 
     while (!m_queue.isEmpty()) {
@@ -167,7 +167,7 @@ void MicStream::sendLoop()
         memcpy(pkt.data() + 8, &ssrcbe, 4);
         memcpy(pkt.data() + 12, opus.constData(), opus.size());
         m_socket.writeDatagram(pkt, m_host, m_port);
-        LOG_DEBUG(QStringLiteral("[MicStream] sent seq=%1 ts=%2 bytes=%3")
+        LOG_INFO(QStringLiteral("[MicStream] sent seq=%1 ts=%2 bytes=%3")
                   .arg(m_seq - 1)
                   .arg(m_timestamp)
                   .arg(opus.size()));
