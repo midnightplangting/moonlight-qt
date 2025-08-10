@@ -8,6 +8,8 @@
 #include "SDL_compat.h"
 #include "utils.h"
 
+extern "C" uint16_t MicPortNumber;
+
 #ifdef HAVE_FFMPEG
 #include "video/ffmpeg.h"
 #endif
@@ -2438,7 +2440,7 @@ void Session::startMicrophone()
     if (!m_MicStream) {
         m_MicStream = new MicStream(this);
         LOG_INFO(QStringLiteral("[Session] starting microphone"));
-        if (!m_MicStream->start(m_Computer->activeAddress.address(), 0)) {
+        if (!m_MicStream->start(m_Computer->activeAddress.address(), MicPortNumber)) {
             LOG_WARN(QStringLiteral("[Session] microphone initialization failed"));
             delete m_MicStream;
             m_MicStream = nullptr;
