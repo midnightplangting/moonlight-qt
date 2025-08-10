@@ -88,10 +88,23 @@ void MicStream::stop()
 
 void MicStream::onAudio()
 {
+    if (m_audioInput) {
+        LOG_DEBUG(QStringLiteral("[MicStream] onAudio bytesAvailable=%1 queue=%2")
+                  .arg(m_audioInput->bytesAvailable())
+                  .arg(m_queue.size()));
+    }
+
     while (m_audioInput && m_audioInput->bytesAvailable() >= PCM_FRAME_SIZE) {
         QByteArray pcm = m_audioDevice->read(PCM_FRAME_SIZE);
-        if (pcm.size() < PCM_FRAME_SIZE)
+        if (pcm.size() < PCM_FRAME_SIZE) {
+            LOG_WARN(QStringLiteral("[MicStream] PCM underrun read=%1 expected=%2")
+                     .arg(pcm.size())
+                     .arg(PCM_FRAME_SIZE));
             return;
+        }
+
+        LOG_DEBUG(QStringLiteral("[MicStream] read pcm=%1 bytes")
+                  .arg(pcm.size()));
 
         unsigned char encoded[MAX_OPUS_SIZE];
         int len = opus_encode(m_encoder,
@@ -101,12 +114,22 @@ void MicStream::onAudio()
                               MAX_OPUS_SIZE);
         if (len > 0) {
             m_queue.enqueue(QByteArray(reinterpret_cast<char*>(encoded), len));
+            LOG_DEBUG(QStringLiteral("[MicStream] queued opus bytes=%1 totalQueued=%2")
+                      .arg(len)
+                      .arg(m_queue.size()));
+        } else {
+            LOG_WARN(QStringLiteral("[MicStream] opus_encode failed len=%1")
+                     .arg(len));
         }
     }
 }
 
 void MicStream::sendLoop()
 {
+    if (m_queue.isEmpty()) {
+        LOG_DEBUG(QStringLiteral("[MicStream] sendLoop no queued frames"));
+    }
+
     while (!m_queue.isEmpty()) {
         QByteArray opus = m_queue.dequeue();
         QByteArray pkt;
