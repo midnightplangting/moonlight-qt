@@ -11,6 +11,7 @@
 #include <QThread>
 #include <QThreadPool>
 #include <QCoreApplication>
+#include <QMetaObject>
 
 #include <random>
 #include <QJsonDocument>      // 解析 JSON
@@ -257,6 +258,9 @@ ComputerManager::~ComputerManager()
         // 此时所有延迟刷新应已完成
         Q_ASSERT(!m_NeedsDelayedFlush);
     }
+
+    // 等待线程池中的任务完成，防止析构时仍在访问成员
+    QThreadPool::globalInstance()->waitForDone();
 
     QWriteLocker lock(&m_Lock);
 
@@ -615,21 +619,26 @@ public:
             m_ComputerManager->m_KnownHosts.remove(m_Computer->uuid);
         }
 
-        // 发出信号通知 model 有主机被删
-        emit m_ComputerManager->hostRemoved(m_Computer);
+        ComputerManager* cm = m_ComputerManager;
+        NvComputer* computer = m_Computer;
 
-        // Persist the new host list with this computer deleted
-        m_ComputerManager->saveHosts();
+        QMetaObject::invokeMethod(cm, [cm, computer, pollingEntry]() {
+            // 发出信号通知 model 有主机被删
+            emit cm->hostRemoved(computer);
 
-        // Delete the polling entry first. This will stop all polling threads too.
-        delete pollingEntry;
+            // Persist the new host list with this computer deleted
+            cm->saveHosts();
 
-        // Delete cached box art
-        BoxArtManager::deleteBoxArt(m_Computer);
+            // Delete the polling entry first. This will stop all polling threads too.
+            delete pollingEntry;
 
-        // Finally, delete the computer itself. This must be done
-        // last because the polling thread might be using it.
-        delete m_Computer;
+            // Delete cached box art
+            BoxArtManager::deleteBoxArt(computer);
+
+            // Finally, delete the computer itself. This must be done
+            // last because the polling thread might be using it.
+            delete computer;
+        });
     }
 
 private:

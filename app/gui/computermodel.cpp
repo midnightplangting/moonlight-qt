@@ -103,6 +103,8 @@ QVariant ComputerModel::data(const QModelIndex& index, int role) const
         return computer->orderId;
     case IsOrderDeviceRole:
         return m_ComputerManager->isOrderDevice(computer);
+    case UuidRole:
+        return computer->uuid;
     default:
         return QVariant();
     }
@@ -138,6 +140,7 @@ QHash<int, QByteArray> ComputerModel::roleNames() const
     names[BillingTypeRole] = "billingType";
     names[OrderIdRole] = "orderId";
     names[IsOrderDeviceRole] = "isOrderDevice";
+    names[UuidRole] = "uuid";
 
     return names;
 }
@@ -226,7 +229,10 @@ QString ComputerModel::getDesktopAppName(int computerIndex)
 
 void ComputerModel::deleteComputer(int computerIndex)
 {
-    Q_ASSERT(computerIndex < m_Computers.count());
+    if (computerIndex < 0 || computerIndex >= m_Computers.count()) {
+        LOG_WARN(QStringLiteral("[ComputerModel] 删除主机失败，索引=%1 无效").arg(computerIndex));
+        return;
+    }
 
     beginRemoveRows(QModelIndex(), computerIndex, computerIndex);
 
@@ -327,9 +333,22 @@ QVariantMap ComputerModel::handlePcClicked(int computerIndex)
 
 void ComputerModel::checkoutComputer(int computerIndex)
 {
-    Q_ASSERT(computerIndex < m_Computers.count());
+    if (computerIndex < 0 || computerIndex >= m_Computers.count()) {
+        LOG_WARN(QStringLiteral("[ComputerModel] 结账失败，索引=%1 无效").arg(computerIndex));
+        return;
+    }
 
     m_ComputerManager->closeOrder(m_Computers[computerIndex]);
+}
+
+int ComputerModel::findComputerIndex(const QString& uuid) const
+{
+    for (int i = 0; i < m_Computers.count(); ++i) {
+        if (m_Computers[i]->uuid == uuid) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 QString ComputerModel::generatePinString()

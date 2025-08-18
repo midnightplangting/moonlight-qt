@@ -158,6 +158,7 @@ CenteredGridView {
 
         property alias pcContextMenu: pcContextMenuLoader.item
         property int index: model.index
+        property string uuid: model && model.uuid !== undefined ? model.uuid : ""
 
         // 使用安全默认值避免 undefined 警告
         property string name: model && model.name !== undefined ? model.name : ""
@@ -270,6 +271,7 @@ CenteredGridView {
         Keys.onDeletePressed: {
             deletePcDialog.pcIndex = index
             deletePcDialog.pcName = model.name
+            deletePcDialog.pcUuid = model.uuid
             deletePcDialog.open()
         }
 
@@ -367,6 +369,7 @@ CenteredGridView {
                             renewDialog.open()
                         } else {
                             checkoutConfirmDialog.pcIndex = index
+                            checkoutConfirmDialog.pcUuid = model.uuid
                             checkoutConfirmDialog.open()
                         }
                     }
@@ -457,6 +460,7 @@ CenteredGridView {
                     onTriggered: {
                         deletePcDialog.pcIndex = index
                         deletePcDialog.pcName = model.name
+                        deletePcDialog.pcUuid = model.uuid
                         deletePcDialog.open()
                     }
                 }
@@ -546,11 +550,17 @@ CenteredGridView {
         // don't allow edits to the rest of the window while open
         property int pcIndex : -1
         property string pcName : ""
+        property string pcUuid: ""
         text: qsTr("Are you sure you want to remove '%1'?").arg(pcName)
         standardButtons: Dialog.Yes | Dialog.No
 
         onAccepted: {
-            computerModel.deleteComputer(pcIndex)
+            pcIndex = computerModel.findComputerIndex(pcUuid)
+            if (pcIndex >= 0) {
+                computerModel.deleteComputer(pcIndex)
+            } else {
+                console.warn("deletePcDialog: invalid index")
+            }
         }
     }
 
@@ -558,9 +568,15 @@ CenteredGridView {
         id: checkoutConfirmDialog
         text: qsTr("确认结账下机吗？")
         property int pcIndex: -1
+        property string pcUuid: ""
         standardButtons: Dialog.Yes | Dialog.No
         onAccepted: {
-            computerModel.checkoutComputer(pcIndex)
+            pcIndex = computerModel.findComputerIndex(pcUuid)
+            if (pcIndex >= 0) {
+                computerModel.checkoutComputer(pcIndex)
+            } else {
+                console.warn("checkoutConfirmDialog: invalid index")
+            }
         }
     }
 

@@ -23,7 +23,8 @@ class ComputerModel : public QAbstractListModel
         OrderStatusRole,
         BillingTypeRole,
         OrderIdRole,
-        IsOrderDeviceRole
+        IsOrderDeviceRole,
+        UuidRole
     };
 
 public:
@@ -54,6 +55,8 @@ public:
     Q_INVOKABLE QVariantMap handlePcClicked(int computerIndex);
 
     Q_INVOKABLE void checkoutComputer(int computerIndex);
+
+    Q_INVOKABLE int findComputerIndex(const QString& uuid) const;
 
     Q_INVOKABLE Session* createSessionForCurrentGame(int computerIndex);
     Q_INVOKABLE Session* createDesktopSession(int computerIndex);
