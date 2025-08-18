@@ -10,6 +10,10 @@
 #include <QList>
 #include "backend/Logger.h"
 
+extern "C" {
+#include <Input.h>
+}
+
 static const int PCM_FRAME_SAMPLES = 960; // 20 ms at 48 kHz
 static const int PCM_FRAME_SIZE = PCM_FRAME_SAMPLES * 2; // mono 16-bit
 static const int MAX_OPUS_SIZE = 4000;
@@ -22,7 +26,6 @@ MicStream::MicStream(QObject *parent)
       m_seq(0),
       m_timestamp(0),
       m_ssrc(0),
-      m_port(48001),
       m_pcmBytes(0),
       m_opusBytes(0),
       m_sentBytes(0),
@@ -39,7 +42,7 @@ MicStream::~MicStream()
     stop();
 }
 
-bool MicStream::start(const QString &host, int negotiatedPort)
+bool MicStream::start()
 {
     if (m_audioInput)
         return false;
@@ -84,15 +87,21 @@ bool MicStream::start(const QString &host, int negotiatedPort)
 
     connect(m_audioDevice, &QIODevice::readyRead, this, &MicStream::onAudio);
 
-    m_host = QHostAddress(host);
-    m_port = negotiatedPort > 0 ? negotiatedPort : 48001;
+    if (initializeMicrophoneStream() != 0) {
+        LOG_WARN(QStringLiteral("[MicStream] initializeMicrophoneStream failed"));
+        m_audioInput->stop();
+        delete m_audioInput;
+        m_audioInput = nullptr;
+        opus_encoder_destroy(m_encoder);
+        m_encoder = nullptr;
+        return false;
+    }
+
     m_seq = 0;
     m_timestamp = 0;
     m_ssrc = QRandomGenerator::global()->generate();
 
-    LOG_INFO(QStringLiteral("[MicStream] start host=%1 port=%2")
-             .arg(host)
-             .arg(m_port));
+    LOG_INFO(QStringLiteral("[MicStream] start"));
 
     m_sendTimer.start(20);
     m_logTimer.start();
@@ -119,6 +128,8 @@ void MicStream::stop()
         opus_encoder_destroy(m_encoder);
         m_encoder = nullptr;
     }
+
+    destroyMicrophoneStream();
     m_queue.clear();
 
     LOG_INFO(QStringLiteral("[MicStream] stop"));
@@ -172,7 +183,12 @@ void MicStream::sendLoop()
         memcpy(pkt.data() + 4, &tsle, 4);
         memcpy(pkt.data() + 8, &ssrcle, 4);
         memcpy(pkt.data() + 12, opus.constData(), opus.size());
-        m_socket.writeDatagram(pkt, m_host, m_port);
+        int rc = sendMicrophoneData(pkt.constData(), pkt.size());
+        if (rc < 0) {
+            LOG_WARN(QStringLiteral("[MicStream] sendMicrophoneData failed rc=%1")
+                     .arg(rc));
+            continue;
+        }
         m_sentPackets++;
         m_sentBytes += opus.size();
         m_timestamp += PCM_FRAME_SAMPLES;

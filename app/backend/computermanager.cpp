@@ -226,7 +226,7 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
     m_DelayedFlushThread->start();
 
     // 定时同步订单状态，确保串流过程中也能获取最新状态
-    m_OrderTimer.setInterval(30000);
+    m_OrderTimer.setInterval(3000);
     connect(&m_OrderTimer, &QTimer::timeout, this, &ComputerManager::syncOrderDevices);
 
     // 为了及时退出，收到 aboutToQuit() 信号后需阻止新的请求。
