@@ -215,6 +215,11 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
         NvComputer* computer = new NvComputer(settings);
         m_KnownHosts[computer->uuid] = computer;
         m_LastSerializedHosts[computer->uuid] = *computer;
+        registerDeviceInfo(computer);
+        if (computer->isOrderDevice) {
+            QString key = deviceKey(computer);
+            m_OrderDeviceKeys.insert(key);
+        }
     }
     settings.endArray();
 
@@ -512,6 +517,7 @@ void ComputerManager::handleComputerStateChanged(NvComputer* computer)
 {
     // Apply order information if available
     QString key = deviceKey(computer);
+    bool orderDevice = computer->isOrderDevice;
     {
         QReadLocker rlock(&m_OrderLock);
         if (m_DeviceInfo.contains(key)) {
@@ -527,7 +533,12 @@ void ComputerManager::handleComputerStateChanged(NvComputer* computer)
                 computer->orderId = info.orderId;
             computer->orderStatus = info.status;
             computer->orderBillingType = info.billingType;
+            orderDevice = info.billingType != 0;
         }
+    }
+    {
+        QWriteLocker wlock(&computer->lock);
+        computer->isOrderDevice = orderDevice;
     }
     emit computerStateChanged(computer);
 
@@ -647,18 +658,7 @@ void ComputerManager::renameHost(NvComputer* computer, QString name)
 
 bool ComputerManager::isOrderDevice(NvComputer* computer)
 {
-    QString key = deviceKey(computer);
-
-    {
-        QReadLocker rlock(&m_OrderLock);
-        if (m_DeviceInfo.contains(key)) {
-            return m_DeviceInfo.value(key).billingType != 0;
-        }
-    }
-
-    // 自动扫描的主机会走到这里，为其创建默认记录，计费类型为 0
-    registerDeviceInfo(computer);
-    return false;
+    return computer->isOrderDevice;
 }
 
 void ComputerManager::clearOrderDevices()
@@ -666,10 +666,8 @@ void ComputerManager::clearOrderDevices()
     QList<NvComputer*> toDelete;
     {
         QReadLocker lock(&m_Lock);
-        QReadLocker orderLock(&m_OrderLock);
         for (NvComputer* pc : m_KnownHosts) {
-            QString key = deviceKey(pc);
-            if (m_DeviceInfo.contains(key) && m_DeviceInfo.value(key).billingType != 0) {
+            if (pc->isOrderDevice) {
                 toDelete.append(pc);
             }
         }
@@ -1235,6 +1233,7 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
     QJsonArray arr = doc["data"].toArray();
     QSet<QString> newKeys;
     QList<std::tuple<QString, quint16, QString>> newDevices;
+    QList<NvComputer*> existingHosts;
     QSet<QString> removed;
 
     {
@@ -1263,22 +1262,28 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
             info.billingType = orderObj["billingType"].toInt();
             m_DeviceInfo.insert(key, info);
 
-            bool knownHost = false;
+            NvComputer* existingPc = nullptr;
             {
                 QReadLocker hostLock(&m_Lock);
                 for (NvComputer* pc : m_KnownHosts) {
                     if (deviceKey(pc) == key) {
-                        knownHost = true;
+                        existingPc = pc;
                         break;
                     }
                 }
             }
-            if (!knownHost)
+            if (existingPc)
+                existingHosts.append(existingPc);
+            else
                 newDevices.append({ip, port, name});
         }
 
         removed = m_OrderDeviceKeys - newKeys;
         m_OrderDeviceKeys = newKeys;
+    }
+
+    for (NvComputer* pc : existingHosts) {
+        handleComputerStateChanged(pc);
     }
 
     // 添加新设备

@@ -50,7 +50,7 @@ Item {
         onRegisterSuccess: {
             console.log("Register success")
             registerErrorMessage = ""
-            requestClose()
+            tabBar.currentIndex = 0
         }
 
         onRegisterFailure: (errorMsg) => {

@@ -140,8 +140,7 @@ CenteredGridView {
         Label {
             height: searchSpinner.height
             elide: Label.ElideRight
-            text: StreamingPreferences.enableMdns ? qsTr("点击右上角加号购买机器")
-                                                  : qsTr("Automatic PC discovery is disabled. Add your PC manually.")
+            text: qsTr("点击右上角➕按钮购买机器")
             font.pointSize: 20
             verticalAlignment: Text.AlignVCenter
             wrapMode: Text.Wrap
@@ -308,7 +307,7 @@ CenteredGridView {
                                    (billingType === 2 ? qsTr("包天") :
                                     (billingType === 3 ? qsTr("包周") :
                                      (billingType === 4 ? qsTr("包月") :
-                                       (billingType === 7 ? qsTr("包时") :""))))) :
+                                       (billingType === 7 ? qsTr("包时") : qsTr("异常")))))) :
                                   qsTr("自动扫描")
                             font.pixelSize: 14
                             color: "#FFFFFF"
@@ -678,6 +677,15 @@ CenteredGridView {
     NavigableMessageDialog {
         id: restartResult
         standardButtons: Dialog.Ok
+    }
+
+    Connections {
+        target: ComputerManager
+        onRestartSunshineFinished: function(success, message) {
+            restartLoading.close()
+            restartResult.text = message
+            restartResult.open()
+        }
     }
 
     RenewDialog { id: renewDialog }

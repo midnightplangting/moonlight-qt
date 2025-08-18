@@ -118,6 +118,7 @@ public:
     QByteArray macAddress;
     QString name;
     bool hasCustomName;
+    bool isOrderDevice = false;
     QString uuid;
     QSslCertificate serverCert;
     QVector<NvApp> appList;

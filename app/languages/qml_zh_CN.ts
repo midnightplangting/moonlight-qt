@@ -10,6 +10,11 @@
         <translation>继续游戏</translation>
     </message>
     <message>
+        <location filename="../gui/SettingsView.qml" line="946"/>
+        <source>Enable microphone (experimental)</source>
+        <translation>启用麦克风（测试）</translation>
+    </message>
+    <message>
         <location filename="../gui/AppView.qml" line="173"/>
         <location filename="../gui/AppView.qml" line="308"/>
         <source>Quit Game</source>
@@ -237,13 +242,9 @@
     </message>
     <message>
         <location filename="../gui/PcView.qml" line="143"/>
-        <source>点击右上角加号购买机器</source>
-        <translation>点击右上角加号购买机器</translation>
-    </message>
-    <message>
         <location filename="../gui/PcView.qml" line="99"/>
-        <source>Automatic PC discovery is disabled. Add your PC manually.</source>
-        <translation>已禁用计算机自动发现。需要手动添加计算机。</translation>
+        <source>Click the '+' in the top-right to purchase a machine</source>
+        <translation>点击右上角加号购买机器</translation>
     </message>
     <message>
         <location filename="../gui/PcView.qml" line="167"/>

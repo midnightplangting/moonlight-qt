@@ -943,7 +943,7 @@ Flickable {
                 CheckBox {
                     id: enableMicCheck
                     width: parent.width
-                    text: qsTr("Enable microphone streaming")
+                    text: qsTr("启用麦克风（测试）")
                     font.pointSize: 12
                     checked: StreamingPreferences.enableMicrophone
                     onCheckedChanged: {
