@@ -256,7 +256,7 @@ public:
 
     void pairHost(NvComputer* computer, QString pin);
 
-    void quitRunningApp(NvComputer* computer);
+    Q_INVOKABLE void quitRunningApp(NvComputer* computer);
 
     QVector<NvComputer*> getComputers();
 

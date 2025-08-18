@@ -131,3 +131,5 @@ public:
 private:
     uint16_t externalPort;
 };
+
+Q_DECLARE_METATYPE(NvComputer*)

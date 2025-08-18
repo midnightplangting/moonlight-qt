@@ -519,6 +519,7 @@ int main(int argc, char *argv[])
 
     // Register custom metatypes for use in signals
     qRegisterMetaType<NvApp>("NvApp");
+    qRegisterMetaType<NvComputer*>("NvComputer*");
 
     // Allow the display to sleep by default. We will manually use SDL_DisableScreenSaver()
     // and SDL_EnableScreenSaver() when appropriate. This hint must be set before

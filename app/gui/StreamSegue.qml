@@ -4,6 +4,7 @@ import QtQuick.Window 2.2
 
 import SdlGamepadKeyNavigation 1.0
 import Session 1.0
+import ComputerManager 1.0
 
 Item {
     property Session session
@@ -65,9 +66,15 @@ Item {
     {
         // Avoid the push transition animation
         var component = Qt.createComponent("QuitSegue.qml")
-        StackView.view.replace(StackView.view.currentItem,
-                               component.createObject(StackView.view, {"appName": appName}),
-                               StackView.Immediate)
+        StackView.view.replace(
+            StackView.view.currentItem,
+            component.createObject(StackView.view, {
+                "appName": appName,
+                "quitRunningAppFn": function() {
+                    ComputerManager.quitRunningApp(session.computer())
+                }
+            }),
+            StackView.Immediate)
 
         // Show the Qt window again to show quit segue
         window.visible = true

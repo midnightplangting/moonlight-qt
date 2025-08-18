@@ -17,6 +17,7 @@
 #include <QJsonDocument>      // 解析 JSON
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QVariant>
 #include "UserSession.h"      // （若之前已包含可忽略）
 #include <atomic>             // 线程一次性标记
 #include <QDateTime>
@@ -829,41 +830,57 @@ public:
     PendingQuitTask(ComputerManager* computerManager, NvComputer* computer)
         : m_Computer(computer)
     {
-        connect(this, &PendingQuitTask::quitAppFailed,
+        connect(this, &PendingQuitTask::quitAppCompleted,
                 computerManager, &ComputerManager::quitAppCompleted);
     }
 
 signals:
-    void quitAppFailed(QString error);
+    void quitAppCompleted(QVariant error);
 
 private:
     void run()
     {
         NvHTTP http(m_Computer);
 
+        LOG_INFO_T(QStringLiteral("[PendingQuitTask] 开始退出 %1 的当前应用")
+                        .arg(m_Computer->name));
+
         try {
             if (m_Computer->currentGameId != 0) {
+                LOG_INFO_T(QStringLiteral("[PendingQuitTask] 请求退出应用"));
                 http.quitApp();
             }
+
+            {
+                QWriteLocker lock(&m_Computer->lock);
+                m_Computer->pendingQuit = false;
+            }
+
+            LOG_INFO_T(QStringLiteral("[PendingQuitTask] 已完成退出应用"));
+            emit quitAppCompleted(QVariant());
         } catch (const GfeHttpResponseException& e) {
             {
                 QWriteLocker lock(&m_Computer->lock);
                 m_Computer->pendingQuit = false;
             }
+            LOG_INFO_T(QStringLiteral("[PendingQuitTask] 退出应用失败: %1")
+                            .arg(e.toQString()));
             if (e.getStatusCode() == 599) {
                 // 状态码 599 需要返回自定义提示信息
-                emit quitAppFailed(tr("The running game wasn't started by this PC. "
-                                      "You must quit the game on the host PC manually or use the device that originally started the game."));
+                emit quitAppCompleted(tr("The running game wasn't started by this PC. "
+                                         "You must quit the game on the host PC manually or use the device that originally started the game."));
             }
             else {
-                emit quitAppFailed(e.toQString());
+                emit quitAppCompleted(e.toQString());
             }
         } catch (const QtNetworkReplyException& e) {
             {
                 QWriteLocker lock(&m_Computer->lock);
                 m_Computer->pendingQuit = false;
             }
-            emit quitAppFailed(e.toQString());
+            LOG_INFO_T(QStringLiteral("[PendingQuitTask] 网络异常: %1")
+                            .arg(e.toQString()));
+            emit quitAppCompleted(e.toQString());
         }
     }
 
@@ -874,6 +891,9 @@ void ComputerManager::quitRunningApp(NvComputer* computer)
 {
     QWriteLocker lock(&computer->lock);
     computer->pendingQuit = true;
+
+    LOG_INFO(QStringLiteral("[ComputerManager] 请求退出 %1 的当前应用")
+                 .arg(computer->name));
 
     PendingQuitTask* quit = new PendingQuitTask(this, computer);
     QThreadPool::globalInstance()->start(quit);

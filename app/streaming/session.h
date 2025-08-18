@@ -12,6 +12,8 @@
 #include "video/overlaymanager.h"
 #include "micstream.h"
 
+class NvComputer;
+
 class SupportedVideoFormatList : public QList<int>
 {
 public:
@@ -126,6 +128,8 @@ public:
     void flushWindowEvents();
 
     void setShouldExitAfterQuit();
+
+    Q_INVOKABLE NvComputer* computer() const { return m_Computer; }
 
 signals:
     void stageStarting(QString stage);
