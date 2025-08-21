@@ -225,12 +225,12 @@ Item {
 
                             // 赠送徽章
                             Rectangle { visible: model.gift > 0; width: parent.width * 0.7; height: 20; radius: 6; anchors.horizontalCenter: parent.horizontalCenter; y: -3; color: "#FFBF00"
-                                Label { anchors.centerIn: parent; text: qsTr("赠") + model.gift + qsTr("金币"); font.pixelSize: 14; font.bold: true; color: "#333333" }
+                                Label { anchors.centerIn: parent; anchors.verticalCenterOffset: 2; text: qsTr("赠") + model.gift + qsTr("金币"); font.pixelSize: 14; font.bold: true; color: "#333333" }
                             }
                             // 主信息
-                            Column { anchors.centerIn: parent; spacing: 4
-                                Label { text: model.coins + qsTr("金币"); font.pixelSize: 18; font.bold: true; color: "#FFC000" }
-                                Label { text: "¥ " + model.price.toFixed(2); font.pixelSize: 14; font.bold: true; color: "#cccccc" }
+                            ColumnLayout { anchors.centerIn: parent; spacing: 4; width: parent.width
+                                Label { text: model.coins + qsTr("金币"); font.pixelSize: 18; font.bold: true; color: "#FFC000"; Layout.alignment: Qt.AlignHCenter; Layout.topMargin: 15 }
+                                Label { text: "¥ " + model.price.toFixed(2); font.pixelSize: 14; font.bold: true; color: "#cccccc"; Layout.alignment: Qt.AlignHCenter }
                             }
                         }
                     }
@@ -255,7 +255,7 @@ Item {
                     }
                     // 立即支付按钮
                     Rectangle {
-                        id: payButton; width: 240; height: 60; radius: 40; color: "#FFBF00"
+                        id: payButton; width: 240; height: 60; radius: 40; color: "#FFBF00"; Layout.topMargin: 30
                         scale: 1; transformOrigin: Item.Center
                         Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
                         Label { anchors.centerIn: parent; text: qsTr("立即支付"); font.pixelSize: 25; color: "black"; font.bold: true }
