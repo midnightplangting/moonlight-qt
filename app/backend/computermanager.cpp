@@ -58,6 +58,15 @@ private:
 
         NvComputer newState(http, serverInfo);
 
+        if (m_Computer->isOrderDevice) {
+            // Order devices use server-provided name as deviceKey, so keep the
+            // existing name/UUID and simply update other fields.
+            newState.name = m_Computer->name;
+            newState.uuid = m_Computer->uuid;
+            changed = m_Computer->update(newState);
+            return true;
+        }
+
         // 确保回应的主机就是我们想要联系的那台
         if (m_Computer->uuid != newState.uuid) {
             bool nameMatches = (m_Computer->name == newState.name);
@@ -1315,14 +1324,34 @@ void ComputerManager::updateOrderInfoFromJson(const QString& json)
         handleComputerStateChanged(pc);
     }
 
-    // 添加新设备
+    // 添加新设备（无需验证，直接创建占位 PC）
     for (auto& d : newDevices) {
+        QString ip = std::get<0>(d);
+        quint16 port = std::get<1>(d);
+        QString name = std::get<2>(d);
         LOG_INFO(QStringLiteral("[OrderSync] 新增设备 %1 %2 %3")
-                     .arg(std::get<2>(d))
-                     .arg(std::get<0>(d))
-                     .arg(std::get<1>(d)));
-        addNewHost(NvAddress(std::get<0>(d), std::get<1>(d)),
-                    false, NvAddress(), false);
+                     .arg(name)
+                     .arg(ip)
+                     .arg(port));
+
+        NvComputer* pc = new NvComputer();
+        pc->name = name;
+        pc->uuid = deviceKey(name);
+        pc->localAddress = NvAddress(ip, port);
+        pc->manualAddress = pc->localAddress;
+        pc->activeAddress = pc->localAddress;
+        pc->state = NvComputer::CS_UNKNOWN;
+        pc->pairState = NvComputer::PS_UNKNOWN;
+        pc->isOrderDevice = true;
+
+        {
+            QWriteLocker lock(&m_Lock);
+            m_KnownHosts[pc->uuid] = pc;
+            registerDeviceInfo(pc);
+            startPollingComputer(pc);
+        }
+
+        handleComputerStateChanged(pc);
     }
 
     // 删除消失的设备（支持多个）
