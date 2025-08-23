@@ -755,35 +755,54 @@ private:
     {
         NvPairingManager pairingManager(m_Computer);
 
-        try {
-           NvPairingManager::PairState result = pairingManager.pair(m_Computer->appVersion, m_Pin, m_Computer->serverCert);
-           switch (result)
-           {
-           case NvPairingManager::PairState::PIN_WRONG:
-               emit pairingCompleted(m_Computer, tr("The PIN from the PC didn't match. Please try again."));
-               break;
-           case NvPairingManager::PairState::FAILED:
-               if (m_Computer->currentGameId != 0) {
-                   emit pairingCompleted(m_Computer, tr("You cannot pair while a previous session is still running on the host PC. Quit any running games or reboot the host PC, then try pairing again."));
-               }
-               else {
-                   emit pairingCompleted(m_Computer, tr("Pairing failed. Please try again."));
-               }
-               break;
-           case NvPairingManager::PairState::ALREADY_IN_PROGRESS:
-               emit pairingCompleted(m_Computer, tr("Another pairing attempt is already in progress."));
-               break;
-           case NvPairingManager::PairState::PAIRED:
-               // Persist the newly pinned server certificate for this host
-               m_ComputerManager->saveHost(m_Computer);
+        // Attempt pairing up to three times to handle transient failures
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                NvPairingManager::PairState result = pairingManager.pair(m_Computer->appVersion, m_Pin, m_Computer->serverCert);
 
-               emit pairingCompleted(m_Computer, nullptr);
-               break;
-           }
-        } catch (const GfeHttpResponseException& e) {
-            emit pairingCompleted(m_Computer, tr("GeForce Experience returned error: %1").arg(e.toQString()));
-        } catch (const QtNetworkReplyException& e) {
-            emit pairingCompleted(m_Computer, e.toQString());
+                // Return immediately on success so we don't perform unnecessary retries
+                if (result == NvPairingManager::PairState::PAIRED) {
+                    // Persist the newly pinned server certificate for this host
+                    m_ComputerManager->saveHost(m_Computer);
+                    emit pairingCompleted(m_Computer, nullptr);
+                    return;
+                }
+
+                switch (result)
+                {
+                case NvPairingManager::PairState::PIN_WRONG:
+                    emit pairingCompleted(m_Computer, tr("The PIN from the PC didn't match. Please try again."));
+                    return;
+                case NvPairingManager::PairState::FAILED:
+                    if (m_Computer->currentGameId != 0) {
+                        emit pairingCompleted(m_Computer, tr("You cannot pair while a previous session is still running on the host PC. Quit any running games or reboot the host PC, then try pairing again."));
+                        return;
+                    }
+                    if (attempt < 2) {
+                        QThread::sleep(1);
+                        continue;
+                    }
+                    emit pairingCompleted(m_Computer, tr("Pairing failed. Please try again."));
+                    return;
+                case NvPairingManager::PairState::ALREADY_IN_PROGRESS:
+                    emit pairingCompleted(m_Computer, tr("Another pairing attempt is already in progress."));
+                    return;
+                }
+            } catch (const GfeHttpResponseException& e) {
+                if (attempt < 2) {
+                    QThread::sleep(1);
+                    continue;
+                }
+                emit pairingCompleted(m_Computer, tr("GeForce Experience returned error: %1").arg(e.toQString()));
+                return;
+            } catch (const QtNetworkReplyException& e) {
+                if (attempt < 2) {
+                    QThread::sleep(1);
+                    continue;
+                }
+                emit pairingCompleted(m_Computer, e.toQString());
+                return;
+            }
         }
     }
 

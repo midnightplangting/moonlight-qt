@@ -133,7 +133,7 @@ Item {
                         width: 140; height: parent.height; radius: 12; color: "#1C1C1E"; clip: true
                         ListView {
                             anchors.fill: parent; anchors.margins: 8; spacing: 8
-                            model: [qsTr("账单明细"), qsTr("激活体验码"), qsTr("联系客服"), qsTr("关于我们")]
+                            model: [qsTr("账单明细"), qsTr("激活兑换码"), qsTr("联系客服"), qsTr("关于我们")]
                             delegate: Rectangle {
                                 width: parent.width; height: 32; color: "transparent"
                                 Label {
@@ -148,7 +148,7 @@ Item {
                                         console.debug("点击菜单", modelData)
                                         if (modelData === qsTr("账单明细")) {
                                             stackView.push("qrc:/gui/BillDetailView.qml")
-                                        } else if (modelData === qsTr("激活体验码")) {
+                                        } else if (modelData === qsTr("激活兑换码")) {
                                             couponInputDialog.open()
                                         } else if (modelData === qsTr("联系客服")) {
                                             stackView.push("qrc:/gui/ContactCustomerView.qml")
@@ -164,35 +164,41 @@ Item {
                         Layout.fillWidth: true; height: 260; radius: 12; color: "#1C1C1E"
                         Label {
                             anchors.centerIn: parent
-                            text: qsTr("图片链接"); color: "#0ebb76"; font.pixelSize: 20
+                            text: qsTr("敬请期待..."); color: "#0ebb76"; font.pixelSize: 20
                         }
                     }
                 }
-
-                // 轮播Banner
                 Rectangle {
-                    id: bannerFrame
-                    width: parent.width; height: 280; radius: 12; color: "#1C1C1E"; clip: true
-                    ListModel { id: bannerModel
-                        ListElement { source: "qrc:/res/logo.svg" }
-                        ListElement { source: "qrc:/res/logo.svg" }
-                        ListElement { source: "qrc:/res/logo.svg" }
+                    width: parent.width; height: 280; radius: 12; color: "#1C1C1E"
+                    Label {
+                        anchors.centerIn: parent
+                        text: qsTr("敬请期待..."); color: "#0ebb76"; font.pixelSize: 20
                     }
-                    ListView {
-                        id: bannerView
-                        anchors.fill: parent; orientation: ListView.Horizontal
-                        model: bannerModel; snapMode: ListView.SnapOneItem; boundsBehavior: Flickable.StopAtBounds; interactive: false
-                        delegate: Item { width: bannerFrame.width; height: bannerFrame.height
-                            Image { anchors.fill: parent; source: model.source; fillMode: Image.PreserveAspectCrop }
-                        }
-                    }
-                    Row { spacing: 6; anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 6
-                        Repeater { model: bannerModel.count
-                            Rectangle { width: 8; height: 8; radius: 12; color: index === bannerView.currentIndex ? "#ffffff" : "#1C1C1E" }
-                        }
-                    }
-                    Timer { interval: 3000; running: true; repeat: true; onTriggered: bannerView.currentIndex = (bannerView.currentIndex + 1) % bannerModel.count }
                 }
+                // 轮播Banner
+                // Rectangle {
+                //     id: bannerFrame
+                //     width: parent.width; height: 280; radius: 12; color: "#1C1C1E"; clip: true
+                //     ListModel { id: bannerModel
+                //         ListElement { source: "qrc:/res/logo.svg" }
+                //         ListElement { source: "qrc:/res/logo.svg" }
+                //         ListElement { source: "qrc:/res/logo.svg" }
+                //     }
+                //     ListView {
+                //         id: bannerView
+                //         anchors.fill: parent; orientation: ListView.Horizontal
+                //         model: bannerModel; snapMode: ListView.SnapOneItem; boundsBehavior: Flickable.StopAtBounds; interactive: false
+                //         delegate: Item { width: bannerFrame.width; height: bannerFrame.height
+                //             Image { anchors.fill: parent; source: model.source; fillMode: Image.PreserveAspectCrop }
+                //         }
+                //     }
+                //     Row { spacing: 6; anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 6
+                //         Repeater { model: bannerModel.count
+                //             Rectangle { width: 8; height: 8; radius: 12; color: index === bannerView.currentIndex ? "#ffffff" : "#1C1C1E" }
+                //         }
+                //     }
+                //     Timer { interval: 3000; running: true; repeat: true; onTriggered: bannerView.currentIndex = (bannerView.currentIndex + 1) % bannerModel.count }
+                // }
             }
 
             // ===== 右侧面板 =====
@@ -346,13 +352,13 @@ Item {
             anchors.fill: parent
             spacing: 10
             Label {
-                text: qsTr("请输入体验码")
+                text: qsTr("请输入兑换码")
                 Layout.alignment: Qt.AlignHCenter
             }
             TextField {
                 id: couponField
                 Layout.fillWidth: true
-                placeholderText: qsTr("体验码")
+                placeholderText: qsTr("兑换码")
             }
         }
     }
