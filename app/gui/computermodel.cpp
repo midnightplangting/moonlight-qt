@@ -320,11 +320,13 @@ QVariantMap ComputerModel::handlePcClicked(int computerIndex)
     QString pin = m_ComputerManager->generatePinString();
     m_ComputerManager->pairHost(computer, pin);
 
-    // show pin only for LAN devices or manual additions
+    // Show PIN only when it must be entered manually on the host
     bool isOrderDevice = m_ComputerManager->isOrderDevice(computer);
+    bool autoPin = isOrderDevice ||
+                   (computer->manualAddress.isNull() && !computer->remoteAddress.isNull());
 
-    if (!isOrderDevice && computer->manualAddress.isNull()) {
-        // LAN device - show PIN
+    if (!autoPin) {
+        // LAN or manually added device - display PIN to the user
         result["pin"] = pin;
     }
 
