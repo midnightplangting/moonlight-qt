@@ -8,7 +8,7 @@
 #include <QMediaDevices>
 #include <QAudio>
 #include <QList>
-#include "backend/Logger.h"
+#include <QDebug>
 
 extern "C" {
 #include <Input.h>
@@ -20,17 +20,17 @@ static const int MAX_OPUS_SIZE = 4000;
 
 MicStream::MicStream(QObject *parent)
     : QObject(parent),
-      m_audioInput(nullptr),
-      m_audioDevice(nullptr),
-      m_encoder(nullptr),
-      m_seq(0),
-      m_timestamp(0),
-      m_ssrc(0),
-      m_pcmBytes(0),
-      m_opusBytes(0),
-      m_sentBytes(0),
-      m_sentPackets(0),
-      m_idleLoops(0)
+    m_audioInput(nullptr),
+    m_audioDevice(nullptr),
+    m_encoder(nullptr),
+    m_seq(0),
+    m_timestamp(0),
+    m_ssrc(0),
+    m_pcmBytes(0),
+    m_opusBytes(0),
+    m_sentBytes(0),
+    m_sentPackets(0),
+    m_idleLoops(0)
 {
     connect(&m_sendTimer, &QTimer::timeout, this, &MicStream::sendLoop);
     m_logTimer.setInterval(5000);
@@ -58,37 +58,60 @@ bool MicStream::start()
     fmt.setChannelCount(1);
     fmt.setSampleFormat(QAudioFormat::Int16);
 
+    // macOS/Qt sometimes returns devices that do not support requested format.
+    // Query supported formats and fall back if needed to avoid silent failures.
+    QAudioDevice deviceTest = QMediaDevices::defaultAudioInput();
+    if (!deviceTest.isFormatSupported(fmt)) {
+        qWarning() << "[MicStream] Requested audio format not supported by default device, attempting fallbacks";
+        // try common fallbacks
+        QAudioFormat fmt2 = fmt;
+        fmt2.setSampleRate(44100);
+        if (deviceTest.isFormatSupported(fmt2)) {
+            fmt = fmt2;
+            qInfo() << "[MicStream] Falling back to 44100 Hz";
+        } else {
+            // try stereo 48000 then
+            QAudioFormat fmt3 = fmt;
+            fmt3.setChannelCount(2);
+            if (deviceTest.isFormatSupported(fmt3)) {
+                fmt = fmt3;
+                qInfo() << "[MicStream] Falling back to stereo 48000";
+            } else {
+                qWarning() << "[MicStream] No compatible fallback format found; will still attempt start and log errors";
+            }
+        }
+    }
+
     const QList<QAudioDevice> devices = QMediaDevices::audioInputs();
     if (devices.isEmpty()) {
-        LOG_WARN(QStringLiteral("[MicStream] No audio input devices available"));
+        qWarning() << "[MicStream] No audio input devices available";
     } else {
-        LOG_INFO(QStringLiteral("[MicStream] Available audio input devices:"));
+        qInfo() << "[MicStream] Available audio input devices:";
         for (const QAudioDevice &dev : devices) {
-            LOG_INFO(QStringLiteral("  %1").arg(dev.description()));
+            qInfo() << "  " << dev.description();
         }
     }
 
     QAudioDevice device = QMediaDevices::defaultAudioInput();
-    LOG_INFO(QStringLiteral("[MicStream] Using audio input device: %1")
-             .arg(device.description()));
+    qInfo() << "[MicStream] Using audio input device:" << device.description();
 
     m_audioInput = new QAudioSource(device, fmt, this);
-    m_audioInput->setBufferSize(PCM_FRAME_SIZE);
+    // make buffer at least one PCM frame or a few frames to smooth reads
+    m_audioInput->setBufferSize(PCM_FRAME_SIZE * 4);
     m_audioDevice = m_audioInput->start();
     if (!m_audioDevice || m_audioInput->error() != QAudio::NoError) {
-        LOG_WARN(QStringLiteral("[MicStream] Failed to start audio device error=%1")
-                 .arg(m_audioInput->error()));
+        qWarning() << "[MicStream] Failed to start audio device error=" << m_audioInput->error();
         delete m_audioInput;
         m_audioInput = nullptr;
         return false;
     }
 
-    LOG_INFO(QStringLiteral("[MicStream] Audio device initialized successfully"));
+    qInfo() << "[MicStream] Audio device initialized successfully";
 
     connect(m_audioDevice, &QIODevice::readyRead, this, &MicStream::onAudio);
 
     if (initializeMicrophoneStream() != 0) {
-        LOG_WARN(QStringLiteral("[MicStream] initializeMicrophoneStream failed"));
+        qWarning() << "[MicStream] initializeMicrophoneStream failed";
         m_audioInput->stop();
         delete m_audioInput;
         m_audioInput = nullptr;
@@ -101,7 +124,7 @@ bool MicStream::start()
     m_timestamp = 0;
     m_ssrc = QRandomGenerator::global()->generate();
 
-    LOG_INFO(QStringLiteral("[MicStream] start"));
+    qInfo() << "[MicStream] start";
 
     m_sendTimer.start(20);
     m_logTimer.start();
@@ -132,18 +155,27 @@ void MicStream::stop()
     destroyMicrophoneStream();
     m_queue.clear();
 
-    LOG_INFO(QStringLiteral("[MicStream] stop"));
+    qInfo() << "[MicStream] stop";
 }
 
 void MicStream::onAudio()
 {
-    while (m_audioDevice && m_audioDevice->bytesAvailable() >= PCM_FRAME_SIZE) {
-        QByteArray pcm = m_audioDevice->read(PCM_FRAME_SIZE);
+    // accumulate partial reads to form complete PCM frames
+    if (!m_audioDevice)
+        return;
+
+    QByteArray chunk = m_audioDevice->readAll();
+    if (chunk.isEmpty()) {
+        return;
+    }
+    // append to partial buffer
+    m_partialBuffer.append(chunk);
+    while (m_partialBuffer.size() >= PCM_FRAME_SIZE) {
+        QByteArray pcm = m_partialBuffer.left(PCM_FRAME_SIZE);
+        m_partialBuffer.remove(0, PCM_FRAME_SIZE);
         if (pcm.size() < PCM_FRAME_SIZE) {
-            LOG_WARN(QStringLiteral("[MicStream] PCM underrun read=%1 expected=%2")
-                     .arg(pcm.size())
-                     .arg(PCM_FRAME_SIZE));
-            return;
+            qWarning() << "[MicStream] PCM underrun after assembly read=" << pcm.size() << " expected=" << PCM_FRAME_SIZE;
+            break;
         }
         m_pcmBytes += pcm.size();
 
@@ -157,8 +189,7 @@ void MicStream::onAudio()
             m_queue.enqueue(QByteArray(reinterpret_cast<char*>(encoded), len));
             m_opusBytes += len;
         } else {
-            LOG_WARN(QStringLiteral("[MicStream] opus_encode failed len=%1")
-                     .arg(len));
+            qWarning() << "[MicStream] opus_encode failed len=" << len;
         }
     }
 }
@@ -185,8 +216,7 @@ void MicStream::sendLoop()
         memcpy(pkt.data() + 12, opus.constData(), opus.size());
         int rc = sendMicrophoneData(pkt.constData(), pkt.size());
         if (rc < 0) {
-            LOG_WARN(QStringLiteral("[MicStream] sendMicrophoneData failed rc=%1")
-                     .arg(rc));
+            qWarning() << "[MicStream] sendMicrophoneData failed rc=" << rc;
             continue;
         }
         m_sentPackets++;
@@ -197,17 +227,14 @@ void MicStream::sendLoop()
 
 void MicStream::logSummary()
 {
-    LOG_INFO(QStringLiteral("[MicStream] 5s summary pcm=%1B opus=%2B sent=%3/%4B idle=%5 queue=%6")
-             .arg(m_pcmBytes)
-             .arg(m_opusBytes)
-             .arg(m_sentPackets)
-             .arg(m_sentBytes)
-             .arg(m_idleLoops)
-             .arg(m_queue.size()));
+    qInfo() << "[MicStream] 5s summary pcm=" << m_pcmBytes
+            << "B opus=" << m_opusBytes
+            << "B sent=" << m_sentPackets << "/" << m_sentBytes
+            << "B idle=" << m_idleLoops
+            << "queue=" << m_queue.size();
     m_pcmBytes = 0;
     m_opusBytes = 0;
     m_sentBytes = 0;
     m_sentPackets = 0;
     m_idleLoops = 0;
 }
-
