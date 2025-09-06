@@ -87,8 +87,8 @@
         <file>res/zfb.svg</file>
         <file>res/reconnect.svg</file>
         <file>res/user.svg</file>
-        <file>res/logo.svg</file>
         <file>res/AlibabaPuHuiTi-3-75-SemiBold.ttf</file>
+        <file>res/logo.svg</file>
     </qresource>
     <qresource prefix="/data">
         <file alias="gamecontrollerdb.txt">SDL_GameControllerDB/gamecontrollerdb.txt</file>
