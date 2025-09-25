@@ -17,7 +17,7 @@ if /I "%BUILD_CONFIG%"=="debug" (
         if /I "%BUILD_CONFIG%"=="signed-release" (
             set BUILD_CONFIG=release
             set SIGN=1
-            set MUST_DEPLOY_SYMBOLS=1
+            set MUST_DEPLOY_SYMBOLS=0
 
             rem Fail if there are unstaged changes
             git diff-index --quiet HEAD --
