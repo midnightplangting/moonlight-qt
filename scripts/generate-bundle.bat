@@ -32,7 +32,7 @@ if /I "%BUILD_CONFIG%"=="debug" (
     )
 )
 
-set SIGNTOOL_PARAMS=sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sha1 8b9d0d682ad9459e54f05a79694bc10f9876e297 /v
+set SIGNTOOL_PARAMS=sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sha1 a1c342bd70d9b3b824f133277e089d2e4e57ff57 /v
 
 set BUILD_ROOT=%cd%\build
 set SOURCE_ROOT=%cd%
