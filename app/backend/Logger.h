@@ -2,6 +2,7 @@
 #define LOGGER_H
 #pragma once
 
+#include <QMutex>
 #include <QString>
 
 class NvComputer;
@@ -24,8 +25,11 @@ public:
     static void logComputer(const NvComputer* computer,
                             const DeviceInfo* info = nullptr);
 private:
+    static void writeErrorLog(const QString& msg);
     static LogLevel s_level;
     static bool s_enabled;
+    static QString s_logFilePath;
+    static QMutex s_logMutex;
 };
 
 #define LOG_ERROR(msg) Logger::log(LogLevel::Error, msg)

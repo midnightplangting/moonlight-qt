@@ -1,13 +1,25 @@
 #include "Logger.h"
 #include "nvcomputer.h"
 #include "computermanager.h"
+#include <QCoreApplication>
+#include <QDateTime>
 #include <QDebug>
-#include <QStringList>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QFileInfoList>
+#include <QMutexLocker>
 #include <QReadWriteLock>
+#include <QStringList>
+#include <QStandardPaths>
+#include <QTextStream>
 #include <QThread>
+#include <QVector>
 
 LogLevel Logger::s_level = LogLevel::Error;
 bool Logger::s_enabled = true;
+QString Logger::s_logFilePath;
+QMutex Logger::s_logMutex;
 
 void Logger::setLevel(LogLevel level)
 {
@@ -27,6 +39,7 @@ void Logger::log(LogLevel level, const QString& msg)
     switch (level) {
     case LogLevel::Error:
         qCritical() << "[错误]" << msg;
+        writeErrorLog(msg);
         break;
     case LogLevel::Warning:
         qWarning() << "[警告]" << msg;
@@ -38,6 +51,111 @@ void Logger::log(LogLevel level, const QString& msg)
         qDebug() << "[调试]" << msg;
         break;
     }
+}
+
+void Logger::writeErrorLog(const QString& msg)
+{
+    QMutexLocker locker(&s_logMutex);
+
+    if (s_logFilePath.isEmpty()) {
+        auto prepareLogFile = [](const QString& directory) -> QString {
+            if (directory.isEmpty()) {
+                return QString();
+            }
+
+            QDir logDir(directory);
+            if (!logDir.exists() && !logDir.mkpath(QStringLiteral("."))) {
+                return QString();
+            }
+
+            const QFileInfoList existingFiles = logDir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot);
+            for (const QFileInfo& fileInfo : existingFiles) {
+                logDir.remove(fileInfo.fileName());
+            }
+
+            const QString logFilePath = logDir.filePath(QStringLiteral("latest.log"));
+            QFile file(logFilePath);
+            if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+                return QString();
+            }
+            file.close();
+
+            return logFilePath;
+        };
+
+        struct LogCandidate {
+            QString directory;
+            QString description;
+        };
+
+        QVector<LogCandidate> candidates;
+
+        const QString baseDir = QCoreApplication::applicationDirPath();
+        if (!baseDir.isEmpty()) {
+            candidates.append({ QDir(baseDir).filePath(QStringLiteral("logs")), QStringLiteral("安装目录") });
+        }
+
+#ifdef Q_OS_WIN
+        const QString programData = qEnvironmentVariable("PROGRAMDATA");
+        if (!programData.isEmpty()) {
+            QStringList subPathParts;
+            if (!QCoreApplication::organizationName().isEmpty()) {
+                subPathParts << QCoreApplication::organizationName();
+            }
+            if (!QCoreApplication::applicationName().isEmpty()) {
+                subPathParts << QCoreApplication::applicationName();
+            }
+            subPathParts << QStringLiteral("logs");
+
+            const QString programDataLogs = QDir(programData).filePath(subPathParts.join(QStringLiteral("/")));
+            candidates.append({ programDataLogs, QStringLiteral("公共数据目录") });
+        }
+#endif
+
+        const QString appLocalDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+        if (!appLocalDataDir.isEmpty()) {
+            candidates.append({ QDir(appLocalDataDir).filePath(QStringLiteral("logs")), QStringLiteral("用户数据目录") });
+        }
+
+        const QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        if (!appDataDir.isEmpty() && appDataDir != appLocalDataDir) {
+            candidates.append({ QDir(appDataDir).filePath(QStringLiteral("logs")), QStringLiteral("漫游数据目录") });
+        }
+
+        const QString homeDir = QDir::homePath();
+        if (!homeDir.isEmpty()) {
+            candidates.append({ QDir(homeDir).filePath(QStringLiteral("Moonlight/logs")), QStringLiteral("用户主目录") });
+        }
+
+        QString resolvedDescription;
+        for (const LogCandidate& candidate : candidates) {
+            const QString logFilePath = prepareLogFile(candidate.directory);
+            if (!logFilePath.isEmpty()) {
+                s_logFilePath = logFilePath;
+                resolvedDescription = candidate.description;
+                break;
+            }
+        }
+
+        if (!s_logFilePath.isEmpty()) {
+            qWarning() << "[日志] 错误日志写入" << resolvedDescription << ':' << s_logFilePath;
+        }
+        else {
+            qWarning() << "[日志] 无法创建错误日志文件";
+        }
+    }
+
+    if (s_logFilePath.isEmpty()) {
+        return;
+    }
+
+    QFile file(s_logFilePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        return;
+    }
+
+    QTextStream stream(&file);
+    stream << QDateTime::currentDateTime().toString(Qt::ISODate) << " [错误] " << msg << '\n';
 }
 
 void Logger::logThread(LogLevel level, const QString& msg)
