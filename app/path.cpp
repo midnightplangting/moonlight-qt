@@ -115,6 +115,10 @@ void Path::initialize(bool portable)
         // On macOS, $TMPDIR is some random folder under /var/folders/ that nobody can
         // easily find, so use the system's global tmp directory instead.
         s_LogDir = "/tmp";
+#elif defined(Q_OS_WIN)
+        // For installed builds on Windows, place logs next to the executable so they
+        // match the behavior of the portable distribution.
+        s_LogDir = QCoreApplication::applicationDirPath();
 #else
         s_LogDir = QDir::tempPath();
 #endif
